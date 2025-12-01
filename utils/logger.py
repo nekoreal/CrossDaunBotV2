@@ -46,7 +46,7 @@ def logger(
                     f"{datetime.now() if time_log else ''} "
                     f"\nfunc:{func.__name__}->{res}"
                     f"\nargs:{args} kwargs:{kwargs}"
-                    f"{f'\n\nexc{exc}\n' if exc else ''}"
+                    f"{f'\n\nexc{exc}\n\n\n' if exc else ''}"
                 )
                 if print_log:
                     print(log)

@@ -2,7 +2,7 @@ from discord.ext import commands
 from utils.logger import logger
 from .senders import send_embed_to_discord
 import requests
-from telegram_bot.senders import send_telegram_message
+from telegram_bot.senders import send_telegram_message, send_telegram_photo
 
 bot: commands.Bot | None  = None
 
@@ -33,10 +33,8 @@ async def tg(ctx):
 
     for attachment in ctx.message.attachments:
         if attachment.content_type and attachment.content_type.startswith("image/"):
-            ...
-            # Скачиваем фото
             photo_bytes = requests.get(attachment.url).content
-            #telegram_bot.send_photo(TELEGRAM_CHAT_ID, photo=photo_bytes, caption=message_text)
+            send_telegram_photo(author, photo_bytes)
 @tg.error
 async def tg_error(ctx, error):
     if isinstance(error, commands.MissingRole):

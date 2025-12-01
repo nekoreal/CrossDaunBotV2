@@ -7,7 +7,7 @@ bot = telebot.TeleBot(TELEGRAM_TOKEN)
 def run_telegram_bot():
     while True:
         try:
-            print('polling')
+            print("Telegram Bot Starting")
             bot.polling(none_stop=True)
         except Exception as e:
             print(e)

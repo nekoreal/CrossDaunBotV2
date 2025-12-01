@@ -1,6 +1,28 @@
-from .bot import bot
+from pickle import FALSE
 
+from .bot import bot
+from config import TELEGRAM_CHAT_ID
+from utils.logger import logger
+
+@logger(
+    txtfile="telegram_bot.log",
+    print_log=True,
+    only_exc=True,
+    time_log=True,
+    raise_exc=False
+)
 def send_telegram_message(author, text):
-    print(text)
-    bot.send_message(f"`{author}`: {text}",parse_mode="Markdown")
-    print("finished")
+    bot.send_message(
+        chat_id=TELEGRAM_CHAT_ID,
+        text=f"`{author}`: {text}",parse_mode="Markdown"
+    )
+
+@logger(
+    txtfile="telegram_bot.log",
+    print_log=True,
+    only_exc=True,
+    time_log=True,
+    raise_exc=False
+)
+def send_telegram_photo(author, photo):
+    bot.send_photo(caption=author, photo=photo, chat_id=TELEGRAM_CHAT_ID)
