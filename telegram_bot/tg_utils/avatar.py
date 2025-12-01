@@ -1,7 +1,15 @@
 import requests
 from io import BytesIO
 from config import TELEGRAM_TOKEN
+from utils.logger import logger
 
+@logger(
+    txtfile="telegram_bot.log",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
 def get_user_avatar( telegram_bot,user_id):
     """
     Получение аватара пользователя Telegram в виде BytesIO (если есть)

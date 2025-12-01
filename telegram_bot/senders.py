@@ -7,9 +7,9 @@ from utils.logger import logger
 @logger(
     txtfile="telegram_bot.log",
     print_log=True,
+    raise_exc=False,
     only_exc=True,
     time_log=True,
-    raise_exc=False
 )
 def send_telegram_message(author, text):
     bot.send_message(
@@ -20,9 +20,9 @@ def send_telegram_message(author, text):
 @logger(
     txtfile="telegram_bot.log",
     print_log=True,
+    raise_exc=False,
     only_exc=True,
     time_log=True,
-    raise_exc=False
 )
 def send_telegram_photo(author, photo):
     bot.send_photo(caption=author, photo=photo, chat_id=TELEGRAM_CHAT_ID)

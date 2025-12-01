@@ -5,6 +5,13 @@ from utils.logger import logger, make_log
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
+@logger(
+    txtfile="telegram_bot.log",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
 def run_telegram_bot():
     import telegram_bot.handlers
     while True:

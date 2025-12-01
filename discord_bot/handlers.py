@@ -7,6 +7,13 @@ from telegram_bot.senders import send_telegram_message, send_telegram_photo
 
 bot: commands.Bot | None  = None
 
+@logger(
+    txtfile="discord_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
 def register_handlers(local_bot: commands.Bot ):
     global bot
     bot = local_bot
@@ -16,6 +23,7 @@ def register_handlers(local_bot: commands.Bot ):
 
 
 @commands.command(name="tg")
+@commands.has_role("telegram")
 async def tg(ctx):
     if ctx.message.author.bot:
         return

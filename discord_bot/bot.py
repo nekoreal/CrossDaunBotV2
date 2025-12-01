@@ -22,6 +22,8 @@ get_bot(bot)
 @logger(
     txtfile="discord_bot.txt",
     print_log=True,
+    raise_exc=False,
+    only_exc=True,
     time_log=True,
 )
 @bot.event
@@ -35,9 +37,9 @@ def get_discord_loop():
 @logger(
     txtfile="discord_bot.txt",
     print_log=True,
-    time_log=True,
     raise_exc=False,
-    only_exc=True
+    only_exc=True,
+    time_log=True,
 )
 async def run_discord_bot():
     await bot.start(DISCORD_TOKEN)

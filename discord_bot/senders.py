@@ -5,6 +5,13 @@ from utils.logger import logger
 
 bot: commands.Bot | None  = None
 
+@logger(
+    txtfile="discord_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
 def get_bot(local_bot: commands.Bot ):
     global bot
     bot = local_bot
@@ -12,7 +19,7 @@ def get_bot(local_bot: commands.Bot ):
 @logger(
     txtfile="discord_bot.txt",
     print_log=True,
-    raise_exc=True,
+    raise_exc=False,
     only_exc=True,
     time_log=True,
 )
@@ -38,6 +45,13 @@ async def send_embed_to_discord(
         embed.set_image(url="attachment://photo.jpg")
     await bot.get_channel(DISCORD_CHANNEL_ID).send(embed=embed, files=files)
 
+@logger(
+    txtfile="discord_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
 async def send_reply_embed_to_discord(
         sender="Unknown",
         text=None,

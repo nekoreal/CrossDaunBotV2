@@ -16,9 +16,9 @@ from utils.model_gpt import dialoggpt, askgpt
 @logger(
     txtfile="telegram_bot.log",
     print_log=True,
+    raise_exc=False,
     only_exc=True,
     time_log=True,
-    raise_exc=False
 )
 def handle_ds(message:Message):
     text = message.text if message.content_type == 'text' else message.caption
@@ -48,7 +48,13 @@ def handle_ds(message:Message):
                 pass
 
 
-
+@logger(
+    txtfile="telegram_bot.log",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
 def dsinfo(message:Message):
     res = asyncio.run_coroutine_threadsafe(
         get_online_info()
@@ -57,6 +63,13 @@ def dsinfo(message:Message):
     bot.reply_to(message,res, parse_mode="Markdown")
     send_react(message.chat.id, message.message_id)
 
+@logger(
+    txtfile="telegram_bot.log",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
 def ds(message:Message):
     kwargs = {
         "sender" : message.from_user.username,
@@ -75,6 +88,13 @@ def ds(message:Message):
     )
     send_react(message.chat.id, message.message_id)
 
+@logger(
+    txtfile="telegram_bot.log",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
 def to_ds(message:Message):
     if not message.reply_to_message:
         bot.reply_to(message, "Еблан, ты хоть выдели, что пересылаешь")

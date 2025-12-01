@@ -1,6 +1,14 @@
 from ..bot import bot
 from config import DISCORD_CHANNEL_ID
+from utils.logger import logger
 
+@logger(
+    txtfile="discord_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
 async def get_online_info():
     channel = bot.get_channel(DISCORD_CHANNEL_ID)
     if not channel:
