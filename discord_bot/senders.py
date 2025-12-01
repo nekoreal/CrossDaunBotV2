@@ -2,8 +2,9 @@ import discord
 from discord.ext import commands
 from config import DISCORD_GUILD_ID, DISCORD_CHANNEL_ID
 from utils.logger import logger
+from .bot import get_bot
 
-bot: commands.Bot | None  = None
+bot: commands.Bot | None  = get_bot()
 
 @logger(
     txtfile="discord_bot.txt",

@@ -11,6 +11,7 @@ from random import randint
 from .tg_utils.reaction import send_react,send_react_for_user
 import threading
 from utils.model_gpt import dialoggpt, askgpt
+from discord_bot.ds_utils.invite_with_role import get_invite_link
 
 @bot.message_handler(content_types=['photo','text'])
 @logger(
@@ -33,6 +34,9 @@ def handle_ds(message:Message):
     elif text.startswith("/dsinfo") or text.startswith("/дсинфо"):
         dsinfo(message)
         return
+    elif text.startswith("/invite") or text.startswith("/приглашение"):
+        invite(message)
+        return
     elif text.startswith("/n") or text.startswith("/н"):
         bot.reply_to(message, askgpt(message.text[2:]))
         send_react(message.chat.id, message.message_id)
@@ -46,6 +50,22 @@ def handle_ds(message:Message):
                 return
             except:
                 pass
+
+
+@logger(
+    txtfile="telegram_bot.log",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
+def invite(message: Message):
+    res = asyncio.run_coroutine_threadsafe(
+        get_invite_link()
+        , get_discord_loop()
+    ).result()
+    bot.reply_to(message, res, parse_mode="Markdown")
+    send_react(message.chat.id, message.message_id)
 
 
 @logger(

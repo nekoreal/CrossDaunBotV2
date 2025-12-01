@@ -40,3 +40,24 @@ args:(<telebot.types.Message object at 0x00000162B47A9590>,) kwargs:{}
 exc'NoneType' object is not subscriptable
 
 
+2025-12-01 22:36:20.871993 
+func:handle_ds->None
+args:(<telebot.types.Message object at 0x00000264AAF8D7F0>,) kwargs:{}
+
+excobject of type 'NoneType' has no len()
+
+
+2025-12-01 23:08:52.288881 
+func:handle_ds->None
+args:(<telebot.types.Message object at 0x000001F003145310>,) kwargs:{}
+
+exc'NoneType' object has no attribute 'startswith'
+
+
+2025-12-01 23:15:58.465198 
+func:handle_ds->None
+args:(<telebot.types.Message object at 0x00000283A1ABD6D0>,) kwargs:{}
+
+excobject of type 'NoneType' has no len()
+
+

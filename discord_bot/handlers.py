@@ -1,11 +1,17 @@
 from discord.ext import commands
-from utils.logger import logger
-from .senders import send_embed_to_discord
-import requests
-from telegram_bot.senders import send_telegram_message, send_telegram_photo
 
+from utils.logger import logger
+import requests
+import discord
+from telegram_bot.senders import send_telegram_message, send_telegram_photo
+from config import DISCORD_GUILD_ID, BOT_USERNAME,INVITE_ROLE, DISCORD_CHANNEL_ID
+import threading
 
 bot: commands.Bot | None  = None
+INVITES:list[discord.Invite] = []
+
+def get_invites():
+    return INVITES
 
 @logger(
     txtfile="discord_bot.txt",
@@ -19,8 +25,23 @@ def register_handlers(local_bot: commands.Bot ):
     bot = local_bot
 
     bot.add_command(tg)
+    bot.event(on_member_join)
 
-
+async def on_member_join(member:discord.Member):
+    global INVITES
+    nowinvites = {inv.code: inv for inv in await bot.get_guild(DISCORD_GUILD_ID).invites()}
+    for i in INVITES:
+        if nowinvites.get(i.code).uses != i.uses:
+            if nowinvites.get(i.code).inviter!=BOT_USERNAME:
+                currentinv:discord.Invite = await  bot.fetch_invite(i.code)
+                await currentinv.delete(reason=f"Было использовано {member.name}")
+                role = member.guild.get_role(INVITE_ROLE)
+                if role:
+                    await member.add_roles(role)
+                    await bot.get_channel(DISCORD_CHANNEL_ID).send(f"Новый пидор в дискорде `{member.name}` по приглашению бота")
+                    threading.Thread(target=send_telegram_message, args=("Server", f"Новый пидор в дискорде `{member.name}` по приглашению бота")).start()
+            break
+    INVITES = await bot.get_guild(DISCORD_GUILD_ID).invites()
 
 @commands.command(name="tg")
 @commands.has_role("telegram")
