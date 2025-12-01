@@ -37,3 +37,29 @@ async def send_embed_to_discord(
         files.append(discord.File(photo, filename="photo.jpg"))
         embed.set_image(url="attachment://photo.jpg")
     await bot.get_channel(DISCORD_CHANNEL_ID).send(embed=embed, files=files)
+
+async def send_reply_embed_to_discord(
+        sender="Unknown",
+        text=None,
+        senderavatar=None,
+        senderlink=None,
+        rsender=None,
+        rsenderavatar=None,
+        photo=None
+):
+    embed = discord.Embed(
+        color=0x2288ff
+    )
+    files = []
+    if senderavatar :
+        files.append(discord.File(senderavatar, filename="senderavatar.jpg"))
+        embed.set_author(name=f"{sender} переслал:"  , url=senderlink , icon_url="attachment://senderavatar.jpg")
+    else: embed.set_author(name=f"{sender} переслал:"  , url=senderlink )
+    if rsenderavatar:
+        files.append(discord.File(rsenderavatar, filename="rsenderavatar.jpg"))
+        embed.set_footer(text=f"{rsender}: {text}", icon_url="attachment://rsenderavatar.jpg")
+    else: embed.set_footer(text=f"{rsender}: {text}")
+    if photo:
+        files.append(discord.File(photo, filename="photo.jpg"))
+        embed.set_image(url="attachment://photo.jpg")
+    await bot.get_channel(DISCORD_CHANNEL_ID).send(embed=embed, files=files)

@@ -2,9 +2,11 @@ import telebot
 from config import TELEGRAM_TOKEN
 from utils.logger import logger, make_log
 
+
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
 def run_telegram_bot():
+    import telegram_bot.handlers
     while True:
         try:
             print("Telegram Bot Starting")

@@ -4,22 +4,15 @@ from .senders import send_embed_to_discord
 import requests
 from telegram_bot.senders import send_telegram_message, send_telegram_photo
 
+
 bot: commands.Bot | None  = None
 
 def register_handlers(local_bot: commands.Bot ):
     global bot
     bot = local_bot
 
-    bot.event(on_ready)
     bot.add_command(tg)
 
-@logger(
-    txtfile="discord_bot.txt",
-    print_log=True,
-    time_log=True,
-)
-async def on_ready():
-    print("ds_bot_started")
 
 
 @commands.command(name="tg")

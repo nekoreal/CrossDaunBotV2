@@ -1,15 +1,42 @@
-2025-12-01 19:43:28.392730 
-func:send_telegram_message->None
-args:(<Member id=528579639761829889 name='n.e.k.o.real' global_name='N.e.k.o.' bot=False nick='[Ï¸ñ] N.e.k.o.' guild=<Guild id=619593521153966101 name='Kingdom of daun' shard_id=0 chunked=True member_count=96>>, 'ëîëü') kwargs:{}
+2025-12-01 20:59:14.364409 
+func:handle_ds->None
+args:(<telebot.types.Message object at 0x0000026BC1C923C0>,) kwargs:{}
 
-excTeleBot.send_message() missing 1 required positional argument: 'text'
-2025-12-01 19:44:36.334675 
-func:send_telegram_message->None
-args:(<Member id=528579639761829889 name='n.e.k.o.real' global_name='N.e.k.o.' bot=False nick='[Ï¸ñ] N.e.k.o.' guild=<Guild id=619593521153966101 name='Kingdom of daun' shard_id=0 chunked=True member_count=96>>, 'Õóé') kwargs:{}
+exc'NoneType' object has no attribute 'startswith'
 
-excA request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: chat not found
-2025-12-01 19:45:40.716580 
-func:send_telegram_message->None
-args:(<Member id=528579639761829889 name='n.e.k.o.real' global_name='N.e.k.o.' bot=False nick='[Ï¸ñ] N.e.k.o.' guild=<Guild id=619593521153966101 name='Kingdom of daun' shard_id=0 chunked=True member_count=96>>, 'v') kwargs:{}
 
-excA request to the Telegram API was unsuccessful. Error code: 400. Description: Bad Request: chat not found
+2025-12-01 21:16:49.117583 
+func:handle_ds->None
+args:(<telebot.types.Message object at 0x000001B328B35310>,) kwargs:{}
+
+exc'NoneType' object is not subscriptable
+
+
+2025-12-01 21:17:35.255844 
+func:handle_ds->None
+args:(<telebot.types.Message object at 0x0000022A3CAAD450>,) kwargs:{}
+
+exc'NoneType' object is not subscriptable
+
+
+2025-12-01 21:17:52.911200 
+func:handle_ds->None
+args:(<telebot.types.Message object at 0x00000223351C5450>,) kwargs:{}
+
+exc'NoneType' object is not subscriptable
+
+
+2025-12-01 21:17:52.915415Telegram bot error: 'NoneType' object is not subscriptable2025-12-01 21:19:30.369484 
+func:handle_ds->None
+args:(<telebot.types.Message object at 0x0000025044BB5BD0>,) kwargs:{}
+
+exc'NoneType' object is not subscriptable
+
+
+2025-12-01 21:21:12.020195 
+func:handle_ds->None
+args:(<telebot.types.Message object at 0x00000162B47A9590>,) kwargs:{}
+
+exc'NoneType' object is not subscriptable
+
+
