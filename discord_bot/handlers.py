@@ -36,7 +36,8 @@ async def tg(ctx):
         if attachment.content_type and attachment.content_type.startswith("image/"):
             photo_bytes = requests.get(attachment.url).content
             send_telegram_photo(author, photo_bytes)
+    await ctx.message.add_reaction('✅')
 @tg.error
 async def tg_error(ctx, error):
     if isinstance(error, commands.MissingRole):
-        await ctx.send(f"Хуесос без роли telegram, {ctx.author}")
+        await ctx.message.add_reaction('❌')
