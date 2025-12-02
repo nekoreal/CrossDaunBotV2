@@ -3,7 +3,8 @@ from config import TELEGRAM_TOKEN
 
 user={
     '874183602':"🔥",
-    '670305019':"🎃"
+    '670305019':"🎃",
+    '1941380895':'😘'
 }
 
 def send_react(chat_id, message_id):
