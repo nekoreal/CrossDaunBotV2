@@ -1,4 +1,8 @@
 import asyncio
+
+from pydantic import Tag
+
+from config import TELEGRAM_CHAT_ID
 from utils.logger import logger
 from discord_bot.senders import send_embed_to_discord, send_reply_embed_to_discord
 from .bot import bot
@@ -12,17 +16,24 @@ from .tg_utils.reaction import send_react,send_react_for_user
 import threading
 from utils.model_gpt import dialoggpt, askgpt
 from discord_bot.ds_utils.invite_with_role import get_invite_link
+from .tg_db.db_controllers import user_controller, at_user_tag_controller, tag_controller
+from .tg_utils.mini_utils import escape_markdown, run_in_thread
+from .tg_db import session_scope
+from .tg_db.models.tg_teg import TelegramTag
+
+
 
 @bot.message_handler(content_types=['photo','text'])
 @logger(
     txtfile="telegram_bot.log",
     print_log=True,
-    raise_exc=False,
+    raise_exc=True,
     only_exc=True,
     time_log=True,
 )
-def handle_ds(message:Message):
-    text = message.text if message.content_type == 'text' else message.caption
+def message_handler(message:Message):
+    user=user_controller.get_user(message.from_user.id)
+    text = message.text if message.content_type == 'text' else (message.caption if message.caption else "")
     if message.from_user.id == bot.user.id:
         return
     if text.startswith("/ds ") or text.startswith("/дс "):
@@ -37,20 +48,134 @@ def handle_ds(message:Message):
     elif text.startswith("/invite") or text.startswith("/приглашение"):
         invite(message)
         return
-    elif text.startswith("/n") or text.startswith("/н"):
+    elif text.startswith("/n ") or text.startswith("/н "):
         bot.reply_to(message, askgpt(message.text[2:]))
         send_react(message.chat.id, message.message_id)
         return
+    elif text.startswith("/+tag ") or text.startswith("/+тег "):
+        run_in_thread(add_tag,message)
+        send_react(message.chat.id, message.message_id)
+        return
+    elif text.startswith("/-tag ") or text.startswith("/-тег "):
+        run_in_thread(delete_tag, message)
+        send_react(message.chat.id, message.message_id)
+        return
+    elif text.startswith("/tags") or text.startswith("/теги"):
+        run_in_thread(tags, message)
+        send_react(message.chat.id, message.message_id)
+        return
+    elif text.startswith("#") and len(text)>1:
+        run_in_thread(trigger_tags, message)
+        send_react(message.chat.id, message.message_id)
+        return
+
 
     send_react_for_user(message.chat.id, message.message_id, message.from_user.id)
-    if len(message.text)>25:
+    if len(text)>25:
         if randint(0,17)==7:
             try:
-                threading.Thread(target=bot.reply_to, args=(message,dialoggpt(message.text, message.from_user.username),)).start()
+                threading.Thread(target=bot.reply_to, args=(message,dialoggpt(text, message.from_user.username),)).start()
                 return
             except:
                 pass
 
+
+@logger(
+    txtfile="telegram_bot.log",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
+def trigger_tags(message: Message):
+    try:
+        msg_split = message.text.split(" ")
+        tag_name = msg_split[0][1:]
+        text = ' '.join(msg_split[1:])
+    except:
+        bot.reply_to(message, "Неправильный ввод. Пидорский пример // tag text")
+        return
+    with session_scope() as session:
+        tag = session.query(TelegramTag).filter_by(tag=tag_name).first()
+        if tag is None:
+            bot.reply_to(message, "Тег не найден, как и твой член")
+            return
+        res=(f"{escape_markdown("@"+" @".join(list( bot.get_chat_member( TELEGRAM_CHAT_ID ,at.user.tg_id).user.username for at in tag.at_user_tag )))}"
+                         f"\n\n`{message.from_user.username}`:\n{escape_markdown(text)}" )
+        bot.send_message(message.chat.id,
+                         res
+                         ,parse_mode="Markdown")
+
+
+
+@logger(
+    txtfile="telegram_bot.log",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
+def tags(message: Message):
+    user = user_controller.get_user(message.from_user.id)
+    bot.reply_to(message,
+                 f"Твои теги:\n"
+                 f"```ini\n"
+                 f"{escape_markdown('\n'.join(list( user_controller.get_user_tags_by_tg_id(user["tg_id"]) )))}\n"
+                 f"\n```"
+                 ,parse_mode="Markdown",
+                 )
+
+@logger(
+    txtfile="telegram_bot.log",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
+def delete_tag(message: Message):
+    user = user_controller.get_user(message.from_user.id)
+    try:
+        tag_name = message.text[6:]
+        if len(tag_name) < 2:
+            raise Exception("Короткий тэг")
+    except Exception as e:
+        bot.reply_to(
+            message,
+            "Неверная команда `пидор`",
+            parse_mode="Markdown",
+        )
+        return
+    bot.reply_to(
+        message,
+        at_user_tag_controller.delete_at_user_tag(user["id"], tag_name),
+        parse_mode="Markdown",
+                 )
+
+@logger(
+    txtfile="telegram_bot.log",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
+def add_tag(message: Message):
+    user = user_controller.get_user(message.from_user.id)
+    try:
+        tag_name = message.text[6:]
+        if len(tag_name)<2:
+            raise Exception("Короткий тэг")
+    except Exception as e:
+        bot.reply_to(
+            message,
+            "Неверная команда `пидор`",
+            parse_mode="Markdown",
+        )
+        return
+    bot.reply_to(
+        message,
+        escape_markdown(user_controller.add_tag_to_user(user_id=user["id"], tag_name=tag_name)),
+        parse_mode="Markdown",
+    )
 
 @logger(
     txtfile="telegram_bot.log",

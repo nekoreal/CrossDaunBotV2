@@ -3,6 +3,12 @@ from telegram_bot import run_telegram_bot
 import threading
 import asyncio
 from utils.logger import logger
+from telegram_bot.tg_db import engine, Base
+from telegram_bot.tg_db.models.tg_user import TelegramUser
+from telegram_bot.tg_db.models.tg_teg import TelegramTag
+from telegram_bot.tg_db.models.tg_at_user_tag import UserTagAssociation
+
+
 
 
 @logger(
@@ -13,6 +19,7 @@ from utils.logger import logger
     time_log=True,
 )
 def main():
+    Base.metadata.create_all(bind=engine)
     telegram_thread = threading.Thread(target=run_telegram_bot)
     telegram_thread.start()
     asyncio.run(run_discord_bot())
