@@ -20,6 +20,7 @@ from .tg_db.db_controllers import user_controller, at_user_tag_controller, tag_c
 from .tg_utils.mini_utils import escape_markdown, run_in_thread
 from .tg_db import session_scope
 from .tg_db.models.tg_teg import TelegramTag
+from .tg_db.db_controllers.tag_controller import get_tags_with_user_counts, delete_unused_tags
 
 
 
@@ -64,6 +65,10 @@ def message_handler(message:Message):
         run_in_thread(tags, message)
         send_react(message.chat.id, message.message_id)
         return
+    elif text.startswith("/alltags") or text.startswith("/всетеги"):
+        run_in_thread(alltags, message)
+        send_react(message.chat.id, message.message_id)
+        return
     elif text.startswith("#") and len(text)>1:
         run_in_thread(trigger_tags, message)
         send_react(message.chat.id, message.message_id)
@@ -102,9 +107,35 @@ def trigger_tags(message: Message):
             return
         res=(f"{escape_markdown("@"+" @".join(list( bot.get_chat_member( TELEGRAM_CHAT_ID ,at.user.tg_id).user.username for at in tag.at_user_tag )))}"
                          f"\n\n`{message.from_user.username}`:\n{escape_markdown(text)}" )
-        bot_msg = bot.send_message(message.chat.id,
+        bot.send_message(message.chat.id,
                          res
                          ,parse_mode="Markdown")
+        run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id]))
+
+
+
+@logger(
+    txtfile="telegram_bot.log",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
+def alltags(message: Message):
+    try:
+        with session_scope() as session:
+            tags_counts = get_tags_with_user_counts(session)
+            if not tags_counts:
+                bot.reply_to(message, "Нет ни одного тега.")
+                return
+            text = "*Теги и количество пользователей:*\n"
+            for tag, count in sorted(tags_counts, key=lambda x: x[1], reverse=True):
+                text += f"`{count}` — {tag}\n"
+            bot_msg = bot.reply_to(message, text, parse_mode="Markdown")
+            run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
+                          , time_sleep=10)
+    except:
+        bot_msg = bot.reply_to(message, "Ошибка")
         run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
                       , time_sleep=10)
 
@@ -170,6 +201,8 @@ def delete_tag(message: Message):
         f"\n{at_user_tag_controller.delete_at_user_tag(user["id"], tag_name)}",
         parse_mode="Markdown",
                  )
+    with session_scope() as session:
+        delete_unused_tags(session)
     run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
                   , time_sleep=5)
 
