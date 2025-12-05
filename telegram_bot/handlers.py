@@ -110,7 +110,7 @@ def trigger_tags(message: Message):
             bot.reply_to(message, "Тег не найден, как и твой член")
             return
         res=(f"{escape_markdown("@"+" @".join(list( bot.get_chat_member( TELEGRAM_CHAT_ID ,at.user.tg_id).user.username for at in tag.at_user_tag )))}"
-                         f"\n\n`{message.from_user.username}`:\n{escape_markdown(text)}" )
+                         f"\n\n#{tag.tag}\n`{message.from_user.username}`:\n{escape_markdown(text)}" )
         bot.send_message(message.chat.id,
                          res
                          ,parse_mode="Markdown")
