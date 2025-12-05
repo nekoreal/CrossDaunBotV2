@@ -69,6 +69,10 @@ def message_handler(message:Message):
         run_in_thread(alltags, message)
         send_react(message.chat.id, message.message_id)
         return
+    elif text.startswith("/taginfo ") or text.startswith("/тегинфо "):
+        run_in_thread(taginfo,message)
+        send_react(message.chat.id, message.message_id)
+        return
     elif text.startswith("#") and len(text)>1:
         run_in_thread(trigger_tags, message)
         send_react(message.chat.id, message.message_id)
@@ -112,7 +116,34 @@ def trigger_tags(message: Message):
                          ,parse_mode="Markdown")
         run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id]))
 
-
+@logger(
+    txtfile="telegram_bot.log",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
+def taginfo(message: Message):
+    try:
+        msg_split = message.text.split(" ")
+        tag_name = ' '.join(msg_split[1:])
+    except:
+        bot_msg=bot.reply_to(message, "Неправильный ввод. Пидорский пример /tag tag_name")
+        run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id]), time_sleep=5)
+        return
+    with session_scope() as session:
+        tag = session.query(TelegramTag).filter_by(tag=tag_name).first()
+        if tag is None:
+            bot_msg=bot.reply_to(message, "Тег не найден, как и твой член")
+            run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id]), time_sleep=5)
+            return
+        res = (
+            f"Тег `{tag.tag}`\n"
+            f"```ini\n{escape_markdown( "\n".join(list(bot.get_chat_member(TELEGRAM_CHAT_ID, at.user.tg_id).user.username for at in tag.at_user_tag)))}```")
+        bot_msg = bot.reply_to(message,
+                         res
+                         , parse_mode="Markdown")
+        run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id,bot_msg.message_id]), time_sleep=15)
 
 @logger(
     txtfile="telegram_bot.log",
@@ -179,9 +210,6 @@ def delete_tag(message: Message):
             return
     else:
         user = user_controller.get_user(message.from_user.id)
-    if str(message.from_user.id) == "874183602":
-        if message.reply_to_message:
-            user = user_controller.get_user(message.reply_to_message.from_user.id)
     try:
         tag_name = message.text[6:]
         if len(tag_name) < 2:

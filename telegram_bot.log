@@ -780,3 +780,4 @@ excThis Session's transaction has been rolled back due to a previous exception d
 (Background on this error at: https://sqlalche.me/e/20/9h9h) (Background on this error at: https://sqlalche.me/e/20/7s2a)
 
 
+2025-12-05 16:06:22.568263Telegram bot error: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot6267155089:AAHROhVcyZnd1XuL4LpJ-KmrEjHoR2xpjHI/getUpdates?offset=552960110&timeout=20 (Caused by ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response')))
