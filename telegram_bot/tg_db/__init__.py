@@ -5,6 +5,7 @@ from config import SQLALCHEMY_DATABASE_URI
 engine = create_engine(SQLALCHEMY_DATABASE_URI, echo=True)
 SessionLocal = sessionmaker(bind=engine)
 
+
 Base = declarative_base()
 
 from contextlib import contextmanager

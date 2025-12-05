@@ -102,10 +102,11 @@ def trigger_tags(message: Message):
             return
         res=(f"{escape_markdown("@"+" @".join(list( bot.get_chat_member( TELEGRAM_CHAT_ID ,at.user.tg_id).user.username for at in tag.at_user_tag )))}"
                          f"\n\n`{message.from_user.username}`:\n{escape_markdown(text)}" )
-        bot.send_message(message.chat.id,
+        bot_msg = bot.send_message(message.chat.id,
                          res
                          ,parse_mode="Markdown")
-
+        run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
+                      , time_sleep=10)
 
 
 @logger(
@@ -117,13 +118,17 @@ def trigger_tags(message: Message):
 )
 def tags(message: Message):
     user = user_controller.get_user(message.from_user.id)
-    bot.reply_to(message,
-                 f"Твои теги:\n"
+    if message.reply_to_message:
+        user = user_controller.get_user(message.reply_to_message.from_user.id)
+    bot_msg = bot.reply_to(message,
+                 f"`{bot.get_chat_member( TELEGRAM_CHAT_ID ,user_id=user["tg_id"]).user.username}` теги:\n"
                  f"```ini\n"
                  f"{escape_markdown('\n'.join(list( user_controller.get_user_tags_by_tg_id(user["tg_id"]) )))}\n"
                  f"\n```"
                  ,parse_mode="Markdown",
                  )
+    run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
+                  , time_sleep=10)
 
 @logger(
     txtfile="telegram_bot.log",
@@ -133,23 +138,40 @@ def tags(message: Message):
     time_log=True,
 )
 def delete_tag(message: Message):
-    user = user_controller.get_user(message.from_user.id)
+    if message.reply_to_message:
+        if str(message.from_user.id) == "874183602":
+            user = user_controller.get_user(message.reply_to_message.from_user.id)
+        else:
+            bot_msg = bot.reply_to(message,"Кто такой, чтобы такое делать")
+            run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
+                          , time_sleep=5)
+            return
+    else:
+        user = user_controller.get_user(message.from_user.id)
+    if str(message.from_user.id) == "874183602":
+        if message.reply_to_message:
+            user = user_controller.get_user(message.reply_to_message.from_user.id)
     try:
         tag_name = message.text[6:]
         if len(tag_name) < 2:
             raise Exception("Короткий тэг")
     except Exception as e:
-        bot.reply_to(
+        bot_msg = bot.reply_to(
             message,
             "Неверная команда `пидор`",
             parse_mode="Markdown",
         )
+        run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
+                      , time_sleep=5)
         return
-    bot.reply_to(
+    bot_msg = bot.reply_to(
         message,
-        at_user_tag_controller.delete_at_user_tag(user["id"], tag_name),
+        f"Для `{bot.get_chat_member( TELEGRAM_CHAT_ID ,user_id=user["tg_id"]).user.username}`"
+        f"\n{at_user_tag_controller.delete_at_user_tag(user["id"], tag_name)}",
         parse_mode="Markdown",
                  )
+    run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
+                  , time_sleep=5)
 
 @logger(
     txtfile="telegram_bot.log",
@@ -159,23 +181,37 @@ def delete_tag(message: Message):
     time_log=True,
 )
 def add_tag(message: Message):
-    user = user_controller.get_user(message.from_user.id)
+    if message.reply_to_message:
+        if str(message.from_user.id) == "874183602":
+            user = user_controller.get_user(message.reply_to_message.from_user.id)
+        else:
+            bot_msg = bot.reply_to(message, "Кто такой, чтобы такое делать")
+            run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
+                          , time_sleep=5)
+            return
+    else:
+        user = user_controller.get_user(message.from_user.id)
     try:
         tag_name = message.text[6:]
         if len(tag_name)<2:
             raise Exception("Короткий тэг")
     except Exception as e:
-        bot.reply_to(
+        bot_msg = bot.reply_to(
             message,
             "Неверная команда `пидор`",
             parse_mode="Markdown",
         )
+        run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
+                      , time_sleep=5)
         return
-    bot.reply_to(
+    bot_msg = bot.reply_to(
         message,
-        escape_markdown(user_controller.add_tag_to_user(user_id=user["id"], tag_name=tag_name)),
+        f"Для `{bot.get_chat_member(TELEGRAM_CHAT_ID, user_id=user["tg_id"]).user.username}`"
+        f"\n{escape_markdown(user_controller.add_tag_to_user(user_id=user["id"], tag_name=tag_name))}",
         parse_mode="Markdown",
     )
+    run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
+                  ,time_sleep=5)
 
 @logger(
     txtfile="telegram_bot.log",

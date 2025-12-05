@@ -762,3 +762,21 @@ args:(<telebot.types.Message object at 0x000002644F417ED0>,) kwargs:{}
 excColumn expression, FROM clause, or other columns clause element expected, got <class 'pydantic.types.Tag'>.
 
 
+2025-12-05 15:25:17.461262 
+func:tags->None
+args:(<telebot.types.Message object at 0x0000017DC02620D0>,) kwargs:{}
+
+excTeleBot.get_chat_member() missing 1 required positional argument: 'chat_id'
+
+
+2025-12-05 15:41:20.495311 
+func:add_tag->None
+args:(<telebot.types.Message object at 0x00000253B8D68CD0>,) kwargs:{}
+
+excThis Session's transaction has been rolled back due to a previous exception during flush. To begin a new transaction with this Session, first issue Session.rollback(). Original exception was: (raised as a result of Query-invoked autoflush; consider using a session.no_autoflush block if this flush is occurring prematurely)
+(pymysql.err.DataError) (1406, "Data too long for column 'tag' at row 1")
+[SQL: INSERT INTO telegram_tags (tag) VALUES (%(tag)s)]
+[parameters: {'tag': 'fdfffffffffffffffffffffffdfffffffffffffffffffffffdfffffffffffffffffffffffdfffffffffffffffffffffffdfffffffffffffffffffffffdfffffffffffffffffffffffdfff ... (566 characters truncated) ... ffffffdfffffffffffffffffffffffdfffffffffffffffffffffffdfffffffffffffffffffffffdfffffffffffffffffffffffdfffffffffffffffffffffffdffffffffffffffffffffff'}]
+(Background on this error at: https://sqlalche.me/e/20/9h9h) (Background on this error at: https://sqlalche.me/e/20/7s2a)
+
+

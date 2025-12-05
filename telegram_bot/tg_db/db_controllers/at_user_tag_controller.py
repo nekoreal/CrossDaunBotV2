@@ -14,8 +14,8 @@ def create_at_user_tag(user_id, tag_name:str):
     :param tag_name:
     :return:
     '''
-    with session_scope() as session:
-        try:
+    try:
+        with session_scope() as session:
             tag = session.query(TelegramTag).filter_by(tag=tag_name).first()
             if tag is None:
                 tag = TelegramTag(tag=tag_name)
@@ -24,13 +24,13 @@ def create_at_user_tag(user_id, tag_name:str):
                 return f"Связь {tag_name} уже есть"
             at_user_tag = UserTagAssociation(user_id=user_id, tag_id=tag.id)
             session.add(at_user_tag)
-        except Exception as e:
-            return "Неверные данные"
-        return f"Связь {tag_name} была создана"
+    except Exception as e:
+        return "Неверные данные"
+    return f"Связь {tag_name} была создана"
 
 def delete_at_user_tag(user_id, tag_name:str):
-    with session_scope() as session:
-        try:
+    try:
+        with session_scope() as session:
             tag = session.query(TelegramTag).filter_by(tag=tag_name).first()
             if tag is None:
                 tag = TelegramTag(tag=tag_name)
@@ -38,6 +38,6 @@ def delete_at_user_tag(user_id, tag_name:str):
             if session.query(UserTagAssociation).filter_by(user_id=user_id, tag_id=tag.id).delete():
                 return f"Связь {tag_name} удалена"
             return "Такой связи нету"
-        except Exception as e:
-            return "Ошибка удаления"
+    except Exception as e:
+        return "Ошибка удаления"
 
