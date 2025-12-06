@@ -20,6 +20,7 @@ from .tg_db.db_controllers import user_controller, at_user_tag_controller, tag_c
 from .tg_utils.mini_utils import escape_markdown, run_in_thread
 from .tg_db import session_scope
 from .tg_db.models.tg_teg import TelegramTag
+from .tg_db.models.tg_user import TelegramUser
 from .tg_db.db_controllers.tag_controller import get_tags_with_user_counts, delete_unused_tags
 
 
@@ -33,6 +34,8 @@ from .tg_db.db_controllers.tag_controller import get_tags_with_user_counts, dele
     time_log=True,
 )
 def message_handler(message:Message):
+    if str(message.from_user.id) == "862249650":
+        return
     user=user_controller.get_user(message.from_user.id)
     text = message.text if message.content_type == 'text' else (message.caption if message.caption else "")
     if message.from_user.id == bot.user.id:
@@ -73,6 +76,10 @@ def message_handler(message:Message):
         run_in_thread(taginfo,message)
         send_react(message.chat.id, message.message_id)
         return
+    elif text.startswith("/all ") or text.startswith("/все "):
+        run_in_thread(trigger_all, message)
+        send_react(message.chat.id, message.message_id)
+        return
     elif text.startswith("#") and len(text)>1:
         run_in_thread(trigger_tags, message)
         send_react(message.chat.id, message.message_id)
@@ -88,6 +95,28 @@ def message_handler(message:Message):
             except:
                 pass
 
+@logger(
+    txtfile="telegram_bot.log",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
+def trigger_all(message: Message):
+    try:
+        msg_split = message.text.split(" ")
+        text = ' '.join(msg_split[1:])
+    except:
+        bot.reply_to(message, "Неправильный ввод. Пидорский пример // tag text")
+        return
+    with session_scope() as session:
+        users = session.query(TelegramUser).all()
+        res=(f"{escape_markdown("@"+" @".join(list( bot.get_chat_member( TELEGRAM_CHAT_ID ,user.tg_id).user.username for user in users )))}"
+                         f"\n\n`{message.from_user.username}`:\n{escape_markdown(text)}" )
+        bot.send_message(message.chat.id,
+                         res
+                         ,parse_mode="Markdown")
+        run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id]))
 
 @logger(
     txtfile="telegram_bot.log",
@@ -102,15 +131,25 @@ def trigger_tags(message: Message):
         tag_name = msg_split[0][1:]
         text = ' '.join(msg_split[1:])
     except:
-        bot.reply_to(message, "Неправильный ввод. Пидорский пример // tag text")
+        bot_msg = bot.reply_to(message, "Неправильный ввод. Пидорский пример // tag text")
+        run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id]))
         return
     with session_scope() as session:
         tag = session.query(TelegramTag).filter_by(tag=tag_name).first()
         if tag is None:
             bot.reply_to(message, "Тег не найден, как и твой член")
             return
-        res=(f"{escape_markdown("@"+" @".join(list( bot.get_chat_member( TELEGRAM_CHAT_ID ,at.user.tg_id).user.username for at in tag.at_user_tag )))}"
-                         f"\n\n#{tag.tag}\n`{message.from_user.username}`:\n{escape_markdown(text)}" )
+        usernames = [
+            bot.get_chat_member(TELEGRAM_CHAT_ID, at.user.tg_id).user.username
+            for at in tag.at_user_tag
+            if at.user.tg_id != message.from_user.id
+        ]
+        mentions = "@" + " @".join(usernames) if usernames else ""
+
+        res = (
+            f"{escape_markdown(mentions)}"
+            f"\n\n#{tag.tag}\n`{message.from_user.username}`:\n{escape_markdown(text)}"
+        )
         bot.send_message(message.chat.id,
                          res
                          ,parse_mode="Markdown")
