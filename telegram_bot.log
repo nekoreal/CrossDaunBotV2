@@ -780,4 +780,11 @@ excThis Session's transaction has been rolled back due to a previous exception d
 (Background on this error at: https://sqlalche.me/e/20/9h9h) (Background on this error at: https://sqlalche.me/e/20/7s2a)
 
 
-2025-12-05 16:06:22.568263Telegram bot error: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot6267155089:AAHROhVcyZnd1XuL4LpJ-KmrEjHoR2xpjHI/getUpdates?offset=552960110&timeout=20 (Caused by ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response')))
+2025-12-05 16:06:22.568263Telegram bot error: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot6267155089:AAHROhVcyZnd1XuL4LpJ-KmrEjHoR2xpjHI/getUpdates?offset=552960110&timeout=20 (Caused by ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response')))2025-12-06 19:47:43.059719Telegram bot error: HTTPSConnectionPool(host='api.telegram.org', port=443): Max retries exceeded with url: /bot6267155089:AAHROhVcyZnd1XuL4LpJ-KmrEjHoR2xpjHI/getUpdates?offset=552960423&timeout=20 (Caused by ProxyError('Unable to connect to proxy', RemoteDisconnected('Remote end closed connection without response')))2025-12-06 19:56:19.576789 
+func:message_handler->None
+args:(<telebot.types.Message object at 0x0000019D7AB87D90>,) kwargs:{}
+
+exc'NoneType' object has no attribute 'from_user'
+
+
+2025-12-06 19:56:19.581689Telegram bot error: 'NoneType' object has no attribute 'from_user'

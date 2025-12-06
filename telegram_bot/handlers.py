@@ -56,34 +56,35 @@ def message_handler(message:Message):
         bot.reply_to(message, askgpt(message.text[2:]))
         send_react(message.chat.id, message.message_id)
         return
-    elif text.startswith("/+tag ") or text.startswith("/+тег "):
-        run_in_thread(add_tag,message)
-        send_react(message.chat.id, message.message_id)
-        return
-    elif text.startswith("/-tag ") or text.startswith("/-тег "):
-        run_in_thread(delete_tag, message)
-        send_react(message.chat.id, message.message_id)
-        return
-    elif text.startswith("/tags") or text.startswith("/теги"):
-        run_in_thread(tags, message)
-        send_react(message.chat.id, message.message_id)
-        return
-    elif text.startswith("/alltags") or text.startswith("/всетеги"):
-        run_in_thread(alltags, message)
-        send_react(message.chat.id, message.message_id)
-        return
-    elif text.startswith("/taginfo ") or text.startswith("/тегинфо "):
-        run_in_thread(taginfo,message)
-        send_react(message.chat.id, message.message_id)
-        return
-    elif text.startswith("/all ") or text.startswith("/все "):
-        run_in_thread(trigger_all, message)
-        send_react(message.chat.id, message.message_id)
-        return
-    elif text.startswith("#") and len(text)>1:
-        run_in_thread(trigger_tags, message)
-        send_react(message.chat.id, message.message_id)
-        return
+    elif str(message.reply_to_message.from_user.id) != "862249650" if message.reply_to_message else True:
+        if text.startswith("/+tag ") or text.startswith("/+тег "):
+            run_in_thread(add_tag,message)
+            send_react(message.chat.id, message.message_id)
+            return
+        elif text.startswith("/-tag ") or text.startswith("/-тег "):
+            run_in_thread(delete_tag, message)
+            send_react(message.chat.id, message.message_id)
+            return
+        elif text.startswith("/tags") or text.startswith("/теги"):
+            run_in_thread(tags, message)
+            send_react(message.chat.id, message.message_id)
+            return
+        elif text.startswith("/alltags") or text.startswith("/всетеги"):
+            run_in_thread(alltags, message)
+            send_react(message.chat.id, message.message_id)
+            return
+        elif text.startswith("/taginfo ") or text.startswith("/тегинфо "):
+            run_in_thread(taginfo,message)
+            send_react(message.chat.id, message.message_id)
+            return
+        elif text.startswith("/all ") or text.startswith("/все "):
+            run_in_thread(trigger_all, message)
+            send_react(message.chat.id, message.message_id)
+            return
+        elif text.startswith("#") and len(text)>1:
+            run_in_thread(trigger_tags, message)
+            send_react(message.chat.id, message.message_id)
+            return
 
 
     send_react_for_user(message.chat.id, message.message_id, message.from_user.id)
