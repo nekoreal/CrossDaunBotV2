@@ -40,7 +40,7 @@ def message_handler(message:Message):
     text = message.text if message.content_type == 'text' else (message.caption if message.caption else "")
     if message.from_user.id == bot.user.id:
         return
-    if text.startswith("/ds ") or text.startswith("/дс "):
+    if text.startswith("/ds ") or text.startswith("/дс ") or text in ["/ds", "/дс"]:
         ds(message)
         return
     elif text.startswith("/2ds") or text.startswith("/2дс"):
@@ -384,7 +384,7 @@ def to_ds(message:Message):
     kwargs = {
         "sender" : message.from_user.username,
         "senderlink" : f"https://t.me/{message.from_user.username}" if message.from_user.username else message.from_user.id,
-        "text" : message.reply_to_message.text if message.reply_to_message.content_type=='text' else message.reply_to_message.caption,
+        "text" : message.reply_to_message.text if message.reply_to_message.content_type=='text' else (message.reply_to_message.caption or " "),
         "senderavatar" : get_user_avatar(bot, message.from_user.id),
         "rsender": message.reply_to_message.from_user.username,
         "rsenderavatar": get_user_avatar(bot, message.reply_to_message.from_user.id),
