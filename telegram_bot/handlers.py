@@ -81,7 +81,7 @@ def message_handler(message:Message):
             run_in_thread(trigger_all, message)
             send_react(message.chat.id, message.message_id)
             return
-        elif text.startswith("#") and len(text)>1:
+        elif text.startswith("#") and len(text)>1 and message.content_type=="text":
             run_in_thread(trigger_tags, message)
             send_react(message.chat.id, message.message_id)
             return
