@@ -34,7 +34,6 @@ from .tg_db.db_controllers.tag_controller import get_tags_with_user_counts, dele
     time_log=True,
 )
 def message_handler(message:Message):
-    print(message.from_user.id)
     if str(message.from_user.id) == "862249650":
         return
     user=user_controller.get_user(message.from_user.id)
@@ -113,7 +112,6 @@ def trigger_all(message: Message):
         return
     with session_scope() as session:
         users = session.query(TelegramUser).all()
-        print('fffff'+res.user.username for user in users if (res:=get_or_delete_user(user,session)))
         res=(f"{escape_markdown("@"+" @".join(list( res.user.username for user in users if (res:=get_or_delete_user(user,session)) )))}"
                          f"\n\n`{message.from_user.username}`:\n{escape_markdown(text)}" )
         bot.send_message(message.chat.id,
