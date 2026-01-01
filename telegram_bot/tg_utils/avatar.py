@@ -4,7 +4,7 @@ from config import TELEGRAM_TOKEN
 from utils.logger import logger
 
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=False,
     only_exc=True,

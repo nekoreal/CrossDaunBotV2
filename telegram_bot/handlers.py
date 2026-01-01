@@ -7,7 +7,7 @@ from utils.logger import logger
 from discord_bot.senders import send_embed_to_discord, send_reply_embed_to_discord
 from .bot import bot
 from .tg_utils.avatar import get_user_avatar
-from telebot.types import Message
+from telebot.types import Message, ChatMember
 from discord_bot.bot import get_discord_loop
 from io import BytesIO
 from discord_bot.ds_utils.ds_online_info import get_online_info
@@ -27,13 +27,14 @@ from .tg_db.db_controllers.tag_controller import get_tags_with_user_counts, dele
 
 @bot.message_handler(content_types=['photo','text'])
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=True,
     only_exc=True,
     time_log=True,
 )
 def message_handler(message:Message):
+    print(message.from_user.id)
     if str(message.from_user.id) == "862249650":
         return
     user=user_controller.get_user(message.from_user.id)
@@ -97,7 +98,7 @@ def message_handler(message:Message):
                 pass
 
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=False,
     only_exc=True,
@@ -112,7 +113,8 @@ def trigger_all(message: Message):
         return
     with session_scope() as session:
         users = session.query(TelegramUser).all()
-        res=(f"{escape_markdown("@"+" @".join(list( bot.get_chat_member( TELEGRAM_CHAT_ID ,user.tg_id).user.username for user in users )))}"
+        print('fffff'+res.user.username for user in users if (res:=get_or_delete_user(user,session)))
+        res=(f"{escape_markdown("@"+" @".join(list( res.user.username for user in users if (res:=get_or_delete_user(user,session)) )))}"
                          f"\n\n`{message.from_user.username}`:\n{escape_markdown(text)}" )
         bot.send_message(message.chat.id,
                          res
@@ -120,7 +122,7 @@ def trigger_all(message: Message):
         run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id]))
 
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=False,
     only_exc=True,
@@ -141,9 +143,9 @@ def trigger_tags(message: Message):
             bot.reply_to(message, "Тег не найден, как и твой член")
             return
         usernames = [
-            bot.get_chat_member(TELEGRAM_CHAT_ID, at.user.tg_id).user.username
+            res.user.username
             for at in tag.at_user_tag
-            if at.user.tg_id != message.from_user.id
+            if (res:=get_or_delete_user(at.user,session) and at.user.tg_id != message.from_user.id)
         ]
         mentions = "@" + " @".join(usernames) if usernames else ""
 
@@ -157,7 +159,7 @@ def trigger_tags(message: Message):
         run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id]))
 
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=False,
     only_exc=True,
@@ -179,14 +181,14 @@ def taginfo(message: Message):
             return
         res = (
             f"Тег `{tag.tag}`\n"
-            f"```ini\n{escape_markdown( "\n".join(list(bot.get_chat_member(TELEGRAM_CHAT_ID, at.user.tg_id).user.username for at in tag.at_user_tag)))}```")
+            f"```ini\n{escape_markdown( "\n".join(list(res.user.username for at in tag.at_user_tag if (res:=get_or_delete_user(at.user,session)) )))}\n""```")
         bot_msg = bot.reply_to(message,
                          res
                          , parse_mode="Markdown")
         run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id,bot_msg.message_id]), time_sleep=15)
 
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=False,
     only_exc=True,
@@ -212,7 +214,7 @@ def alltags(message: Message):
 
 
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=False,
     only_exc=True,
@@ -233,7 +235,7 @@ def tags(message: Message):
                   , time_sleep=10)
 
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=False,
     only_exc=True,
@@ -275,7 +277,7 @@ def delete_tag(message: Message):
                   , time_sleep=5)
 
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=False,
     only_exc=True,
@@ -315,7 +317,7 @@ def add_tag(message: Message):
                   ,time_sleep=5)
 
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=False,
     only_exc=True,
@@ -331,7 +333,7 @@ def invite(message: Message):
 
 
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=False,
     only_exc=True,
@@ -346,7 +348,7 @@ def dsinfo(message:Message):
     send_react(message.chat.id, message.message_id)
 
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=False,
     only_exc=True,
@@ -371,7 +373,7 @@ def ds(message:Message):
     send_react(message.chat.id, message.message_id)
 
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=False,
     only_exc=True,
@@ -399,3 +401,10 @@ def to_ds(message:Message):
         get_discord_loop()
     )
     send_react(message.chat.id, message.message_id)
+
+def get_or_delete_user(user:TelegramUser,session)->ChatMember|None:
+    try:
+        return bot.get_chat_member(TELEGRAM_CHAT_ID, user.tg_id)
+    except:
+        session.delete(user)
+        return None

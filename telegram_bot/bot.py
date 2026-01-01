@@ -6,7 +6,7 @@ from utils.logger import logger, make_log
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=False,
     only_exc=True,
@@ -21,7 +21,7 @@ def run_telegram_bot():
         except Exception as e:
             print(e)
             make_log(
-                txtfile="telegram_bot.log",
+                txtfile="telegram_bot.txt",
                 text=f"Telegram bot error: {e}",
                 print_log=True,
                 time_log=True

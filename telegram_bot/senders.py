@@ -5,7 +5,7 @@ from config import TELEGRAM_CHAT_ID
 from utils.logger import logger
 
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=False,
     only_exc=True,
@@ -18,7 +18,7 @@ def send_telegram_message(author, text):
     )
 
 @logger(
-    txtfile="telegram_bot.log",
+    txtfile="telegram_bot.txt",
     print_log=True,
     raise_exc=False,
     only_exc=True,
