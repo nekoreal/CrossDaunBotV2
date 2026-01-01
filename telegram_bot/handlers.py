@@ -143,7 +143,7 @@ def trigger_tags(message: Message):
         usernames = [
             res.user.username
             for at in tag.at_user_tag
-            if (res:=get_or_delete_user(at.user,session) and at.user.tg_id != message.from_user.id)
+            if ((res:=get_or_delete_user(at.user,session)) and at.user.tg_id != message.from_user.id)
         ]
         mentions = "@" + " @".join(usernames) if usernames else ""
 
