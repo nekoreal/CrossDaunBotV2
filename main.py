@@ -13,6 +13,13 @@ import logging
 
 
 
+from flask import Flask, render_template
+from telegram_bot.tg_db import session_scope
+from telegram_bot.tg_db.models.tg_user import TelegramUser
+from telegram_bot.tg_db.models.tg_teg import TelegramTag
+from telegram_bot.tg_db.models.tg_at_user_tag import UserTagAssociation
+
+from dashboard import run_flask
 
 @logger(
     txtfile="main.txt",
@@ -25,6 +32,10 @@ def main():
     Base.metadata.create_all(bind=engine)
     telegram_thread = threading.Thread(target=run_telegram_bot)
     telegram_thread.start()
+
+    flask_thread = threading.Thread(target=run_flask)
+    flask_thread.start()
+
     asyncio.run(run_discord_bot())
 
 if __name__ == "__main__":

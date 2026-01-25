@@ -20,6 +20,10 @@ class TelegramUser(Base):
         return {
             "id": self.id,
             "tg_id": self.tg_id,
+            "msg_count": self.msg_count,
+            "photo_count": self.photo_count,
+            "video_count": self.video_count,
+            "sticker_count": self.sticker_count,
         }
 
     def __repr__(self):
