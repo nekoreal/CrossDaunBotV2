@@ -6,7 +6,7 @@ import asyncio
 def logger(
     txtfile: str = "log.txt",
     print_log: bool = False,
-    time_log: bool = False,
+    time_log: bool = True,
     raise_exc: bool = True,
     only_exc: bool = True,
 ):

@@ -7,6 +7,11 @@ class TelegramUser(Base):
 
     id = Column(Integer, primary_key=True, index=True, unique=True, nullable=False, autoincrement=True)
     tg_id = Column(BigInteger, unique=True, nullable=False, index=True)
+    #msg_count
+    #photo_count
+    #video_count
+    #sticker_count
+
 
     at_user_tag = relationship("UserTagAssociation", back_populates="user", cascade="all, delete-orphan")
 

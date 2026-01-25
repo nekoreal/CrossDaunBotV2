@@ -4,3 +4,4 @@ __pycache__
 !req.txt
 !README.md
 .idea
+test.py

@@ -1,7 +1,7 @@
 import telebot
 from config import TELEGRAM_TOKEN
 from utils.logger import logger, make_log
-
+from time import sleep as delay
 
 bot = telebot.TeleBot(TELEGRAM_TOKEN)
 
@@ -26,3 +26,4 @@ def run_telegram_bot():
                 print_log=True,
                 time_log=True
             )
+            delay(180)
