@@ -15,8 +15,6 @@ def index():
         users = session.query(TelegramUser).all()
         users_data = []
 
-        print(f"DEBUG: Найдено юзеров в БД: {len(users)}")  # Проверь это в консоли!
-
         for user in users:
             # Берем базу
             d = user.to_dict()
@@ -31,7 +29,6 @@ def index():
                 d[
                     "avatar"] = f"https://t.me/i/userpic/320/{u.username}.jpg" if u.username else "https://ui-avatars.com/api/?name=?"
             except Exception as e:
-                print(f"Ошибка ТГ для {user.tg_id}: {e}")
                 d["username_plain"] = f"ID: {user.tg_id}"
                 d["profile_url"] = "#"
                 d["avatar"] = "https://ui-avatars.com/api/?name=?"

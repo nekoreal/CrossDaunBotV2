@@ -4,133 +4,213 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CrossDaunBot Statistics</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
     <style>
         :root {
             --bg-dark: #0f111a;
-            --card-bg: #161925;
+            --card-bg: #161b22; /* Серый фон карточки */
             --accent: #00f2ff;
-            --text-muted: #8b949e;
-            --glow: 0 0 15px rgba(0, 242, 255, 0.5);
+            --text-muted: #a0a0a0; /* Более светлый текст описания */
+            --border: #30363d;
+            --glow: 0 0 15px rgba(0, 242, 255, 0.4);
         }
 
         body {
             background-color: var(--bg-dark);
             color: #f0f6fc;
-            font-family: 'Inter', -apple-system, sans-serif;
-            padding: 40px 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
         }
 
-        .dashboard-card {
-            background: var(--card-bg);
-            border: 1px solid #30363d;
-            border-radius: 16px;
-            padding: 24px;
-            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+        .container {
+            width: 100%;
+            max-width: 1100px;
         }
 
-        /* Поиск */
+        /* Заголовок и поиск */
+        .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 25px;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        h2 { margin: 0; font-size: 1.8rem; font-weight: 700; }
+        .text-muted {
+            color: var(--text-muted);
+            margin: 5px 0 0 0;
+            font-size: 0.95rem;
+        }
+
         .search-box {
             background: #0d1117;
-            border: 1px solid #30363d;
+            border: 1px solid var(--border);
             color: white;
-            border-radius: 10px;
+            border-radius: 8px;
             padding: 10px 15px;
-            margin-bottom: 20px;
+            outline: none;
+            width: 300px;
+            transition: 0.3s;
         }
         .search-box:focus {
-            background: #0d1117;
             border-color: var(--accent);
             box-shadow: var(--glow);
-            color: white;
         }
 
         /* Таблица */
-        .table { color: #e6edf3; vertical-align: middle; margin-bottom: 0; }
-        .table thead th {
-            border-bottom: 2px solid #30363d;
-            color: var(--text-muted);
-            font-weight: 600;
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.5px;
-            cursor: pointer;
-            transition: color 0.2s;
-        }
-        .table thead th:hover { color: var(--accent); }
-        .table td { border-bottom: 1px solid #21262d; padding: 16px 8px; }
-
-        /* Аватар */
-        .user-avatar {
-            width: 42px; height: 42px;
+        .dashboard-card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
             border-radius: 12px;
-            object-fit: cover;
-            border: 2px solid #30363d;
-            transition: transform 0.2s;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
         }
-        tr:hover .user-avatar { transform: scale(1.1); border-color: var(--accent); }
 
-        /* Username со свечением */
+        .table-responsive { overflow-x: auto; }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        thead th {
+            background-color: #1c2128;
+            color: #8b949e;
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            padding: 15px;
+            cursor: pointer;
+            border-bottom: 1px solid var(--border);
+            user-select: none;
+        }
+        thead th:hover { color: var(--accent); }
+
+        tbody td {
+            padding: 14px 15px;
+            border-bottom: 1px solid #21262d;
+            vertical-align: middle;
+            background-color: var(--card-bg);
+        }
+
+        tr:hover td { background-color: #1f242c; }
+
+        /* Контент ячеек */
+        .user-avatar {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            object-fit: cover;
+            border: 1px solid var(--border);
+            display: block;
+            transition: all 0.3s ease;
+        }
+
         .username-link {
             color: #58a6ff;
             text-decoration: none;
             font-weight: 600;
-            padding: 4px 8px;
-            border-radius: 6px;
             transition: all 0.3s ease;
+        }
+
+        /* Эффект при наведении на строку */
+        tr:hover td { background-color: #1f242c; }
+
+        tr:hover .user-avatar {
+            border-color: var(--accent);
+            box-shadow: var(--glow);
+            transform: scale(1.30);
+        }
+
+        tr:hover .username-link {
+            color: white;
+            text-shadow: 0 0 8px var(--accent);
+            transition: all 0.3s ease;
+        }
+
+        .count-important {
+            transition: all 0.3s ease
+        }
+
+        tr:hover .count-important {
+            color: var(--accent);
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            box-shadow: var(--glow);
+            transform: scale(1.05);
+        }
+
+
+        .media-count {
+            transition: all 0.3s ease
+        }
+
+        tr:hover .media-count {
+            color: var(--accent);
+            box-shadow: var(--glow);
+            transform: scale(1.05);
+        }
+
+        .username-link {
+            color: #58a6ff;
+            text-decoration: none;
+            font-weight: 600;
+            transition: 0.3s;
         }
         .username-link:hover {
             color: white;
-            background: rgba(0, 242, 255, 0.1);
-            text-shadow: 0 0 8px var(--accent);
-            box-shadow: inset 0 0 10px rgba(0, 242, 255, 0.2);
+            text-shadow: 0 0 10px var(--accent);
         }
 
-        /* Счетчики */
         .stat-badge {
-            font-family: 'Monaco', monospace;
-            background: #21262d;
-            padding: 4px 8px;
+            font-family: monospace;
+            background: #0d1117;
+            padding: 5px 10px;
             border-radius: 6px;
             font-size: 0.9rem;
+            color: #8b949e;
+            display: inline-block;
+            min-width: 30px;
+            text-align: center;
         }
-        .count-important { color: var(--accent); font-weight: bold; }
 
-        .sort-icon { font-size: 0.7rem; margin-left: 4px; opacity: 0.5; }
+        .sort-icon { font-size: 1.2rem; margin-left: 5px; opacity: 0.4; }
+        .text-center { text-align: center; }
+        .small { font-size: 0.85rem;   }
     </style>
 </head>
 <body>
 
 <div class="container">
-    <div class="row mb-4">
-        <div class="col-md-8">
-            <h2 class="fw-bold">CrossDaun <span style="color: var(--accent)">Users</span></h2>
+    <div class="header-section">
+        <div>
+            <h2>CrossDaun <span style="color: var(--accent)">Users</span></h2>
             <p class="text-muted">Мониторинг активности участников в базе данных</p>
         </div>
-        <div class="col-md-4">
-            <input type="text" id="searchInput" class="form-control search-box" placeholder="Поиск по нику или ID...">
-        </div>
+        <input type="text" id="searchInput" class="search-box" placeholder="Поиск пользователя...">
     </div>
 
     <div class="dashboard-card">
         <div class="table-responsive">
-            <table class="table" id="usersTable">
+            <table id="usersTable">
                 <thead>
                     <tr>
-                        <th onclick="sortTable(0)">ID <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                        <th onclick="sortTable(0)">ID <span class="sort-icon">↕</span></th>
                         <th>Аватар</th>
-                        <th onclick="sortTable(2)">Пользователь <i class="bi bi-arrow-down-up sort-icon"></i></th>
-                        <th onclick="sortTable(3)">TG ID</th>
-                        <th onclick="sortTable(4)" class="text-center">Сообщения <i class="bi bi-arrow-down-up sort-icon"></i></th>
-                        <th onclick="sortTable(5)" class="text-center">Медиа <i class="bi bi-arrow-down-up sort-icon"></i></th>
-                        <th onclick="sortTable(6)" class="text-center">Стикеры <i class="bi bi-arrow-down-up sort-icon"></i></th>
+                        <th onclick="sortTable(2)">Пользователь <span class="sort-icon">↕</span></th>
+                        <th onclick="sortTable(3)">TG ID <span class="sort-icon">↕</span></th>
+                        <th onclick="sortTable(4)" class="text-center">Сообщения <span class="sort-icon">↕</span></th>
+                        <th onclick="sortTable(5)" class="text-center">Медиа <span class="sort-icon">↕</span></th>
+                        <th onclick="sortTable(6)" class="text-center">Стикеры <span class="sort-icon">↕</span></th>
                     </tr>
                 </thead>
                 <tbody id="tableBody">
                     {% for user in users %}
                     <tr>
-                        <td class="text-muted small">#{{ user.id }}</td>
+                        <td class="small">#{{ user.id }}</td>
                         <td>
                             <img src="{{ user.avatar }}" onerror="this.src='https://ui-avatars.com/api/?name={{ user.username_plain }}&background=random'" class="user-avatar">
                         </td>
@@ -141,16 +221,19 @@
                         </td>
                         <td class="small">{{ user.tg_id }}</td>
                         <td class="text-center">
-                            <span class="stat-badge {% if user.msg_count > 0 %}count-important{% endif %}">
+                            <span class="stat-badge count-important ">
                                 {{ user.msg_count }}
                             </span>
                         </td>
-                        <td class="text-center text-muted">
-                            <span class="small">🖼️ {{ user.photo_count }}</span> |
-                            <span class="small">🎥 {{ user.video_count }}</span>
+                        <td class="text-center ">
+                            <span class="stat-badge media-count">
+                                <span class="small ">🖼️ {{ user.photo_count }}</span>
+                                <span style="color:#30363d">|</span>
+                                <span class="small ">🎥 {{ user.video_count }}</span>
+                            </span>
                         </td>
                         <td class="text-center">
-                            <span class="stat-badge">{{ user.sticker_count }}</span>
+                            <span class="stat-badge count-important">{{ user.sticker_count }}</span>
                         </td>
                     </tr>
                     {% endfor %}
@@ -161,15 +244,13 @@
 </div>
 
 <script>
-    // Поиск по таблице
-    document.getElementById('searchInput').addEventListener('keyup', function() {
-        let filter = this.value.toLowerCase();
-        let rows = document.querySelector('#tableBody').getElementsByTagName('tr');
-
-        for (let row of rows) {
-            let text = row.textContent.toLowerCase();
-            row.style.display = text.includes(filter) ? '' : 'none';
-        }
+    // Поиск (фильтрация)
+    document.getElementById('searchInput').addEventListener('input', function() {
+        const filter = this.value.toLowerCase();
+        const rows = document.querySelectorAll('#tableBody tr');
+        rows.forEach(row => {
+            row.style.display = row.innerText.toLowerCase().includes(filter) ? '' : 'none';
+        });
     });
 
     // Сортировка
@@ -178,7 +259,6 @@
         let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
         switching = true;
         dir = "asc";
-
         while (switching) {
             switching = false;
             rows = table.rows;
@@ -187,30 +267,26 @@
                 x = rows[i].getElementsByTagName("TD")[n];
                 y = rows[i + 1].getElementsByTagName("TD")[n];
 
-                let xValue = x.textContent.toLowerCase().replace('#', '');
-                let yValue = y.textContent.toLowerCase().replace('#', '');
+                let xVal = x.innerText.toLowerCase().replace('#', '');
+                let yVal = y.innerText.toLowerCase().replace('#', '');
 
-                // Проверка на числа для корректной сортировки ID и счетчиков
-                if (!isNaN(parseFloat(xValue)) && !isNaN(parseFloat(yValue))) {
-                    xValue = parseFloat(xValue);
-                    yValue = parseFloat(yValue);
+                if (!isNaN(parseFloat(xVal)) && !isNaN(parseFloat(yVal))) {
+                    xVal = parseFloat(xVal);
+                    yVal = parseFloat(yVal);
                 }
 
-                if (dir == "asc") {
-                    if (xValue > yValue) { shouldSwitch = true; break; }
-                } else if (dir == "desc") {
-                    if (xValue < yValue) { shouldSwitch = true; break; }
+                if (dir === "asc" ? xVal > yVal : xVal < yVal) {
+                    shouldSwitch = true;
+                    break;
                 }
             }
             if (shouldSwitch) {
                 rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
                 switching = true;
-                switchcount ++;
-            } else {
-                if (switchcount == 0 && dir == "asc") {
-                    dir = "desc";
-                    switching = true;
-                }
+                switchcount++;
+            } else if (switchcount === 0 && dir === "asc") {
+                dir = "desc";
+                switching = true;
             }
         }
     }
