@@ -37,7 +37,6 @@ def index():
                 d["avatar"] = "https://ui-avatars.com/api/?name=?"
 
             users_data.append(d)
-
     return render_template('index.html', users=users_data)
 
 def run_flask():
