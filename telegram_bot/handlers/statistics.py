@@ -14,8 +14,15 @@ from telegram_bot.tg_db.db_controllers import user_controller, at_user_tag_contr
 from utils.logger import logger
 from utils.mini_utils import run_in_thread, escape_markdown
 
+STATS_MAP = {
+        'text': TelegramUser.msg_count,
+        'photo': TelegramUser.photo_count,
+        'video': TelegramUser.video_count,
+        'sticker': TelegramUser.sticker_count
+    }
+
 @bot.message_handler(
-    content_types=['text']
+    content_types=['text','photo','video','sticker'],
 )
 @logger(
     txtfile="telegram_bot.txt",
@@ -25,6 +32,13 @@ from utils.mini_utils import run_in_thread, escape_markdown
     time_log=True,
 )
 def text_statistic(message:Message):
+    user = user_controller.get_user(message.from_user.id)
 
+    target_column = STATS_MAP.get(message.content_type)
+    if target_column:
+        with session_scope() as session:
+            session.query(TelegramUser). \
+                filter(TelegramUser.tg_id == message.from_user.id). \
+                update({target_column: target_column + 1})
 
     send_react_for_user(message.chat.id, message.message_id, message.from_user.id)
