@@ -1,122 +1,179 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CrossDaunBot Statistics</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
-</head>
-<body>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>CrossDaunBot Statistics</title>
+        <link
+            rel="stylesheet"
+            href="{{ url_for('static', filename='style.css') }}"
+        />
+    </head>
+    <body>
+        <div class="container">
+            <div class="header-section">
+                <div>
+                    <h2>
+                        CrossDaun
+                        <span style="color: var(--accent)">Users</span>
+                    </h2>
+                    <p class="text-muted">
+                        Мониторинг членов в жопе бота CrossDaunBot
+                    </p>
+                </div>
+                <input
+                    type="text"
+                    id="searchInput"
+                    class="search-box"
+                    placeholder="Поиск пользователя..."
+                />
+            </div>
 
-<div class="container">
-    <div class="header-section">
-        <div>
-            <h2>CrossDaun <span style="color: var(--accent)">Users</span></h2>
-            <p class="text-muted">Мониторинг активности участников в базе данных</p>
+            <div class="dashboard-card">
+                <div class="table-responsive">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th onclick="sortTable(0)">
+                                    ID <span class="sort-icon">↕</span>
+                                </th>
+                                <th>Аватар</th>
+                                <th onclick="sortTable(2)">
+                                    Пользователь
+                                    <span class="sort-icon">↕</span>
+                                </th>
+                                <th onclick="sortTable(3)">
+                                    TG ID <span class="sort-icon">↕</span>
+                                </th>
+                                <th onclick="sortTable(4)" class="text-center">
+                                    Сообщения <span class="sort-icon">↕</span>
+                                </th>
+                                <th onclick="sortTable(5)" class="text-center">
+                                    Медиа <span class="sort-icon">↕</span>
+                                </th>
+                                <th onclick="sortTable(6)" class="text-center">
+                                    Стикеры <span class="sort-icon">↕</span>
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody id="tableBody">
+                            {% for user in users %}
+                            <tr>
+                                <td class="small">#{{ user.id }}</td>
+                                <td>
+                                    <img
+                                        src="{{ user.avatar }}"
+                                        onerror="this.src='https://ui-avatars.com/api/?name={{ user.username_plain }}&background=random'"
+                                        class="user-avatar"
+                                    />
+                                </td>
+                                <td>
+                                    <a
+                                        href="{{ user.profile_url }}"
+                                        target="_blank"
+                                        class="username-link"
+                                    >
+                                        @{{ user.username_plain }}
+                                    </a>
+                                </td>
+                                <td class="small">{{ user.tg_id }}</td>
+
+                                <td class="text-center">
+                                    <span class="stat-badge count-important">
+                                        💬 {{ user.msg_count }}
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="stat-badge media-count">
+                                        <span class="small"
+                                            >🖼️ {{ user.photo_count }}</span
+                                        >
+                                        <span
+                                            class="mobile-hide"
+                                            style="color: #30363d"
+                                            >|</span
+                                        >
+                                        <span class="small"
+                                            >🎥 {{ user.video_count }}</span
+                                        >
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="stat-badge count-important"
+                                        >✨ {{ user.sticker_count }}</span
+                                    >
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
         </div>
-        <input type="text" id="searchInput" class="search-box" placeholder="Поиск пользователя...">
-    </div>
 
-    <div class="dashboard-card">
-        <div class="table-responsive">
-            <table id="usersTable">
-                <thead>
-                    <tr>
-                        <th onclick="sortTable(0)">ID <span class="sort-icon">↕</span></th>
-                        <th>Аватар</th>
-                        <th onclick="sortTable(2)">Пользователь <span class="sort-icon">↕</span></th>
-                        <th onclick="sortTable(3)">TG ID <span class="sort-icon">↕</span></th>
-                        <th onclick="sortTable(4)" class="text-center">Сообщения <span class="sort-icon">↕</span></th>
-                        <th onclick="sortTable(5)" class="text-center">Медиа <span class="sort-icon">↕</span></th>
-                        <th onclick="sortTable(6)" class="text-center">Стикеры <span class="sort-icon">↕</span></th>
-                    </tr>
-                </thead>
-                <tbody id="tableBody">
-                    {% for user in users %}
-                    <tr>
-                        <td class="small">#{{ user.id }}</td>
-                        <td>
-                            <img src="{{ user.avatar }}" onerror="this.src='https://ui-avatars.com/api/?name={{ user.username_plain }}&background=random'" class="user-avatar">
-                        </td>
-                        <td>
-                            <a href="{{ user.profile_url }}" target="_blank" class="username-link">
-                                @{{ user.username_plain }}
-                            </a>
-                        </td>
-                        <td class="small">{{ user.tg_id }}</td>
+        <script>
+            // Поиск (фильтрация)
+            document
+                .getElementById("searchInput")
+                .addEventListener("input", function () {
+                    const filter = this.value.toLowerCase();
+                    const rows = document.querySelectorAll("#tableBody tr");
+                    rows.forEach((row) => {
+                        row.style.display = row.innerText
+                            .toLowerCase()
+                            .includes(filter)
+                            ? ""
+                            : "none";
+                    });
+                });
 
-                        <td class="text-center">
-                            <span class="stat-badge count-important ">
-                                {{ user.msg_count }}
-                            </span>
-                        </td>
-                        <td class="text-center ">
-                            <span class="stat-badge media-count">
-                                <span class="small ">🖼️ {{ user.photo_count }}</span>
-                                <span class="mobile-hide" style="color:#30363d">|</span>
-                                <span class="small ">🎥 {{ user.video_count }}</span>
-                            </span>
-                        </td>
-                        <td class="text-center">
-                            <span class="stat-badge count-important">{{ user.sticker_count }}</span>
-                        </td>
+            // Сортировка
+            function sortTable(n) {
+                const table = document.getElementById("usersTable");
+                let rows,
+                    switching,
+                    i,
+                    x,
+                    y,
+                    shouldSwitch,
+                    dir,
+                    switchcount = 0;
+                switching = true;
+                dir = "asc";
+                while (switching) {
+                    switching = false;
+                    rows = table.rows;
+                    for (i = 1; i < rows.length - 1; i++) {
+                        shouldSwitch = false;
+                        x = rows[i].getElementsByTagName("TD")[n];
+                        y = rows[i + 1].getElementsByTagName("TD")[n];
 
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-    </div>
-</div>
+                        let xVal = x.innerText.toLowerCase().replace("#", "");
+                        let yVal = y.innerText.toLowerCase().replace("#", "");
 
-<script>
-    // Поиск (фильтрация)
-    document.getElementById('searchInput').addEventListener('input', function() {
-        const filter = this.value.toLowerCase();
-        const rows = document.querySelectorAll('#tableBody tr');
-        rows.forEach(row => {
-            row.style.display = row.innerText.toLowerCase().includes(filter) ? '' : 'none';
-        });
-    });
+                        if (
+                            !isNaN(parseFloat(xVal)) &&
+                            !isNaN(parseFloat(yVal))
+                        ) {
+                            xVal = parseFloat(xVal);
+                            yVal = parseFloat(yVal);
+                        }
 
-    // Сортировка
-    function sortTable(n) {
-        const table = document.getElementById("usersTable");
-        let rows, switching, i, x, y, shouldSwitch, dir, switchcount = 0;
-        switching = true;
-        dir = "asc";
-        while (switching) {
-            switching = false;
-            rows = table.rows;
-            for (i = 1; i < (rows.length - 1); i++) {
-                shouldSwitch = false;
-                x = rows[i].getElementsByTagName("TD")[n];
-                y = rows[i + 1].getElementsByTagName("TD")[n];
-
-                let xVal = x.innerText.toLowerCase().replace('#', '');
-                let yVal = y.innerText.toLowerCase().replace('#', '');
-
-                if (!isNaN(parseFloat(xVal)) && !isNaN(parseFloat(yVal))) {
-                    xVal = parseFloat(xVal);
-                    yVal = parseFloat(yVal);
-                }
-
-                if (dir === "asc" ? xVal > yVal : xVal < yVal) {
-                    shouldSwitch = true;
-                    break;
+                        if (dir === "asc" ? xVal > yVal : xVal < yVal) {
+                            shouldSwitch = true;
+                            break;
+                        }
+                    }
+                    if (shouldSwitch) {
+                        rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
+                        switching = true;
+                        switchcount++;
+                    } else if (switchcount === 0 && dir === "asc") {
+                        dir = "desc";
+                        switching = true;
+                    }
                 }
             }
-            if (shouldSwitch) {
-                rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-                switching = true;
-                switchcount++;
-            } else if (switchcount === 0 && dir === "asc") {
-                dir = "desc";
-                switching = true;
-            }
-        }
-    }
-</script>
-
-</body>
+        </script>
+    </body>
 </html>

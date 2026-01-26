@@ -30,6 +30,7 @@ from dashboard import run_flask
 )
 def main():
     Base.metadata.create_all(bind=engine)
+    
     telegram_thread = threading.Thread(target=run_telegram_bot)
     telegram_thread.start()
 
