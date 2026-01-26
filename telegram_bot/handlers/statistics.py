@@ -32,6 +32,8 @@ STATS_MAP = {
     time_log=True,
 )
 def text_statistic(message:Message):
+    if message.chat.id != TELEGRAM_CHAT_ID:
+        return
     user = user_controller.get_user(message.from_user.id)
 
     target_column = STATS_MAP.get(message.content_type)
