@@ -197,7 +197,8 @@ tr:hover .media-count {
     }
 
     .search-box {
-        width: 100%; /* Поиск на всю ширину */
+        /* width: 97%; Поиск на всю ширину */
+        width: auto;
     }
 
     /* Скрываем заголовки таблицы */
@@ -225,13 +226,12 @@ tr:hover .media-count {
         margin-bottom: 15px;
         border-radius: 12px;
         border: 1px solid var(--border);
-        padding: 15px;
         position: relative;
         display: grid;
         grid-template-areas:
             "avatar name name"
             "avatar tg tg";
-        grid-template-columns: 60px 1fr auto;
+        grid-template-columns: 60px auto 1fr;
         gap: 10px;
         column-gap: 50px;
     }
@@ -244,9 +244,8 @@ tr:hover .media-count {
     td:nth-child(2) {
         /* Аватар */
         grid-area: avatar;
-        padding: 0;
+        padding: 15px;
     }
-
     .user-avatar {
         width: 55px;
         height: 55px;

@@ -33,8 +33,8 @@ def index():
                 d["profile_url"] = "#"
                 d["avatar"] = "https://ui-avatars.com/api/?name=?"
 
-            users_data.append(d)
-    return render_template('index.html', users=users_data)
+            users_data.append(d) 
+    return render_template('index.html', users=sorted(users_data, key=lambda x: x["msg_count"], reverse=True))
 
 def run_flask():
     app.run(debug=False, host='0.0.0.0', port=5002)

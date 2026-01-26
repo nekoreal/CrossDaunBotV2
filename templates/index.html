@@ -6,8 +6,7 @@
         <title>CrossDaunBot Statistics</title>
         <link
             rel="stylesheet"
-            href="{{ url_for('static', filename='style.css') }}"
-        />
+            href="{{ url_for('static', filename='style.css') }}" />
     </head>
     <body>
         <div class="container">
@@ -17,16 +16,13 @@
                         CrossDaun
                         <span style="color: var(--accent)">Users</span>
                     </h2>
-                    <p class="text-muted">
-                        Мониторинг членов в жопе бота CrossDaunBot
-                    </p>
+                    <p class="text-muted">Мониторинг статистика заводчан</p>
                 </div>
                 <input
                     type="text"
                     id="searchInput"
                     class="search-box"
-                    placeholder="Поиск пользователя..."
-                />
+                    placeholder="Поиск пользователя..." />
             </div>
 
             <div class="dashboard-card">
@@ -64,15 +60,13 @@
                                     <img
                                         src="{{ user.avatar }}"
                                         onerror="this.src='https://ui-avatars.com/api/?name={{ user.username_plain }}&background=random'"
-                                        class="user-avatar"
-                                    />
+                                        class="user-avatar" />
                                 </td>
                                 <td>
                                     <a
                                         href="{{ user.profile_url }}"
                                         target="_blank"
-                                        class="username-link"
-                                    >
+                                        class="username-link">
                                         @{{ user.username_plain }}
                                     </a>
                                 </td>
@@ -128,51 +122,48 @@
                 });
 
             // Сортировка
-            function sortTable(n) {
+            function sortTable(columnIndex) {
+                console.log("function called for column:", columnIndex);
                 const table = document.getElementById("usersTable");
-                let rows,
-                    switching,
-                    i,
-                    x,
-                    y,
-                    shouldSwitch,
-                    dir,
-                    switchcount = 0;
-                switching = true;
-                dir = "asc";
-                while (switching) {
-                    switching = false;
-                    rows = table.rows;
-                    for (i = 1; i < rows.length - 1; i++) {
-                        shouldSwitch = false;
-                        x = rows[i].getElementsByTagName("TD")[n];
-                        y = rows[i + 1].getElementsByTagName("TD")[n];
+                const tbody = document.getElementById("tableBody");
+                const rows = Array.from(tbody.querySelectorAll("tr"));
+                const th = table.querySelectorAll("th")[columnIndex];
 
-                        let xVal = x.innerText.toLowerCase().replace("#", "");
-                        let yVal = y.innerText.toLowerCase().replace("#", "");
+                // Переключаем направление
+                const isAscending = !th.classList.contains("sort-asc");
 
-                        if (
-                            !isNaN(parseFloat(xVal)) &&
-                            !isNaN(parseFloat(yVal))
-                        ) {
-                            xVal = parseFloat(xVal);
-                            yVal = parseFloat(yVal);
-                        }
+                // Чистим стили заголовков
+                table
+                    .querySelectorAll("th")
+                    .forEach((h) =>
+                        h.classList.remove("sort-asc", "sort-desc"),
+                    );
+                th.classList.add(isAscending ? "sort-asc" : "sort-desc");
 
-                        if (dir === "asc" ? xVal > yVal : xVal < yVal) {
-                            shouldSwitch = true;
-                            break;
-                        }
+                rows.sort((a, b) => {
+                    let valA = a.children[columnIndex].innerText.trim();
+                    let valB = b.children[columnIndex].innerText.trim();
+
+                    // Если колонка не текстовая (все, кроме "Пользователь" под индексом 2)
+                    if (columnIndex !== 2) {
+                        // Выдираем все цифры. Если в ячейке "🖼️ 10 | 🎥 5", получится "105" или "15"
+                        // Для колонок с одним числом это превратит "💬 100" в 100
+                        valA = parseInt(valA.replace(/\D/g, "")) || 0;
+                        valB = parseInt(valB.replace(/\D/g, "")) || 0;
+
+                        console.log(valA, valB);
+                        return isAscending ? valA - valB : valB - valA;
                     }
-                    if (shouldSwitch) {
-                        rows[i].parentNode.insertBefore(rows[i + 1], rows[i]);
-                        switching = true;
-                        switchcount++;
-                    } else if (switchcount === 0 && dir === "asc") {
-                        dir = "desc";
-                        switching = true;
-                    }
-                }
+
+                    // Для имен пользователей оставляем обычную строку
+                    return isAscending
+                        ? valA.localeCompare(valB)
+                        : valB.localeCompare(valA);
+                });
+
+                // Очищаем и закидываем обратно
+                tbody.innerHTML = "";
+                rows.forEach((row) => tbody.appendChild(row));
             }
         </script>
     </body>
