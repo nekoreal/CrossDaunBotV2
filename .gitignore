@@ -5,3 +5,5 @@ __pycache__
 !README.md
 .idea
 test.py
+*.png
+*.jpg

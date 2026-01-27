@@ -5,6 +5,7 @@ from telegram_bot.tg_db.models.tg_teg import TelegramTag
 from telegram_bot.tg_db.models.tg_at_user_tag import UserTagAssociation
 from telegram_bot.bot import bot
 from config import TELEGRAM_CHAT_ID
+from telegram_bot.tg_utils.avatar import get_and_resize_chat_photo
 
 app = Flask(__name__)
 
@@ -34,6 +35,7 @@ def index():
                 d["avatar"] = "https://ui-avatars.com/api/?name=?"
 
             users_data.append(d) 
+    get_and_resize_chat_photo(bot)
     return render_template('index.html', users=sorted(users_data, key=lambda x: x["msg_count"], reverse=True))
 
 def run_flask():
