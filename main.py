@@ -18,8 +18,7 @@ from telegram_bot.tg_db import session_scope
 from telegram_bot.tg_db.models.tg_user import TelegramUser
 from telegram_bot.tg_db.models.tg_teg import TelegramTag
 from telegram_bot.tg_db.models.tg_at_user_tag import UserTagAssociation
-
-from dashboard import run_flask
+from flask_server.dashboard import run_flask
 
 @logger(
     txtfile="main.txt",
