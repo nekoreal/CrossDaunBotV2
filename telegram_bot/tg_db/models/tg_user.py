@@ -12,6 +12,13 @@ class TelegramUser(Base):
     photo_count = Column(Integer, default=0, nullable=False)
     video_count = Column(Integer, default=0, nullable=False)
     sticker_count = Column(Integer, default=0, nullable=False)
+    nya_count = Column(Integer, default=0, nullable=False)
+
+    msg_count_month = Column(Integer, default=0, nullable=False)
+    photo_count_month = Column(Integer, default=0, nullable=False)
+    video_count_month = Column(Integer, default=0, nullable=False)
+    sticker_count_month = Column(Integer, default=0, nullable=False)
+    nya_count_month = Column(Integer, default=0, nullable=False)
 
 
     at_user_tag = relationship("UserTagAssociation", back_populates="user", cascade="all, delete-orphan")
@@ -24,6 +31,12 @@ class TelegramUser(Base):
             "photo_count": self.photo_count,
             "video_count": self.video_count,
             "sticker_count": self.sticker_count,
+            "nya_count": self.nya_count,
+            "msg_count_month": self.msg_count_month,
+            "photo_count_month": self.photo_count_month,
+            "video_count_month": self.video_count_month,
+            "sticker_count_month": self.sticker_count_month,
+            "nya_count_month": self.nya_count_month,
         }
 
     def __repr__(self):
