@@ -37,6 +37,20 @@ def pop_pending_requests(key):
  
 
 @bot.message_handler(
+    content_types=['text','photo'],
+    func=lambda m: (m.text or m.caption or "").startswith(("/ds ", "/дс ")) or (m.text or m.caption or "") in ["/ds", "/дс"] 
+)
+@logger(
+    txtfile="telegram_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
+def ds_handler(message: Message):
+    ds(message)
+
+@bot.message_handler(
     content_types=['text'],
     commands=["tts",'ттс']
 )
