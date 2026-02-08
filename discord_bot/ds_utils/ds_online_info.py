@@ -23,3 +23,23 @@ async def get_online_info():
         return '\n\n'.join(info_list)
     else:
         return "`Дискорд пустой`"
+
+@logger(
+    txtfile="discord_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
+async def get_active_channels():
+    """Возвращает список текстовых каналов, связанных с активными голосовыми"""
+    active_channels = [] 
+    for guild in bot.guilds: 
+        for voice_channel in guild.voice_channels: 
+            if len(voice_channel.members) > 0:
+                text_channel = guild.system_channel or guild.text_channels[0]
+                active_channels.append({
+                    'name': f"{guild.name}: {voice_channel.name}",
+                    'id': text_channel.id
+                }) 
+    return active_channels

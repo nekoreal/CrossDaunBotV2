@@ -16,3 +16,4 @@ from .discord_commands import *
 from .tags import *
 from .commands import *
 from .statistics import *
+from .callbacks import *

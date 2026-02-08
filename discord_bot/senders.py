@@ -1,3 +1,4 @@
+import asyncio
 import discord
 from discord.ext import commands
 from config import DISCORD_GUILD_ID, DISCORD_CHANNEL_ID
@@ -78,3 +79,19 @@ async def send_reply_embed_to_discord(
         files.append(discord.File(photo, filename="photo.jpg"))
         embed.set_image(url="attachment://photo.jpg")
     await bot.get_channel(DISCORD_CHANNEL_ID).send(embed=embed, files=files)
+
+@logger(
+    txtfile="discord_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
+async def send_tts(channel_id, text):
+    channel = bot.get_channel(channel_id)
+    if channel:
+        msg = await channel.send(f"{text}", tts=True)
+        await asyncio.sleep(10)
+        await msg.delete() 
+        return True
+    return False

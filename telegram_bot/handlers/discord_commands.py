@@ -7,13 +7,38 @@ from telegram_bot.tg_utils.avatar import get_user_avatar
 from telebot.types import Message
 from discord_bot.bot import get_discord_loop
 from io import BytesIO
-from discord_bot.ds_utils.ds_online_info import get_online_info
+from discord_bot.ds_utils.ds_online_info import get_active_channels, get_online_info
 from telegram_bot.tg_utils.reaction import send_react
 from discord_bot.ds_utils.invite_with_role import get_invite_link
+from utils.mini_utils import run_in_thread
+from telebot import types 
+
+pending_requests = {}
+
+@logger(
+    txtfile="telegram_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
+def get_pending_requests():
+    return pending_requests
+
+@logger(
+    txtfile="telegram_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
+def pop_pending_requests(key): 
+    pending_requests.pop(key)
+ 
 
 @bot.message_handler(
-    content_types=['text','photo'],
-    func=lambda m: (m.text or m.caption or "").startswith(("/ds ", "/дс ")) or (m.text or m.caption or "") in ["/ds", "/дс"]
+    content_types=['text'],
+    commands=["tts",'ттс']
 )
 @logger(
     txtfile="telegram_bot.txt",
@@ -22,8 +47,50 @@ from discord_bot.ds_utils.invite_with_role import get_invite_link
     only_exc=True,
     time_log=True,
 )
-def ds_handler(message: Message):
-    ds(message)
+def tts_handler(message: Message):
+    text_to_say = message.text.replace('/tts', '').strip()
+    if not text_to_say:
+        bot_msg=bot.reply_to(message, "Извинись, неправильно")
+        run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
+                  ,time_sleep=5)
+        return
+    text_to_say = f"{(message.from_user.username or message.from_user.first_name or 'NoName')} передал {text_to_say}"
+    #ds list
+    future = asyncio.run_coroutine_threadsafe(
+        get_active_channels(),
+        get_discord_loop()
+    )
+    try:
+        channels = future.result(timeout=5)
+    except Exception:
+        bot_msg=bot.reply_to(message, "Дискорд накрылся, извинись")
+        run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
+                  ,time_sleep=5)
+        return 
+    if not channels:
+        bot_msg=bot.reply_to(message, "🔇 В Discord сейчас никого нет в голосовых каналах.")
+        run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
+                  ,time_sleep=5)
+        return
+    
+    markup = types.InlineKeyboardMarkup()
+    for ch in channels:
+        callback_data = f"tts|{ch['id']}"
+        markup.add(types.InlineKeyboardButton(text=ch['name'], callback_data=callback_data))
+    
+    bot_msg = bot.send_message(
+        message.chat.id, 
+        f"Выбери канал для озвучки текста: \n\"{text_to_say}\"", 
+        reply_markup=markup
+    ) 
+    pending_requests[bot_msg.message_id] = {
+        'text': text_to_say,
+        'user_id': message.from_user.id
+    }
+    run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
+                  ,time_sleep=5)
+    run_in_thread(pop_pending_requests, bot_msg.message_id, time_sleep=5)
+    
 
 @bot.message_handler(
     content_types=['text','photo'],
