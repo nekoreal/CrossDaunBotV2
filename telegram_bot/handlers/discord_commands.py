@@ -33,7 +33,7 @@ def get_pending_requests():
     time_log=True,
 )
 def pop_pending_requests(key): 
-    pending_requests.pop(key)
+    pending_requests.pop(key) 
  
 
 @bot.message_handler(
@@ -74,7 +74,7 @@ def tts_handler(message: Message):
         return
     
     markup = types.InlineKeyboardMarkup()
-    for ch in channels:
+    for ch in channels: 
         callback_data = f"tts|{ch['id']}"
         markup.add(types.InlineKeyboardButton(text=ch['name'], callback_data=callback_data))
     

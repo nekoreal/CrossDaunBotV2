@@ -3,7 +3,7 @@ import discord
 from discord.ext import commands
 from config import DISCORD_GUILD_ID, DISCORD_CHANNEL_ID
 from utils.logger import logger
-from .bot import get_bot
+from .bot import get_bot 
 
 bot: commands.Bot | None  = get_bot()
 
@@ -87,10 +87,10 @@ async def send_reply_embed_to_discord(
     only_exc=True,
     time_log=True,
 )
-async def send_tts(channel_id, text):
-    channel = bot.get_channel(channel_id)
-    if channel:
-        msg = await channel.send(f"{text}", tts=True)
+async def send_tts(channel_id, text): 
+    voice_channel = bot.get_channel(channel_id)  
+    if voice_channel:
+        msg = await voice_channel.send(f"{text}", tts=True)
         await asyncio.sleep(10)
         await msg.delete() 
         return True

@@ -5,6 +5,7 @@ from discord_bot.senders import send_tts
 from telegram_bot.bot import bot 
 from discord_bot.bot import get_discord_loop 
 from .discord_commands import get_pending_requests 
+from telebot.types import CallbackQuery
 
 
 
@@ -18,9 +19,8 @@ from .discord_commands import get_pending_requests
     only_exc=True,
     time_log=True,
 )
-def handle_tts_selection(call): 
-    req_data = get_pending_requests().get(call.message.message_id)
-
+def handle_tts_selection(call:CallbackQuery): 
+    req_data = get_pending_requests().get(call.message.message_id) 
     if not req_data:
             bot.answer_callback_query(call.id, "Запрос устарел. Извинись")
             return
@@ -29,11 +29,13 @@ def handle_tts_selection(call):
         bot.answer_callback_query(call.id, "Это не ваша команда! Извинись 😡", show_alert=True)
         return 
     
+    bot.delete_message(call.message.chat.id, call.message.message_id)
+
     channel_id = int(call.data.split('|')[1])
     text = req_data['text']
  
     
-
+    
     future = asyncio.run_coroutine_threadsafe(send_tts(channel_id, text), get_discord_loop())
     
     if future.result(): 
