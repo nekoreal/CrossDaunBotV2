@@ -7,3 +7,5 @@ __pycache__
 test.py
 *.png
 *.jpg
+perse.py
+*.json
