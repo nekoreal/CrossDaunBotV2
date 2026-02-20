@@ -24,13 +24,14 @@
                 <div class="day-card">
                     <div class="day-label">Всего сообщений</div>
                     <div class="day-value" id="totalUsers">
-                        {{ data.total_msg_count }}
+                        {{ data.all_time_msg if data.all_time_msg else 0}}
                     </div>
                 </div>
                 <div class="day-card">
                     <div class="day-label">Сообщений за сегодня</div>
                     <div class="day-value" id="newToday">
-                        {{ data.day_msg_count }}
+                        {{ data.today_msg_count if data.today_msg_count else 0
+                        }}
                     </div>
                 </div>
                 <div class="day-card day-grid day-username">
@@ -112,7 +113,7 @@
                             <span
                                 class="val-to-update"
                                 data-alltime="💬 {{ user.msg_count }}"
-                                data-month="💬 {{ user.msg_count_month }}"></span>
+                                data-month="💬 {{ user.month_messages }}"></span>
                         </div>
                     </div>
                     <div class="align-center media sortable">
@@ -120,12 +121,12 @@
                             <span
                                 class="split-val val-to-update"
                                 data-alltime="🖼️ {{ user.photo_count }}"
-                                data-month="🖼️ {{ user.photo_count_month }}"></span>
+                                data-month="🖼️ {{ user.month_photos }}"></span>
                             <div class="seperator"></div>
                             <span
                                 class="split-val val-to-update"
                                 data-alltime="🎥 {{ user.video_count }}"
-                                data-month="🎥 {{ user.video_count_month }}"></span>
+                                data-month="🎥 {{ user.month_videos }}"></span>
                         </div>
                     </div>
                     <div class="align-center stickers sortable">
@@ -133,7 +134,7 @@
                             <span
                                 class="val-to-update"
                                 data-alltime="💠 {{ user.sticker_count }}"
-                                data-month="💠 {{ user.sticker_count_month }}"></span>
+                                data-month="💠 {{ user.month_stickers }}"></span>
                         </div>
                     </div>
                     <div class="align-center nya sortable">
@@ -141,7 +142,7 @@
                             <span
                                 class="val-to-update"
                                 data-alltime="🐱 {{ user.nya_count }}"
-                                data-month="🐱 {{ user.nya_count_month }}"></span>
+                                data-month="🐱 {{ user.month_nya }}"></span>
                         </div>
                     </div>
                 </div>
@@ -173,6 +174,26 @@
 
                 // --- 2. Сортировка ---
                 let sortDirections = {};
+                function getActivePeriodKey() {
+                    const active = document.querySelector(".switcher.active");
+                    return active && active.id === "alltime"
+                        ? "alltime"
+                        : "month";
+                }
+
+                function getMediaSum(card, periodKey) {
+                    const mediaCell = card.querySelector(".media");
+                    if (!mediaCell) return 0;
+                    const parts = mediaCell.querySelectorAll(".split-val");
+                    let sum = 0;
+                    parts.forEach((p) => {
+                        const attr = p.getAttribute(`data-${periodKey}`) || "";
+                        const num = parseInt(attr.replace(/\D/g, "")) || 0;
+                        sum += num;
+                    });
+                    return sum;
+                }
+
                 window.sortTable = function (columnIndex) {
                     // Делаем функцию глобальной для onclick
                     const container = document.querySelector(".cards");
@@ -182,19 +203,33 @@
 
                     sortDirections[columnIndex] = !sortDirections[columnIndex];
                     const isAsc = sortDirections[columnIndex];
+                    const periodKey = getActivePeriodKey();
 
                     cards.sort((a, b) => {
-                        let valA = a.children[columnIndex].textContent.trim();
-                        let valB = b.children[columnIndex].textContent.trim();
+                        // Special handling for Name column (index 2)
+                        if (columnIndex === 2) {
+                            const valA =
+                                a.children[columnIndex].textContent.trim();
+                            const valB =
+                                b.children[columnIndex].textContent.trim();
+                            return isAsc
+                                ? valA.localeCompare(valB)
+                                : valB.localeCompare(valA);
+                        }
 
-                        if (columnIndex !== 2) {
-                            valA = parseInt(valA.replace(/\D/g, "")) || 0;
-                            valB = parseInt(valB.replace(/\D/g, "")) || 0;
+                        // Special handling for Media column (index 4): sum photos + videos
+                        if (columnIndex === 4) {
+                            const valA = getMediaSum(a, periodKey);
+                            const valB = getMediaSum(b, periodKey);
                             return isAsc ? valA - valB : valB - valA;
                         }
-                        return isAsc
-                            ? valA.localeCompare(valB)
-                            : valB.localeCompare(valA);
+
+                        // Default numeric handling for other columns
+                        let valA = a.children[columnIndex].textContent.trim();
+                        let valB = b.children[columnIndex].textContent.trim();
+                        valA = parseInt(valA.replace(/\D/g, "")) || 0;
+                        valB = parseInt(valB.replace(/\D/g, "")) || 0;
+                        return isAsc ? valA - valB : valB - valA;
                     });
 
                     cards.forEach((card) => container.appendChild(card));

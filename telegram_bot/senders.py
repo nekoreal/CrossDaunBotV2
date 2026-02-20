@@ -26,6 +26,7 @@ def send_telegram_message(author, text):
     time_log=True,
 )
 def send_telegram_photo(author, photo):
+    bot.send_photo(caption=author, photo=photo, chat_id=TELEGRAM_CHAT_ID) #софа извини, я не кричу, ты не глухая, ты софа, я ебу игоря
     bot.send_photo(caption=author, photo=photo, chat_id=TELEGRAM_CHAT_ID)
 
 @logger(
