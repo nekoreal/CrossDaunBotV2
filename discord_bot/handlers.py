@@ -32,20 +32,20 @@ def register_handlers(local_bot: commands.Bot ):
 async def on_member_join(member:discord.Member):
     global INVITES
     not_bot_url= True
-    nowinvites = {inv.code: inv for inv in await bot.get_guild(DISCORD_GUILD_ID).invites()}
-    for i in INVITES:
-        if nowinvites.get(i.code).uses != i.uses:
-            if nowinvites.get(i.code).inviter!=BOT_USERNAME:
-                currentinv:discord.Invite = await  bot.fetch_invite(i.code)
-                await currentinv.delete(reason=f"Было использовано {member.name}")
-                role = member.guild.get_role(INVITE_ROLE)
-                if role:
-                    await member.add_roles(role)
-                    await bot.get_channel(DISCORD_CHANNEL_ID).send(f"Новый пидор в дискорде <@{member.id}> по приглашению бота")
-                    threading.Thread(target=send_telegram_message, args=("Server", f"Новый пидор в дискорде `{member.name}` по приглашению бота")).start()
-                    not_bot_url=False
-            break
-    INVITES = await bot.get_guild(DISCORD_GUILD_ID).invites()
+    # nowinvites = {inv.code: inv for inv in await bot.get_guild(DISCORD_GUILD_ID).invites()}
+    # for i in INVITES:
+    #     if nowinvites.get(i.code).uses != i.uses:
+    #         if nowinvites.get(i.code).inviter!=BOT_USERNAME:
+    #             currentinv:discord.Invite = await  bot.fetch_invite(i.code)
+    #             await currentinv.delete(reason=f"Было использовано {member.name}")
+    #             role = member.guild.get_role(INVITE_ROLE)
+    #             if role:
+    #                 await member.add_roles(role)
+    #                 await bot.get_channel(DISCORD_CHANNEL_ID).send(f"Новый пидор в дискорде <@{member.id}> по приглашению бота")
+    #                 threading.Thread(target=send_telegram_message, args=("Server", f"Новый пидор в дискорде `{member.name}` по приглашению бота")).start()
+    #                 not_bot_url=False
+    #         break
+    # INVITES = await bot.get_guild(DISCORD_GUILD_ID).invites()
 
     if not_bot_url:
         run_in_thread(send_verify_msg, member.id, member.name)
