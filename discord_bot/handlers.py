@@ -62,7 +62,7 @@ async def tg(ctx):
         send_telegram_message(author, message_text)
 
     for attachment in ctx.message.attachments:
-        if attachment.content_type and attachment.content_type.startswith("image/"):
+        if attachment.content_type and attachment.content_type.startswith("image/"): 
             photo_bytes = requests.get(attachment.url).content
             send_telegram_photo(author, photo_bytes)
     await ctx.message.add_reaction('✅')
