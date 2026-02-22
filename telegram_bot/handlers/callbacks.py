@@ -31,7 +31,7 @@ def handle_verify_ds(call:CallbackQuery):
         asyncio.run_coroutine_threadsafe(verify_role(id), get_discord_loop())
         return
     bot.edit_message_text( f"`{username}` не получит мороженку\n\nБлагодаря `{call.from_user.username}` " ,TELEGRAM_CHAT_ID,call.message.id, parse_mode="Markdown") 
-    run_in_thread(bot.delete_message,TELEGRAM_CHAT_ID,call.message.id, time_sleep=10)
+    run_in_thread(bot.delete_message,TELEGRAM_CHAT_ID,call.message.id, time_sleep=30)
     
 
 @bot.callback_query_handler(

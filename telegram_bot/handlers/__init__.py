@@ -11,6 +11,7 @@
 """
 
 
+from .photo_change_poll import *
 from .ignore_users import *
 from .discord_commands import *
 from .tags import *
