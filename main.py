@@ -21,6 +21,9 @@ from telegram_bot.tg_db.models.tg_at_user_tag import UserTagAssociation
 from telegram_bot.tg_db.models.daily_statistic import DailyStatistic
 from flask_server.dashboard import run_flask
 
+from scheduler.setup import init_scheduler
+
+
 @logger(
     txtfile="main.txt",
     print_log=True,
@@ -36,6 +39,9 @@ def main():
 
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.start()
+
+    scheduler_thread = threading.Thread(target=init_scheduler)
+    scheduler_thread.start()
 
     asyncio.run(run_discord_bot())
 

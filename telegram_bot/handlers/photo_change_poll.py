@@ -14,8 +14,8 @@ class PollData:
     phase: Optional[str] = None 
     candidates: Dict[int, str] = field(default_factory=dict)
     extra_rounds: int = 0
-    time_for_voting: int = 1   * 60      # в секундах
-    time_for_collecting: int = 1   * 60  # в секундах
+    time_for_voting: int = 24   * 60  * 60     # в секундах
+    time_for_collecting: int = 24   * 60 * 60  # в секундах
 
     def clear(self,):
         """Полный сброс данных до начального состояния"""
@@ -67,18 +67,17 @@ poll_data:PollData=PollData()
     only_exc=True,
     time_log=True,
 )   
-def start_contest(message):
-    if poll_data.phase!=None:
-        msg = bot.reply_to(message, "Конкурс уже идет!")
-        run_in_thread(bot.delete_messages, TELEGRAM_CHAT_ID, [msg.id, message.id] ,time_sleep=5)
+def start_contest(message:Message|None):
+    if (poll_data.phase!=None): 
+        msg = bot.send_message(TELEGRAM_CHAT_ID, "Конкурс уже идет!")
+        run_in_thread(bot.delete_messages, TELEGRAM_CHAT_ID, [msg.id, message.id] ,time_sleep=10)
         return 
     
     poll_data.clear()
     poll_data.start_collecting()
     
-    bot.send_message(message.chat.id, f"Этап ожидание: Сбор заявок ({poll_data.time_for_collecting//3600} часа)\n\nПрисылайте фото с хэштегом #на_аву. У каждого только 1 вариант")
-    
-    # Планируем переход к голосованию через 24 часа
+    bot.send_message(TELEGRAM_CHAT_ID, f"Этап ожидание: Сбор заявок ({poll_data.time_for_collecting//3600} часа)\n\nПрисылайте фото с хэштегом #на_аву. У каждого только 1 вариант")
+     
     run_in_thread(start_voting, time_sleep=poll_data.time_for_collecting)
 
 @bot.message_handler(
@@ -119,7 +118,8 @@ def start_voting():
         file_id = list(poll_data.candidates.values())[0]
         msg = bot.send_photo(TELEGRAM_CHAT_ID, file_id, caption="`Победитель` по умолчанию, так как конкуренция отсутствует.", parse_mode="Markdown")
         poll_data.clear()
-        return
+        return 
+    
 
     poll_data.phase = 'voting'
     bot.send_message(TELEGRAM_CHAT_ID, f"Этап {poll_data.extra_rounds+1} Голосование ({poll_data.time_for_voting//3600} часа)\n\nНиже представлены все варианты.", parse_mode="Markdown")
@@ -160,7 +160,8 @@ def finish_voting( poll_message_id):
         poll_data.clear()
     else: 
         poll_data.extra_rounds += 1
-        poll_data.time_for_voting=int(poll_data.time_for_voting//2) 
+        if poll_data.extra_rounds >1:
+            poll_data.time_for_voting=int(poll_data.time_for_voting//2)
          
         poll_data.candidates = {idx: list(poll_data.candidates.values())[idx] for idx in winners_idx}
         
