@@ -23,8 +23,8 @@ class PollData:
         self.phase=None
         self.candidates.clear()
         self.extra_rounds=0
-        self.time_for_voting=1            *60 #in seconds
-        self.time_for_collecting=1        *60 #in seconds
+        self.time_for_voting=24   * 60  * 60     # в секундах
+        self.time_for_collecting=24   * 60  * 60     # в секундах
 
     def add_or_update_candidate(self, user_id: int, file_id: str):
         """
