@@ -348,7 +348,7 @@ def all_tags(message: Message):
             if not tags_counts:
                 bot.reply_to(message, "Нет ни одного тега.")
                 return
-            text = "*Теги и количество пользователей:*\n\n```ini"
+            text = "*Теги и количество пользователей:*\n\n```ini "
             for tag, count in sorted(tags_counts, key=lambda x: x[1], reverse=True):
                 text += f"{count} — {tag}\n"
             text += "```"
