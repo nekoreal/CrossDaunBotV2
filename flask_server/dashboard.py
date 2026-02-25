@@ -48,14 +48,10 @@ def index():
  
         stats_today = session.query(DailyStatistic).filter(DailyStatistic.date == today).all()
         stats_month = session.query(DailyStatistic).filter(DailyStatistic.date >= month_start).all()
-        stats_all = session.query(DailyStatistic).filter(DailyStatistic.date >= all_time_start).all()  
-  
+         
         today_msg =  sum( s.total for s in stats_today ) 
  
-        month_map = aggregate_list(stats_month) 
-        all_map = aggregate_list(stats_all) 
-        
-        print(all_map)
+        month_map = aggregate_list(stats_month)  
 
         users_data = []
         for user in users:
