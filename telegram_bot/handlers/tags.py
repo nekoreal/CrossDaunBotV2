@@ -170,7 +170,7 @@ def trigger_tags(message: Message):
 
         res = (
             f"{escape_markdown(mentions)}"
-            f"\n\n#{tag.tag}\n`{message.from_user.username}`:\n{escape_markdown(text)}"
+            f"\n\n#{tag.tag}\n`{message.from_user.username}`:\n```ini \n{text}\n```"
         )
         bot.send_message(message.chat.id,
                          res
@@ -201,7 +201,7 @@ def taginfo(message: Message):
             return
         res = (
             f"Тег `{tag.tag}`\n"
-            f"```ini\n{escape_markdown( "\n".join(list(res.user.username for at in tag.at_user_tag if (res:=get_or_delete_user(at.user,session)) )))}\n""```")
+            f"```ini\n{ "\n".join(list(res.user.username for at in tag.at_user_tag if (res:=get_or_delete_user(at.user,session)) ))}\n```")
         bot_msg = bot.reply_to(message,
                          res
                          , parse_mode="Markdown")
@@ -224,7 +224,7 @@ def trigger_all(message: Message):
     with session_scope() as session:
         users = session.query(TelegramUser).all()
         res=(f"{escape_markdown("@"+" @".join(list( res.user.username for user in users if (res:=get_or_delete_user(user,session)) )))}"
-                         f"\n\n`{message.from_user.username}`:\n{escape_markdown(text)}" )
+                         f"\n\n`{message.from_user.username}`:\n```ini \n{ text } \n```" )
         bot.send_message(message.chat.id,
                          res
                          ,parse_mode="Markdown")
@@ -244,7 +244,7 @@ def tags(message: Message):
     bot_msg = bot.reply_to(message,
                  f"`{bot.get_chat_member( TELEGRAM_CHAT_ID ,user_id=user["tg_id"]).user.username}` теги:\n"
                  f"```ini\n"
-                 f"{escape_markdown('\n'.join(list( user_controller.get_user_tags_by_tg_id(user["tg_id"]) )))}\n"
+                 f"{'\n'.join(list( user_controller.get_user_tags_by_tg_id(user["tg_id"]) ))}\n"
                  f"\n```"
                  ,parse_mode="Markdown",
                  )
