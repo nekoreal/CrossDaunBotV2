@@ -170,7 +170,7 @@ def trigger_tags(message: Message):
 
         res = (
             f"{escape_markdown(mentions)}"
-            f"\n\n#{tag.tag}\n`{message.from_user.username}`:\n```ini \n{text}\n```"
+            f"\n\n#{tag.tag}\n`{message.from_user.username}`:\n```ini {text}\n```"
         )
         bot.send_message(message.chat.id,
                          res
@@ -224,7 +224,7 @@ def trigger_all(message: Message):
     with session_scope() as session:
         users = session.query(TelegramUser).all()
         res=(f"{escape_markdown("@"+" @".join(list( res.user.username for user in users if (res:=get_or_delete_user(user,session)) )))}"
-                         f"\n\n`{message.from_user.username}`:\n```ini \n{ text } \n```" )
+                         f"\n\n`{message.from_user.username}`:\n```ini { text } \n```" )
         bot.send_message(message.chat.id,
                          res
                          ,parse_mode="Markdown")
@@ -348,9 +348,10 @@ def all_tags(message: Message):
             if not tags_counts:
                 bot.reply_to(message, "Нет ни одного тега.")
                 return
-            text = "*Теги и количество пользователей:*\n"
+            text = "*Теги и количество пользователей:*\n\n```ini"
             for tag, count in sorted(tags_counts, key=lambda x: x[1], reverse=True):
-                text += f"`{count}` — {tag}\n"
+                text += f"{count} — {tag}\n"
+            text += "```"
             bot_msg = bot.reply_to(message, text, parse_mode="Markdown")
             run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
                           , time_sleep=10)
