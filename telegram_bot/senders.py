@@ -15,7 +15,7 @@ from telebot import types
 def send_telegram_message(author, text):
     bot.send_message(
         chat_id=TELEGRAM_CHAT_ID,
-        text=f"`{author}`:\n```{text}```",parse_mode="Markdown"
+        text=f"`{author}`:\n```ini \n{text}\n```",parse_mode="Markdown"
     )
 
 @logger(
