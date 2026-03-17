@@ -37,7 +37,7 @@ def pop_pending_requests(key):
  
 
 @bot.message_handler(
-    content_types=['text','photo'],
+    content_types=['text','photo','video'],
     func=lambda m: (m.text or m.caption or "").startswith(("/ds ", "/дс ")) or (m.text or m.caption or "") in ["/ds", "/дс"] 
 )
 @logger(
@@ -181,6 +181,13 @@ def ds(message:Message):
         file_info = bot.get_file(file_id)
         photo_bytes = BytesIO(bot.download_file(file_info.file_path))
         kwargs.update({"photo":photo_bytes})
+    if message.content_type == 'video': 
+        file_id = message.video.file_id
+        file_info = bot.get_file(file_id) 
+        video_bytes = BytesIO(bot.download_file(file_info.file_path)) 
+        video_bytes.name = "video.mp4"  
+        kwargs.update({"video": video_bytes})
+
     asyncio.run_coroutine_threadsafe(
         send_embed_to_discord(  **kwargs  ),
         get_discord_loop()
@@ -227,6 +234,12 @@ def to_ds(message:Message):
         file_info = bot.get_file(file_id)
         photo_bytes = BytesIO(bot.download_file(file_info.file_path))
         kwargs.update({"photo":photo_bytes})
+    if message.reply_to_message.content_type == 'video': 
+        file_id = message.reply_to_message.video.file_id
+        file_info = bot.get_file(file_id) 
+        video_bytes = BytesIO(bot.download_file(file_info.file_path)) 
+        video_bytes.name = "video.mp4"  
+        kwargs.update({"video": video_bytes})
     asyncio.run_coroutine_threadsafe(
         send_reply_embed_to_discord(  **kwargs  ),
         get_discord_loop()

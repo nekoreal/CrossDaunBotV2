@@ -1,9 +1,11 @@
+from io import BytesIO
+
 from discord.ext import commands
 
 from utils.logger import logger
 import requests
 import discord
-from telegram_bot.senders import send_telegram_message, send_telegram_photo
+from telegram_bot.senders import send_telegram_message, send_telegram_photo, send_telegram_video
 from config import DISCORD_GUILD_ID, BOT_USERNAME,INVITE_ROLE, DISCORD_CHANNEL_ID
 import threading
 from utils.mini_utils import run_in_thread
@@ -65,6 +67,14 @@ async def tg(ctx):
         if attachment.content_type and attachment.content_type.startswith("image/"): 
             photo_bytes = requests.get(attachment.url).content
             send_telegram_photo(author, photo_bytes)
+        if attachment.content_type and 'video' in attachment.content_type: 
+                if attachment.size > 50 * 1024 * 1024: 
+                    await ctx.send("❌ Видео слишком тяжелое жирное, пусть худеет")
+                    continue  
+                video_data = await attachment.read() 
+                video_stream = BytesIO(video_data)
+                video_stream.name = attachment.filename 
+                send_telegram_video(author, video_stream) 
     await ctx.message.add_reaction('✅')
 @tg.error
 async def tg_error(ctx, error):

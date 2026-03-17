@@ -1,4 +1,5 @@
 import asyncio
+import os
 import discord
 from discord.ext import commands
 from config import DISCORD_GUILD_ID, DISCORD_CHANNEL_ID
@@ -30,7 +31,8 @@ async def send_embed_to_discord(
         text=None,
         senderavatar=None,
         senderlink=None,
-        photo=None
+        photo=None,
+        video=None
 ):
 
     embed = discord.Embed(
@@ -45,6 +47,9 @@ async def send_embed_to_discord(
     if photo:
         files.append(discord.File(photo, filename="photo.jpg"))
         embed.set_image(url="attachment://photo.jpg")
+    if video:
+        video.seek(0)
+        files.append(discord.File(fp=video, filename=video.name))
     await bot.get_channel(DISCORD_CHANNEL_ID).send(embed=embed, files=files)
 
 @logger(
@@ -61,7 +66,8 @@ async def send_reply_embed_to_discord(
         senderlink=None,
         rsender=None,
         rsenderavatar=None,
-        photo=None
+        photo=None,
+        video=None
 ):
     embed = discord.Embed(
         color=0x2288ff
@@ -77,8 +83,12 @@ async def send_reply_embed_to_discord(
     else: embed.set_footer(text=f"{rsender}: {text}")
     if photo:
         files.append(discord.File(photo, filename="photo.jpg"))
-        embed.set_image(url="attachment://photo.jpg")
+        embed.set_image(url="attachment://photo.jpg")  
+    if video:
+        video.seek(0)
+        files.append(discord.File(fp=video, filename=video.name))
     await bot.get_channel(DISCORD_CHANNEL_ID).send(embed=embed, files=files)
+
 
 @logger(
     txtfile="discord_bot.txt",

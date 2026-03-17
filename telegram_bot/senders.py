@@ -35,6 +35,16 @@ def send_telegram_photo(author, photo):
     only_exc=True,
     time_log=True,
 )
+def send_telegram_video(author, video):
+    bot.send_video(caption=author, video=video, chat_id=TELEGRAM_CHAT_ID, parse_mode=None)
+
+@logger(
+    txtfile="telegram_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
 def send_verify_msg(id, username=None):
     markup = types.InlineKeyboardMarkup() 
     item_yes = types.InlineKeyboardButton("Да ✅", callback_data=f"verify|yes|{id}|{username}")
