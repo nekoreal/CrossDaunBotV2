@@ -62,7 +62,7 @@ def ds_handler(message: Message):
     time_log=True,
 )
 def tts_handler(message: Message):
-    text_to_say = message.text.replace('/tts', '').strip()
+    text_to_say = message.text.replace('/tts', '', 1).replace('/ттс', '', 1).strip() 
     if not text_to_say:
         bot_msg=bot.reply_to(message, "Извинись, неправильно")
         run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
@@ -100,7 +100,7 @@ def tts_handler(message: Message):
     pending_requests[bot_msg.message_id] = {
         'text': text_to_say,
         'user_id': message.from_user.id
-    }
+    } 
     run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
                   ,time_sleep=5)
     run_in_thread(pop_pending_requests, bot_msg.message_id, time_sleep=5)
