@@ -100,8 +100,6 @@ async def send_reply_embed_to_discord(
 async def send_tts(channel_id, text): 
     voice_channel = bot.get_channel(channel_id)  
     if voice_channel:
-        msg = await voice_channel.send(f"{text}", tts=True)
-        await asyncio.sleep(10)
-        await msg.delete() 
+        msg = await voice_channel.send(f"{text}", tts=True) 
         return True
     return False
