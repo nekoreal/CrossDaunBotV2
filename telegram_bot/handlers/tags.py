@@ -360,13 +360,36 @@ def all_tags(message: Message):
         run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id, bot_msg.message_id])
                       , time_sleep=10)
 
+    
+@logger(
+    txtfile="telegram_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
+def trigger_all_text():
+    with session_scope() as session:
+        users = session.query(TelegramUser).all()
+        res = f"{"@"+" @".join(list( res.user.username for user in users if (res:=get_or_delete_user(user,session,delete_if_not_found=False)) ))}"
+    return res
 
+
+@logger(
+    txtfile="telegram_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
 def get_or_delete_user(
         user:TelegramUser,
-        session
+        session,
+        delete_if_not_found:bool=True
 )->ChatMember|None:
     try:
         return bot.get_chat_member(TELEGRAM_CHAT_ID, user.tg_id)
     except:
-        session.delete(user)
+        if delete_if_not_found:
+            session.delete(user)
         return None

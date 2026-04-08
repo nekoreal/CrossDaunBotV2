@@ -5,8 +5,8 @@ from utils.logger import logger
 from telebot.types import Message
 from ..tg_utils.reaction import send_react  
 from dataclasses import dataclass, field
-from typing import Dict, Optional
-
+from typing import Dict, Optional 
+from .tags import trigger_all_text 
  
 @dataclass
 class PollData:
@@ -14,8 +14,8 @@ class PollData:
     phase: Optional[str] = None 
     candidates: Dict[int, str] = field(default_factory=dict)
     extra_rounds: int = 0
-    time_for_voting: int = 24   * 60  * 60     # в секундах
-    time_for_collecting: int = 24   * 60 * 60  # в секундах
+    time_for_voting: int = 30     # в секундах
+    time_for_collecting: int = 20  # в секундах
 
     def clear(self,):
         """Полный сброс данных до начального состояния"""
@@ -23,8 +23,8 @@ class PollData:
         self.phase=None
         self.candidates.clear()
         self.extra_rounds=0
-        self.time_for_voting=24   * 60  * 60     # в секундах
-        self.time_for_collecting=24   * 60  * 60     # в секундах
+        self.time_for_voting=30     # в секундах
+        self.time_for_collecting=20     # в секундах
 
     def add_or_update_candidate(self, user_id: int, file_id: str):
         """
@@ -76,7 +76,7 @@ def start_contest(message:Message|None):
     poll_data.clear()
     poll_data.start_collecting()
     
-    bot.send_message(TELEGRAM_CHAT_ID, f"Этап ожидание: Сбор заявок ({poll_data.time_for_collecting//3600} часа)\n\nПрисылайте фото с хэштегом #на_аву. У каждого только 1 вариант")
+    bot.send_message(TELEGRAM_CHAT_ID, f"{trigger_all_text()}\n\nЭтап ожидание: Сбор заявок ({poll_data.time_for_collecting//3600} часа)\n\nПрисылайте фото с хэштегом #на_аву. У каждого только 1 вариант")
      
     run_in_thread(start_voting, time_sleep=poll_data.time_for_collecting)
 
@@ -116,27 +116,28 @@ def start_voting():
         return
     if len(poll_data.candidates)==1:
         file_id = list(poll_data.candidates.values())[0]
-        msg = bot.send_photo(TELEGRAM_CHAT_ID, file_id, caption="`Победитель` по умолчанию, так как конкуренция отсутствует.", parse_mode="Markdown")
+        msg = bot.send_photo(TELEGRAM_CHAT_ID, file_id, caption=f"{trigger_all_text()}\n\nПобедитель по умолчанию, так как конкуренция отсутствует.")
         poll_data.clear()
         return 
     
 
     poll_data.phase = 'voting'
-    bot.send_message(TELEGRAM_CHAT_ID, f"Этап {poll_data.extra_rounds+1} Голосование ({poll_data.time_for_voting//3600} часа)\n\nНиже представлены все варианты.", parse_mode="Markdown")
-     
-    options = list(poll_data.candidates.values())
-     
-    for idx, file_id in enumerate(options, 1):
-        bot.send_photo(TELEGRAM_CHAT_ID, file_id, caption=f"Вариант `{idx}`", parse_mode="Markdown")
+    bot.send_message(TELEGRAM_CHAT_ID, f"{trigger_all_text()}\n\nЭтап {poll_data.extra_rounds+1} Голосование ({poll_data.time_for_voting//3600} часа)\n\nНиже представлены все варианты.")
+    keys = list(poll_data.candidates.keys())
+    options = []
+    for idx, id in enumerate(keys, 1):
+        bot.send_photo(TELEGRAM_CHAT_ID, poll_data.candidates[id], caption=f"Вариант `{idx}` \nОт `{bot.get_chat_member(TELEGRAM_CHAT_ID, id).user.username}`", parse_mode="Markdown")
+        options.append(f"Вариант {idx} от {bot.get_chat_member(TELEGRAM_CHAT_ID, id).user.username}")
 
     poll = bot.send_poll(
         TELEGRAM_CHAT_ID, 
-        "Выберите лучшую аватарку:", 
-        options=[f"Вариант №{i+1}" for i in range(len(options))],
+        f"Выберите лучшую аватарку:",
+        options=options,
         is_anonymous=True,
         allows_multiple_answers=True
     )
-     
+    bot.pin_chat_message(TELEGRAM_CHAT_ID, poll.message_id)
+
     run_in_thread(finish_voting, poll.message_id, time_sleep=poll_data.time_for_voting)
 
 @logger(
@@ -151,9 +152,9 @@ def finish_voting( poll_message_id):
     results = {idx: option.voter_count for idx, option in enumerate(poll.options)}
     max_votes = max(results.values())
     winners_idx = [idx for idx, count in results.items() if count == max_votes]
-
+    last_candidate = poll_data.candidates.copy()
     if len(winners_idx) == 1 or poll_data.extra_rounds >= 2: 
-        bot.send_message(TELEGRAM_CHAT_ID, "Голосование закончено!")
+        bot.send_message(TELEGRAM_CHAT_ID, f"{trigger_all_text()}\n\nГолосование закончено!")
         for idx in winners_idx:
             file_id = list(poll_data.candidates.values())[idx]
             bot.send_photo(TELEGRAM_CHAT_ID, file_id, caption="Победитель!")
@@ -162,7 +163,7 @@ def finish_voting( poll_message_id):
         poll_data.extra_rounds += 1
         if poll_data.extra_rounds >1:
             poll_data.time_for_voting=int(poll_data.time_for_voting//2)
-         
-        poll_data.candidates = {idx: list(poll_data.candidates.values())[idx] for idx in winners_idx}
+
+        poll_data.candidates = { id:last_candidate[id] for idx, id in enumerate(last_candidate.keys()) if idx in winners_idx}
         
-        run_in_thread(start_voting) 
+        run_in_thread(start_voting)
