@@ -1,5 +1,9 @@
-from flask import Flask, render_template
-from datetime import date, timedelta
+import json
+
+from flask import Flask, render_template, request
+from datetime import date, timedelta, datetime
+
+from rabbitmq import queue_sender
 from telegram_bot.tg_db import session_scope
 from telegram_bot.tg_db.models.tg_user import TelegramUser
 from telegram_bot.tg_db.models.tg_teg import TelegramTag
@@ -33,9 +37,48 @@ def aggregate_list(stats_list):
                 a["total"] += s.msg_count + s.photo_count + s.video_count + s.sticker_count + s.nya_count
             return agg
 
+def parse_device_type(user_agent):
+    user_agent = user_agent.lower()
+    if 'mobile' in user_agent:
+        return 'mobile'
+    elif 'tablet' in user_agent:
+        return 'tablet'
+    elif 'bot' in user_agent or 'crawler' in user_agent:
+        return 'bot'
+    else:
+        return 'desktop'
+
 
 @app.route('/')
-def index(): 
+def index():
+    user_data = [
+    {
+        'timestamp': datetime.now().isoformat(),
+        'endpoint': '/',
+        'method': request.method,
+    },{
+        'ip': request.remote_addr,
+        'real_ip': request.headers.get('X-Real-IP', request.remote_addr),
+        'forwarded_for': request.headers.get('X-Forwarded-For', ''),
+    },{
+        'user_agent': request.headers.get('User-Agent', ''),
+        'platform': request.user_agent.platform if hasattr(request, 'user_agent') else 'Unknown',
+        'browser': request.user_agent.browser if hasattr(request, 'user_agent') else 'Unknown',
+        'language': request.headers.get('Accept-Language', ''),
+        'encoding': request.headers.get('Accept-Encoding', ''),
+        'charset': request.headers.get('Accept-Charset', ''),
+    },{
+        'country': request.headers.get('CF-IPCountry', ''),
+        'city': request.headers.get('X-City', ''),
+        'region': request.headers.get('X-Region', ''),},
+    {
+        'device_type': parse_device_type(request.headers.get('User-Agent', '')),
+    }
+    ]
+    queue_sender("tg_notify",
+                 body=json.dumps(user_data),
+                 )
+
     today=date.today()
     month_start = today.replace(day=1) 
 
@@ -69,10 +112,7 @@ def index():
             d["month_videos"] = m.get("video", 0)
             d["month_stickers"] = m.get("sticker", 0)
             d["month_nya"] = m.get("nya", 0)
-            d["month_total"] = m.get("total", 0)  
-
-            # Убираем сетевые вызовы к Telegram API — медленно при большом количестве пользователей.
-            # Вместо этого показываем базовую информацию по tg_id; при желании можно кешировать в БД
+            d["month_total"] = m.get("total", 0)
             d["username_plain"] = username
             d["profile_url"] = f"tg://user?id={user.tg_id}"
             d["avatar"] = f"https://t.me/i/userpic/320/{username}.jpg" if username else "https://ui-avatars.com/api/?name=?"
