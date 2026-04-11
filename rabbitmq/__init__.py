@@ -1,7 +1,15 @@
 from pika import ConnectionParameters, BlockingConnection
 from config import CONNECTION_PARAMS
+from utils.logger import logger
 
 
+@logger(
+    txtfile="telegram_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
 def queue_sender(
         queue:str = "tg_notify",
         body="Empty"
