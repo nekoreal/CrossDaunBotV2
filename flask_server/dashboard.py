@@ -66,11 +66,7 @@ def index():
         'browser': request.user_agent.browser if hasattr(request, 'user_agent') else 'Unknown',
         'language': request.headers.get('Accept-Language', ''),
         'encoding': request.headers.get('Accept-Encoding', ''),
-        'charset': request.headers.get('Accept-Charset', ''),
-    },{
-        'country': request.headers.get('CF-IPCountry', ''),
-        'city': request.headers.get('X-City', ''),
-        'region': request.headers.get('X-Region', ''),},
+    },
     {
         'device_type': parse_device_type(request.headers.get('User-Agent', '')),
     }
