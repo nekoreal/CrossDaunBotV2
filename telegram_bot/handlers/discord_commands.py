@@ -150,7 +150,7 @@ def invite_handler(message: Message):
 
 @bot.message_handler(
     content_types=['text'],
-    func=lambda m: (m.from_user.id == 938758332) and ( m.text in ['дс','д','ds','d'] )
+    func=lambda m: (m.from_user.id == 938758332) and ( m.text.lower() in ['дс','д','ds','d'] )
 )
 @logger(
     txtfile="telegram_bot.txt",
@@ -159,7 +159,7 @@ def invite_handler(message: Message):
     only_exc=True,
     time_log=True,
 )
-def ds_info_handler(message: Message):
+def ds_info_handler_for_igor(message: Message):
     ds_info(message)
 
 
