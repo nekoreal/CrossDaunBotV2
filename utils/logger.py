@@ -4,7 +4,7 @@ from typing import Callable
 from datetime import datetime
 import asyncio
 
-from rabbitmq import queue_sender
+
 
 
 def logger(
@@ -36,6 +36,7 @@ def logger(
                     "kwargs": kwargs,
                     "exc": exc,
                 }
+                from rabbitmq import queue_sender
                 queue_sender("tg_notify",
                              type="error",
                              body=json.dumps(data_log),
@@ -71,6 +72,7 @@ def logger(
                     "kwargs": kwargs,
                     "exc": exc,
                 }
+                from rabbitmq import queue_sender
                 queue_sender("tg_notify",
                              type="error",
                              body=json.dumps(data_log),
