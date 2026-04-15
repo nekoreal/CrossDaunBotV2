@@ -1,5 +1,7 @@
 import asyncio
 
+from telegram_markdown_converter import convert_markdown
+
 from utils.logger import logger
 from discord_bot.senders import send_tts
 from telegram_bot.bot import bot 
@@ -27,7 +29,7 @@ def handle_verify_ds(call:CallbackQuery):
     username = split[3]
     if ans=='yes': 
         id = split[2]
-        bot.edit_message_text( f"Новый пользователь `{username}` получил роль\n\nБлагодаря `{call.from_user.username}` " ,TELEGRAM_CHAT_ID,call.message.id, parse_mode="Markdown") 
+        bot.edit_message_text( convert_markdown(f"Новый пользователь `{username}` получил роль\n\nБлагодаря `{call.from_user.username}` ") ,TELEGRAM_CHAT_ID,call.message.id, parse_mode="Markdown")
         asyncio.run_coroutine_threadsafe(verify_role(id), get_discord_loop())
         return
     bot.edit_message_text( f"`{username}` не получит мороженку\n\nБлагодаря `{call.from_user.username}` " ,TELEGRAM_CHAT_ID,call.message.id, parse_mode="Markdown") 

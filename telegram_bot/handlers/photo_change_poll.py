@@ -1,3 +1,4 @@
+from telegram_markdown_converter import convert_markdown
 from utils.mini_utils import run_in_thread
 from config import TELEGRAM_CHAT_ID
 from telegram_bot.bot import bot
@@ -126,7 +127,7 @@ def start_voting():
     keys = list(poll_data.candidates.keys())
     options = []
     for idx, id in enumerate(keys, 1):
-        bot.send_photo(TELEGRAM_CHAT_ID, poll_data.candidates[id], caption=f"Вариант `{idx}` \nОт `{bot.get_chat_member(TELEGRAM_CHAT_ID, id).user.username}`", parse_mode="Markdown")
+        bot.send_photo(TELEGRAM_CHAT_ID, poll_data.candidates[id], caption=convert_markdown(f"Вариант `{idx}` \nОт `{bot.get_chat_member(TELEGRAM_CHAT_ID, id).user.username}`"), parse_mode="Markdown")
         options.append(f"Вариант {idx} от {bot.get_chat_member(TELEGRAM_CHAT_ID, id).user.username}")
 
     poll = bot.send_poll(

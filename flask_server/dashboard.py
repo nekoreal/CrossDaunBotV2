@@ -53,7 +53,7 @@ def parse_device_type(user_agent):
 def index():
     user_data = [
     {
-        'timestamp': datetime.now().isoformat(),
+        'request_time': datetime.now().isoformat(),
         'endpoint': '/',
         'method': request.method,
     },{
@@ -72,6 +72,7 @@ def index():
     }
     ]
     queue_sender("tg_notify",
+                 type="request",
                  body=json.dumps(user_data),
                  )
 

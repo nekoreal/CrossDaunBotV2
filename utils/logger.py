@@ -1,7 +1,11 @@
+import json
 from functools import wraps
 from typing import Callable
 from datetime import datetime
 import asyncio
+
+from rabbitmq import queue_sender
+
 
 def logger(
     txtfile: str = "log.txt",
@@ -25,6 +29,18 @@ def logger(
                     f"\nargs:{args} kwargs:{kwargs}"
                     f"{f'\n\nexc{exc}\n' if exc else ''}"
                 )
+                data_log = {
+                    "time": datetime.now(),
+                    "func": func.__name__,
+                    "args": args,
+                    "kwargs": kwargs,
+                    "exc": exc,
+                }
+                queue_sender("tg_notify",
+                             type="error",
+                             body=json.dumps(data_log),
+                             )
+
                 if print_log:
                     print(log)
                 # Можно сделать асинхронную запись, но для простоты — обычная запись
@@ -48,6 +64,18 @@ def logger(
                     f"\nargs:{args} kwargs:{kwargs}"
                     f"{f'\n\nexc{exc}\n\n\n' if exc else ''}"
                 )
+                data_log = {
+                    "time": datetime.now(),
+                    "func": func.__name__,
+                    "args": args,
+                    "kwargs": kwargs,
+                    "exc": exc,
+                }
+                queue_sender("tg_notify",
+                             type="error",
+                             body=json.dumps(data_log),
+                             )
+
                 if print_log:
                     print(log)
                 with open(txtfile, "a") as f:

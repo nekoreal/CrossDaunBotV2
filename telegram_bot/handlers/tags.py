@@ -11,7 +11,7 @@ from telegram_bot.tg_db import session_scope
 from telegram_bot.tg_db.models.tg_user import TelegramUser
 from telegram_bot.tg_db.models.tg_teg import TelegramTag
 from telegram_bot.tg_db.db_controllers import user_controller, at_user_tag_controller, tag_controller
-
+from telegram_markdown_converter  import convert_markdown
 from utils.logger import logger
 from utils.mini_utils import run_in_thread, escape_markdown
 
@@ -170,10 +170,10 @@ def trigger_tags(message: Message):
 
         res = (
             f"{escape_markdown(mentions)}"
-            f"\n\n#{tag.tag}\n`{message.from_user.username}`:\n```ini\n{text}\n```"
+            f"\n\n#{tag.tag}\n`{message.from_user.username}`:\n\n{text}"
         )
         bot.send_message(message.chat.id,
-                         res
+                         convert_markdown(res)
                          ,parse_mode="Markdown")
         run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id]))
 
@@ -224,9 +224,9 @@ def trigger_all(message: Message):
     with session_scope() as session:
         users = session.query(TelegramUser).all()
         res=(f"{escape_markdown("@"+" @".join(list( res.user.username for user in users if (res:=get_or_delete_user(user,session)) )))}"
-                         f"\n\n`{message.from_user.username}`:\n```ini\n{ text } \n```" )
+                         f"\n\n`{message.from_user.username}`:\n\n{ text }" )
         bot.send_message(message.chat.id,
-                         res
+                         convert_markdown(res)
                          ,parse_mode="Markdown")
         run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id]))
 
