@@ -1,12 +1,7 @@
 
 
 
+a=list(['dfsd','dsf','dsf'])
 
-def a(*args, **kwargs):
-    f={
-        "type": 1,
-        **kwargs
-    }
-    print(f) 
-
-a(a=2,fff=3)
+a=" ".join(a)
+print(a)

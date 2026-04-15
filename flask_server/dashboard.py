@@ -128,4 +128,4 @@ def index():
     return render_template('index.html', data=data, reverse=True)
 
 def run_flask():
-    app.run(debug=False, host='0.0.0.0', port=5002, ssl_context=('cert.pem', 'key.pem'))
+    app.run(debug=False, host='0.0.0.0', port=5002 )

@@ -169,12 +169,12 @@ def trigger_tags(message: Message):
         mentions = "@" + " @".join(usernames) if usernames else ""
 
         res = (
-            f"{escape_markdown(mentions)}"
-            f"\n\n#{tag.tag}\n`{message.from_user.username}`:\n\n{text}"
+            f"{mentions}"
+            f"\n\n#{tag.tag}\n`{message.from_user.username}`:\n\n```ini\n{text}\n```"
         )
         bot.send_message(message.chat.id,
                          convert_markdown(res)
-                         ,parse_mode="Markdown")
+                         ,parse_mode="MarkdownV2")
         run_in_thread(bot.delete_messages, message.chat.id, list([message.message_id]))
 
 
@@ -223,8 +223,18 @@ def trigger_all(message: Message):
         return
     with session_scope() as session:
         users = session.query(TelegramUser).all()
-        res=(f"{escape_markdown("@"+" @".join(list( res.user.username for user in users if (res:=get_or_delete_user(user,session)) )))}"
-                         f"\n\n`{message.from_user.username}`:\n\n{ text }" )
+        usernames = [
+            username
+            for user in users
+            if (res := get_or_delete_user(user, session))
+               and res.user  # проверяем наличие user
+               and (username := res.user.username)  # сохраняем username в переменную
+               and username is not None  # проверяем что не None
+        ]
+        mentions = "@"+" @".join(usernames)
+
+        res=(f"{mentions}"
+             f"\n\n`{message.from_user.username}`:\n\n```ini\n{text}\n```" )
         bot.send_message(message.chat.id,
                          convert_markdown(res)
                          ,parse_mode="Markdown")

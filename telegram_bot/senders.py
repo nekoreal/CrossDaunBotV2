@@ -16,7 +16,7 @@ from telegram_markdown_converter  import convert_markdown
 def send_telegram_message(author, text):
     bot.send_message(
         chat_id=TELEGRAM_CHAT_ID,
-        text=convert_markdown(f"`{author}`: {text}"),parse_mode="MarkdownV2"
+        text=convert_markdown(f"`{author}`: \n```ini\n{text}\n```"),parse_mode="MarkdownV2"
     )
 
 @logger(

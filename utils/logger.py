@@ -29,18 +29,6 @@ def logger(
                     f"\nargs:{args} kwargs:{kwargs}"
                     f"{f'\n\nexc{exc}\n' if exc else ''}"
                 )
-                data_log = {
-                    "time": datetime.now(),
-                    "func": func.__name__,
-                    "args": args,
-                    "kwargs": kwargs,
-                    "exc": exc,
-                }
-                from rabbitmq import queue_sender
-                queue_sender("tg_notify",
-                             type="error",
-                             body=json.dumps(data_log),
-                             )
 
                 if print_log:
                     print(log)
@@ -65,21 +53,22 @@ def logger(
                     f"\nargs:{args} kwargs:{kwargs}"
                     f"{f'\n\nexc{exc}\n\n\n' if exc else ''}"
                 )
+
+                if print_log:
+                    print(log)
+
                 data_log = {
-                    "time": datetime.now(),
-                    "func": func.__name__,
-                    "args": args,
-                    "kwargs": kwargs,
-                    "exc": exc,
+                    "time": str(datetime.now()),
+                    "func":str(func.__name__),
+                    "args": str(args),
+                    "kwargs": str(kwargs),
+                    "exc": str(exc),
                 }
                 from rabbitmq import queue_sender
                 queue_sender("tg_notify",
                              type="error",
-                             body=json.dumps(data_log),
+                             body=data_log,
                              )
-
-                if print_log:
-                    print(log)
                 with open(txtfile, "a") as f:
                     f.write(log)
                 if raise_exc and exc:

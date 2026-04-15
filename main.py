@@ -33,7 +33,6 @@ from scheduler.setup import init_scheduler
 )
 def main():
     Base.metadata.create_all(bind=engine)
-    
     telegram_thread = threading.Thread(target=run_telegram_bot)
     telegram_thread.start()
 
