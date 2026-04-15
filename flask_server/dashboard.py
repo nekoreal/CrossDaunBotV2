@@ -73,7 +73,7 @@ def index():
     ]
     queue_sender("tg_notify",
                  type="request",
-                 body=json.dumps(user_data),
+                 body=user_data,
                  )
 
     today=date.today()
