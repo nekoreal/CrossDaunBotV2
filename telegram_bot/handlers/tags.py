@@ -381,7 +381,17 @@ def all_tags(message: Message):
 def trigger_all_text():
     with session_scope() as session:
         users = session.query(TelegramUser).all()
-        res = f"{"@"+" @".join(list( res.user.username for user in users if (res:=get_or_delete_user(user,session,delete_if_not_found=False)) ))}"
+        usernames = [
+            username
+            for user in users
+            if (res := get_or_delete_user(user, session))
+               and res.user  # проверяем наличие user
+               and (username := res.user.username)  # сохраняем username в переменную
+               and username is not None  # проверяем что не None
+        ]
+        mentions = "@" + " @".join(usernames)
+
+        res = f"{mentions}"
     return res
 
 
@@ -397,9 +407,10 @@ def get_or_delete_user(
         session,
         delete_if_not_found:bool=True
 )->ChatMember|None:
+    """
+    delete was off
+    """
     try:
         return bot.get_chat_member(TELEGRAM_CHAT_ID, user.tg_id)
     except:
-        if delete_if_not_found:
-            session.delete(user)
         return None
