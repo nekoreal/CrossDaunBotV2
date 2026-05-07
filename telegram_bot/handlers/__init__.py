@@ -11,6 +11,10 @@
 """
 
 
+from .commands_not_from_group import *
+
+from .only_from_group import * #Этот хэндлер забирает на себя все сообщения не из группы, так что если надо не с группы, импорт хэндлера выше
+
 from .photo_change_poll import *
 from .ignore_users import *
 from .discord_commands import *

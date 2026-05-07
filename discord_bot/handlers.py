@@ -2,10 +2,12 @@ from io import BytesIO
 
 from discord.ext import commands
 
+from rabbitmq import queue_sender
 from utils.logger import logger
 import requests
 import discord
-from telegram_bot.senders import send_telegram_message, send_telegram_photo, send_telegram_video
+from telegram_bot.senders import send_telegram_message, send_telegram_photo, send_telegram_video, \
+    send_ds_info_to_followers
 from config import DISCORD_GUILD_ID, BOT_USERNAME,INVITE_ROLE, DISCORD_CHANNEL_ID
 import threading
 from utils.mini_utils import run_in_thread
@@ -29,7 +31,34 @@ def register_handlers(local_bot: commands.Bot ):
     bot = local_bot
 
     bot.add_command(tg)
-    bot.event(on_member_join) 
+    bot.event(on_member_join)
+    bot.event(on_voice_state_update)
+
+
+async def on_voice_state_update(member, before, after):
+    if before.channel == after.channel:
+        return
+    info=None
+
+    if (after.channel is not None) and (before.channel is None):
+        info = f"`{member.display_name}` зашел в `{after.channel.name}`\n\n"
+        others = [m.display_name for m in after.channel.members if m.id != member.id]
+        info = info + f"`{after.channel.name}`\n```ini\n{'\n'.join(others)}\n```\n\n" if others else info
+
+    elif (before.channel is not None ) and (after.channel is None):
+        info = f"`{member.display_name}` вышел с `{before.channel.name}`\n\n"
+        others = [m.display_name for m in before.channel.members if m.id != member.id]
+        info = info + f"`{before.channel.name}`\n```ini\n{'\n'.join(others)}\n```\n\n" if others else info
+
+    elif  (before.channel is not None ) and (after.channel is not None):
+        info = f"`{member.display_name}` перешел с `{before.channel.name}` в `{after.channel.name}`\n\n"
+        others = [m.display_name for m in before.channel.members if m.id != member.id]
+        info = info + f"`{before.channel.name}`\n```ini\n{'\n'.join(others)}\n```\n\n" if others else info
+        others = [m.display_name for m in after.channel.members if m.id != member.id]
+        info = info + f"`{after.channel.name}`\n```ini\n{'\n'.join(others)}\n```\n\n" if others else info
+
+    if info:
+        send_ds_info_to_followers(info)
 
 async def on_member_join(member:discord.Member):
     global INVITES
@@ -69,7 +98,7 @@ async def tg(ctx):
             send_telegram_photo(author, photo_bytes)
         if attachment.content_type and 'video' in attachment.content_type: 
                 if attachment.size > 50 * 1024 * 1024: 
-                    await ctx.send("❌ Видео слишком тяжелое жирное, пусть худеет")
+                    await ctx.send("❌ Видео слишком жирное, пусть худеет")
                     continue  
                 video_data = await attachment.read() 
                 video_stream = BytesIO(video_data)

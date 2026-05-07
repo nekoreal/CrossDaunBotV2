@@ -2,6 +2,19 @@ from ..import session_scope
 from ..models.tg_user import TelegramUser
 from .at_user_tag_controller import create_at_user_tag
 
+def set_follow_status(tg_id, status):
+    with session_scope() as session:
+        user = session.query(TelegramUser).filter_by(tg_id=tg_id).first()
+        if user is not None:
+            user.ds_follower = status
+            session.commit()
+            return True
+        return False
+
+def get_followers():
+    with session_scope() as session:
+        followers = session.query(TelegramUser).filter_by(ds_follower=True).all()
+        return [f.tg_id for f in followers]
 
 def get_user(tg_id):
     '''

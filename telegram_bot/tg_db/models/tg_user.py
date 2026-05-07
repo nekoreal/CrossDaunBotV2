@@ -1,4 +1,5 @@
-from sqlalchemy import Column, Integer, String, BigInteger
+
+from sqlalchemy import Column, Integer, String, BigInteger, Boolean
 from telegram_bot.tg_db import Base
 from sqlalchemy.orm import relationship
 
@@ -7,6 +8,8 @@ class TelegramUser(Base):
 
     id = Column(Integer, primary_key=True, index=True, unique=True, nullable=False, autoincrement=True)
     tg_id = Column(BigInteger, unique=True, nullable=False, index=True)
+
+    ds_follower = Column(Boolean, default=0, nullable=False)
 
     msg_count = Column(Integer, default=0, nullable=False)
     photo_count = Column(Integer, default=0, nullable=False)
