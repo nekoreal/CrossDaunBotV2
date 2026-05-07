@@ -53,7 +53,7 @@ async def on_voice_state_update(member, before, after):
     elif  (before.channel is not None ) and (after.channel is not None):
         info = f"`{member.display_name}` перешел с `{before.channel.name}` в `{after.channel.name}`\n\n"
         others = [m.display_name for m in before.channel.members if m.id != member.id]
-        info = info + f"`{before.channel.name}`\n```ini\n{'\n'.join(others)}\n```\n\n" if others else info
+        info = info + f"`{before.channel.name}`\n```ini\n{'\n'.join(others)}\n```\n" if others else info
         others = [m.display_name for m in after.channel.members if m.id != member.id]
         info = info + f"`{after.channel.name}`\n```ini\n{'\n'.join(others)}\n```\n\n" if others else info
 
