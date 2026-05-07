@@ -29,7 +29,7 @@ from utils.mini_utils import run_in_thread, escape_markdown
 )
 def follow_ds_info (message :Message):
     if set_follow_status(message.from_user.id, True):
-        botmsg = bot.reply_to(message, "Ты подписался на Sweety Fox")
+        botmsg = bot.reply_to(message, "Ты подписался на Sweety Fox\n(Нужно отправить боту первое сообщение, чтобы он мог вам писать)")
         send_react(TELEGRAM_CHAT_ID, message.id)
         run_in_thread(bot.delete_messages, TELEGRAM_CHAT_ID, [botmsg.id, message.id], time_sleep=5)
         return
