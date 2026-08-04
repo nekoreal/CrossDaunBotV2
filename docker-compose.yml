@@ -18,6 +18,7 @@ services:
       retries: 10
 
   bot:
+    restart: unless-stopped
     build:
       context: .
       dockerfile: Dockerfile
