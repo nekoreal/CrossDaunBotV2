@@ -3,10 +3,11 @@ import os
 
 rabbitmq_user = os.getenv("RABBITMQ_USER" )
 rabbitmq_password = os.getenv("RABBITMQ_PASSWORD" )
+rabbitmq_host = os.getenv("RABBITMQ_HOST" )
 
 credentials = PlainCredentials(rabbitmq_user, rabbitmq_password)
 CONNECTION_PARAMS = ConnectionParameters(
-    host='5.182.87.105',
+    host=rabbitmq_host,
     port=5672,
     virtual_host='/',
     credentials=credentials
