@@ -25,7 +25,7 @@ BOT_USERNAME = 'CrossDaun#3072'
 TELEGRAM_TOKEN = os.getenv("TELEGRAMM_TOKEN")
 SQLALCHEMY_DATABASE_URI = os.getenv(
     "SQLALCHEMY_DATABASE_URI",
-    f"mysql+pymysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}@localhost:3306/{os.getenv('MYSQL_DATABASE')}"
+    f"mysql+pymysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}@{os.getenv('MYSQL_HOST')}:3306/{os.getenv('MYSQL_DATABASE')}"
 )
 TELEGRAM_CHAT_ID = -1001970834344
 
