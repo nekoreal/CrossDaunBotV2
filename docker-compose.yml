@@ -22,7 +22,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    port:
+    ports:
       - "5002:5002"
     depends_on:
       - db
