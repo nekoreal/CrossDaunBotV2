@@ -24,8 +24,8 @@ poll_data:PollData=PollData()
 """
 
 #1059959321 sunya
-#
-MODER_ID=874183602
+#874183602
+MODER_ID=1059959321
  
 
 @bot.message_handler(
