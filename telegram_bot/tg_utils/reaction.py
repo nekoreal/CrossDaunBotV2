@@ -7,7 +7,17 @@ user={
     '1941380895':'😘'
 }
 
-def send_react(chat_id, message_id):
+status_emoji={
+    "no":"💩",
+    "yes":"💯",
+    "wait":"🤔"
+}
+
+def send_react(chat_id, message_id, status:str="yes"):
+    '''
+     "no":"💩",
+     "yes":"💯",
+     "wait":"❓"'''
     url = f'https://api.telegram.org/bot{TELEGRAM_TOKEN}/setMessageReaction'
     data = {
         'chat_id': chat_id,
@@ -15,7 +25,7 @@ def send_react(chat_id, message_id):
         'reaction': [
             {
                 'type': 'emoji',
-                'emoji': "💯"
+                'emoji': status_emoji[status]
             }
         ],
         'is_big': False
