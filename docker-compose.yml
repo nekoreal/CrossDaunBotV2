@@ -43,9 +43,8 @@ services:
     ports:
       - "5002:5002"
     depends_on:
-      - db:
-        condition: service_healthy
-      - minio
+      - db 
+      - minio 
     environment:
       MINIO_ROOT_USER: ${MINIO_ROOT_USER}
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
@@ -60,3 +59,4 @@ services:
 
 volumes:
   db_data:
+  minio_data:

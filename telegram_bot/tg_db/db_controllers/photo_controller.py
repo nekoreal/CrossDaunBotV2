@@ -1,3 +1,4 @@
+
 from sqlalchemy import func
 
 from ..import session_scope
@@ -40,6 +41,7 @@ def add_photo(
         session.add(photo)
             
         if not s3_client.upload_file(file_bytes=file_bytes, file_path=file_path):
+            session.rollback()
             return False 
         
         session.commit()
@@ -62,20 +64,44 @@ def move_photo_to_category(photo_id: int, category_name: str) -> bool:
         new_file_path = str(category.id) + "/" + generate_s3_key()
         photo.file_path = new_file_path
         if not s3_client.move_file(old_file_path=old_file_path, new_file_path=new_file_path):
+            session.rollback()
             return False
 
         session.commit() 
         return True
 
-    
-def get_random_photo_with_category() -> dict | None:
+def delete_photo(photo_id: int) -> bool:
     with session_scope() as session:
-        photo = (
-            session.query(Photo)
-            .filter(Photo.category_id.is_not(None))
-            .order_by(func.random())
-            .first()
-        )
+        photo = session.query(Photo).filter_by(id=photo_id).first()
+        if not photo:
+            return False
+        file_path = photo.file_path
+        session.delete(photo)
+        if not s3_client.delete_file(file_path=file_path):
+            session.rollback()
+            return False
+        session.commit()
+        return True
+
+    
+def get_random_photo(
+        with_category: bool = True
+) -> dict | None:
+    with session_scope() as session: 
+        if with_category:
+            photo = (
+                session.query(Photo)
+                .filter(Photo.category_id.is_not(None))
+                .order_by(func.random())
+                .first()
+            )
+        else:
+            photo = (
+                session.query(Photo)
+                .filter(Photo.category_id.is_(None))
+                .order_by(func.random())
+                .first()
+            )
         if photo:
             photo_bytes = s3_client.download_file(file_path=photo.file_path)
             return {
@@ -85,21 +111,32 @@ def get_random_photo_with_category() -> dict | None:
                 "file_bytes": photo_bytes
             }
 
-        
-def get_random_photo_without_category() -> dict | None:
+ 
+def get_random_photo_url(
+        with_category: bool = True
+) -> str | None:
     with session_scope() as session:
-        photo = (
-            session.query(Photo)
-            .filter(Photo.category_id.is_(None))
-            .order_by(func.random())
-            .first()
-        )
+        if with_category:
+            photo = (
+                session.query(Photo)
+                .filter(Photo.category_id.is_not(None))
+                .order_by(func.random())
+                .first()
+            )
+        else:
+            photo = (
+                session.query(Photo)
+                .filter(Photo.category_id.is_(None))
+                .order_by(func.random())
+                .first()
+            )
         if photo:
-            photo_bytes = s3_client.download_file(file_path=photo.file_path)
-            return {
-                "id": photo.id,
-                "tg_id": photo.tg_id,
-                "category": None,
-                "file_bytes": photo_bytes
-            }
-        
+            presigned_url = s3_client.s3_client.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': s3_client.bucket_name,
+                    'Key': photo.file_path
+                },
+                ExpiresIn=900   
+            )
+            return presigned_url 

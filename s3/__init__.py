@@ -1,4 +1,4 @@
-from client import S3Client
+from .client import S3Client
 import os
 
 

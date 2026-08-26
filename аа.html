@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Photo Sorting Hub</title>
+  <!-- Telegram WebApp Script (для эмуляции или реального интегратора) -->
+  <script src="https://telegram.org/js/telegram-web-app.js"></script>
+  <style>
+    :root {
+      --bg-color: #0d0f18;
+      --card-bg: #161b26;
+      --accent-cyan: #00f0ff;
+      --accent-purple: #7000ff;
+      --accent-pink: #ff0055;
+      --accent-green: #00ff66;
+      --text-main: #e2e8f0;
+      --text-muted: #94a3b8;
+      --border-color: #232a3b;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+
+    body {
+      background-color: var(--bg-color);
+      color: var(--text-main);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
+    }
+
+    .app-container {
+      width: 100%;
+      max-width: 650px;
+      background-color: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      padding: 24px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 240, 255, 0.1);
+      position: relative;
+    }
+
+    /* --- МОДАЛЬНОЕ ОКНО ВХОДА ЧЕРЕЗ TELEGRAM --- */
+    .tg-modal {
+      position: absolute;
+      inset: 0;
+      background: rgba(13, 15, 24, 0.95);
+      backdrop-filter: blur(8px);
+      border-radius: 16px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .tg-avatar {
+      width: 80px;
+      height: 80px;
+      border-radius: 50%;
+      border: 2px solid var(--accent-cyan);
+      margin-bottom: 16px;
+      box-shadow: 0 0 15px rgba(0, 240, 255, 0.3);
+    }
+
+    /* --- ВЕРХНЯЯ ПАНЕЛЬ И ИНФО --- */
+    .header-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .online-stats {
+      font-size: 13px;
+      color: var(--text-muted);
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .online-stats span b {
+      color: var(--accent-cyan);
+    }
+
+    .role-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 40px;
+      height: 20px;
+    }
+    .switch input { opacity: 0; width: 0; height: 0; }
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background-color: var(--border-color);
+      transition: .3s;
+      border-radius: 20px;
+    }
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 14px; width: 14px;
+      left: 3px; bottom: 3px;
+      background-color: white;
+      transition: .3s;
+      border-radius: 50%;
+    }
+    input:checked + .slider { background-color: var(--accent-purple); }
+    input:checked + .slider:before { transform: translateX(20px); }
+
+    .timer-badge {
+      font-size: 18px;
+      font-weight: bold;
+      color: var(--accent-cyan);
+      background: rgba(0, 240, 255, 0.1);
+      padding: 4px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--accent-cyan);
+    }
+
+    /* --- КНОПКИ И СЕТКА --- */
+    .btn-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+
+    button {
+      background: #1e2538;
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+      padding: 12px 16px;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    button:hover:not(:disabled) {
+      border-color: var(--accent-cyan);
+      box-shadow: 0 0 10px rgba(0, 240, 255, 0.2);
+    }
+
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    button.selected { background: var(--accent-purple); border-color: var(--accent-cyan); color: #fff; }
+
+    .btn-tg {
+      background: #24A1DE;
+      color: white;
+      border: none;
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+    }
+    .btn-tg:hover { background: #208bbf; box-shadow: 0 0 15px rgba(36, 161, 222, 0.4); }
+
+    .btn-start-event {
+      background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+      color: #fff;
+      border: none;
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      margin-bottom: 16px;
+      animation: pulse 2s infinite;
+    }
+
+    .btn-join-event {
+      background: var(--accent-green);
+      color: #000;
+      border: none;
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      margin-bottom: 16px;
+    }
+
+    .btn-danger { border-color: var(--accent-pink); color: var(--accent-pink); }
+    .btn-danger:hover:not(:disabled) { background: var(--accent-pink); color: #fff; }
+
+    .btn-stacked { display: flex; flex-direction: column; gap: 10px; }
+
+    /* --- ИЗОБРАЖЕНИЕ --- */
+    .photo-wrapper {
+      width: 100%;
+      height: 300px;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 2px solid var(--border-color);
+      margin-bottom: 16px;
+      background-color: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .photo-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+
+    /* --- КАСТОМНЫЙ СКРОЛЛБАР И ИСТОРИЯ --- */
+    .history-scroll-container {
+      max-height: 320px;
+      overflow-y: auto;
+      padding-right: 8px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+    }
+
+    /* Кастомизация скроллбара */
+    .history-scroll-container::-webkit-scrollbar {
+      width: 6px;
+    }
+    .history-scroll-container::-webkit-scrollbar-track {
+      background: #101420;
+      border-radius: 4px;
+    }
+    .history-scroll-container::-webkit-scrollbar-thumb {
+      background: var(--accent-purple);
+      border-radius: 4px;
+    }
+    .history-scroll-container::-webkit-scrollbar-thumb:hover {
+      background: var(--accent-cyan);
+    }
+
+    .history-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      background: #101420;
+      padding: 10px;
+      border-radius: 10px;
+      border: 1px solid var(--border-color);
+    }
+    .history-card img {
+      width: 60px;
+      height: 60px;
+      border-radius: 6px;
+      object-fit: cover;
+    }
+
+    /* --- ИНФО БЛОКИ --- */
+    .section-title {
+      font-size: 15px;
+      margin-bottom: 12px;
+      color: var(--text-muted);
+      text-align: center;
+    }
+
+    .results-box {
+      background: #101420;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px;
+      margin-bottom: 16px;
+      font-size: 14px;
+    }
+
+    .hidden { display: none !important; }
+
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0.4); }
+      70% { box-shadow: 0 0 0 10px rgba(0, 240, 255, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(0, 240, 255, 0); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="app-container">
+
+    <!-- 0. МОДАЛЬНОЕ ОКНО TELEGRAM AUTH -->
+    <div id="modal-tg-auth" class="tg-modal">
+      <img src="https://picsum.photos/id/64/150/150" alt="Avatar" class="tg-avatar">
+      <h2 style="margin-bottom: 8px;">Добро пожаловать</h2>
+      <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">
+        Авторизуйтесь через Telegram для участия в сортировке фото
+      </p>
+      <button class="btn-tg" id="btn-tg-login">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+        </svg>
+        Войти через Telegram
+      </button>
+    </div>
+
+    <!-- ВЕРХНЯЯ ПАНЕЛЬ С ОНЛАЙНОМ И РОЛЯМИ -->
+    <div class="header-bar">
+      <div class="online-stats">
+        <span>Онлайн на сайте: <b id="site-online">12</b></span>
+        <span>В мероприятии: <b id="event-online">0</b></span>
+      </div>
+
+      <div class="role-toggle">
+        <span>Участник</span>
+        <label class="switch">
+          <input type="checkbox" id="role-switch">
+          <span class="slider"></span>
+        </label>
+        <span style="color: var(--accent-cyan);">Организ.</span>
+      </div>
+
+      <div class="timer-badge hidden" id="timer">01:00</div>
+    </div>
+
+    <!-- 1. ЭКРАН ПО УМОЛЧАНИЮ (МЕРОПРИЯТИЯ НЕТ - ПРОШЛЫЕ РЕЗУЛЬТАТЫ) -->
+    <div id="screen-idle">
+      <!-- Динамические кнопки старта/присоединения -->
+      <button id="btn-host-start" class="btn-start-event hidden">🚀 Начать мероприятие</button>
+      <button id="btn-user-join" class="btn-join-event hidden">✨ Присоединиться к мероприятию</button>
+
+      <div class="section-title">Результаты прошлых сортировок:</div>
+      <div class="history-scroll-container" id="past-results-list"></div>
+    </div>
+
+    <!-- КОНТЕЙНЕР АКТИВНОГО МЕРОПРИЯТИЯ -->
+    <div id="event-container" class="hidden">
+      
+      <!-- Область Фотографии -->
+      <div class="photo-wrapper" id="photo-box">
+        <img id="current-img" src="" alt="Сортируемое фото">
+      </div>
+
+      <!-- 2. ЭКРАН ГОЛОСОВАНИЯ (Для всех) -->
+      <div id="screen-voting" class="hidden">
+        <div class="section-title">Выберите категорию для фото:</div>
+        <div class="btn-grid" id="categories-grid"></div>
+      </div>
+
+      <!-- 3. ЭКРАН ОЖИДАНИЯ / РЕШЕНИЯ (Видят И Участники И Организатор) -->
+      <div id="screen-review" class="hidden">
+        <div class="section-title" id="review-title">Итоги голосования:</div>
+        
+        <!-- Сводка результатов видят ВСЕ -->
+        <div class="results-box" id="results-summary"></div>
+        
+        <!-- Кнопки управления ТОЛЬКО для Организатора -->
+        <div class="btn-stacked hidden" id="host-actions-panel">
+          <button id="btn-accept-winner">Согласиться с результатом</button>
+          <button id="btn-show-override">Выбрать другую категорию</button>
+          <button id="btn-set-unsorted">Оставить неотсортированным</button>
+          <button id="btn-delete-photo" class="btn-danger">Удалить фото</button>
+        </div>
+
+        <!-- Сообщение для участников -->
+        <div id="user-wait-msg" class="section-title hidden" style="color: var(--accent-cyan); margin-top: 10px;">
+          ⏳ Организатор принимает итоговое решение...
+        </div>
+
+        <!-- Выбор альтернативы при клике на "Выбрать другую" (Организатор) -->
+        <div id="override-select-box" class="btn-grid hidden" style="margin-top: 12px;"></div>
+      </div>
+
+      <!-- 4. ЭКРАН ПЕРЕХОДА К СЛЕДУЮЩЕМУ ФОТО (Только для Организатора) -->
+      <div id="screen-next" class="hidden">
+        <div class="section-title">Решение сохранено. Следующий шаг?</div>
+        <div class="btn-grid">
+          <button id="btn-next-photo">Продолжить</button>
+          <button id="btn-finish-event" class="btn-danger">Закончить мероприятие</button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script>
+    // --- ПРИМЕРНЫЕ (MOCK) ДАННЫЕ ---
+    const mockData = {
+      categories: ["Природа", "Архитектура", "Люди", "Животные"],
+      photos: [
+        { id: 1, url: "https://picsum.photos/id/10/600/400" },
+        { id: 2, url: "https://picsum.photos/id/16/600/400" },
+        { id: 3, url: "https://picsum.photos/id/28/600/400" }
+      ],
+      // Прошлые сохраненные мероприятия (с широким набором для демонстрации скроллбара)
+      pastResults: [
+        { photoUrl: "https://picsum.photos/id/1015/600/400", category: "Природа", date: "Вчера, 18:30" },
+        { photoUrl: "https://picsum.photos/id/1018/600/400", category: "Архитектура", date: "Вчера, 18:31" },
+        { photoUrl: "https://picsum.photos/id/1025/600/400", category: "Люди", date: "24 авг, 14:10" },
+        { photoUrl: "https://picsum.photos/id/1069/600/400", category: "Животные", date: "24 авг, 14:12" },
+        { photoUrl: "https://picsum.photos/id/1074/600/400", category: "Природа", date: "23 авг, 09:45" },
+        { photoUrl: "https://picsum.photos/id/1084/600/400", category: "Неотсортировано", date: "23 авг, 09:48" }
+      ]
+    };
+
+    // --- СОСТОЯНИЕ ПРИЛОЖЕНИЯ ---
+    let isHost = false;
+    let isEventActive = false;
+    let currentPhotoIndex = 0;
+    let votes = {};
+    let currentEventResults = [];
+    let timerInterval = null;
+    let timeLeft = 60;
+    let userVotedCategory = null;
+
+    let siteOnlineCount = 14;
+    let eventOnlineCount = 0;
+
+    // --- DOM ЭЛЕМЕНТЫ ---
+    const modalTgAuth = document.getElementById('modal-tg-auth');
+    const btnTgLogin = document.getElementById('btn-tg-login');
+    const roleSwitch = document.getElementById('role-switch');
+    const timerEl = document.getElementById('timer');
+    const currentImg = document.getElementById('current-img');
+
+    const siteOnlineEl = document.getElementById('site-online');
+    const eventOnlineEl = document.getElementById('event-online');
+
+    const screenIdle = document.getElementById('screen-idle');
+    const eventContainer = document.getElementById('event-container');
+    const screenVoting = document.getElementById('screen-voting');
+    const screenReview = document.getElementById('screen-review');
+    const screenNext = document.getElementById('screen-next');
+
+    const btnHostStart = document.getElementById('btn-host-start');
+    const btnUserJoin = document.getElementById('btn-user-join');
+
+    const pastResultsList = document.getElementById('past-results-list');
+    const categoriesGrid = document.getElementById('categories-grid');
+    const resultsSummary = document.getElementById('results-summary');
+    const hostActionsPanel = document.getElementById('host-actions-panel');
+    const userWaitMsg = document.getElementById('user-wait-msg');
+    const overrideSelectBox = document.getElementById('override-select-box');
+
+    // --- ИНИЦИАЛИЗАЦИЯ ---
+    function init() {
+      setupEvents();
+      renderPastResults();
+      updateCounters();
+      updateIdleStateUI();
+    }
+
+    // Рендер истории прошлых сортировок со скроллбаром
+    function renderPastResults() {
+      pastResultsList.innerHTML = mockData.pastResults.map(item => `
+        <div class="history-card">
+          <img src="${item.photoUrl}" alt="photo">
+          <div style="flex-grow: 1;">
+            <div style="font-weight: 600;">Категория: <span style="color: var(--accent-cyan);">${item.category}</span></div>
+            <div style="font-size: 12px; color: var(--text-muted);">${item.date}</div>
+          </div>
+        </div>
+      `).join('');
+    }
+
+    function updateCounters() {
+      siteOnlineEl.textContent = siteOnlineCount;
+      eventOnlineEl.textContent = eventOnlineCount;
+    }
+
+    // Переключение элементов в режиме ожидания (Idle)
+    function updateIdleStateUI() {
+      if (isEventActive) return;
+
+      if (isHost) {
+        btnHostStart.classList.remove('hidden');
+        btnUserJoin.classList.add('hidden');
+      } else {
+        btnHostStart.classList.add('hidden');
+        // Если фейковое мероприятие запущено кем-то
+        if (eventOnlineCount > 0) {
+          btnUserJoin.classList.remove('hidden');
+        } else {
+          btnUserJoin.classList.add('hidden');
+        }
+      }
+    }
+
+    // --- УПРАВЛЕНИЕ МЕРОПРИЯТИЕМ ---
+    function startNewEvent() {
+      isEventActive = true;
+      currentPhotoIndex = 0;
+      currentEventResults = [];
+      eventOnlineCount = isHost ? 1 : eventOnlineCount + 1;
+      updateCounters();
+
+      screenIdle.classList.add('hidden');
+      eventContainer.classList.remove('hidden');
+      timerEl.classList.remove('hidden');
+
+      loadPhoto(currentPhotoIndex);
+    }
+
+    function loadPhoto(index) {
+      if (index >= mockData.photos.length) {
+        finishEvent();
+        return;
+      }
+
+      votes = {};
+      userVotedCategory = null;
+      timeLeft = 60;
+      currentImg.src = mockData.photos[index].url;
+      
+      renderCategories();
+      hideEventScreens();
+      screenVoting.classList.remove('hidden');
+      
+      startTimer();
+    }
+
+    // --- ТАЙМЕР ---
+    function startTimer() {
+      clearInterval(timerInterval);
+      updateTimerDisplay();
+      
+      timerInterval = setInterval(() => {
+        timeLeft--;
+        updateTimerDisplay();
+        if (timeLeft <= 0) {
+          endVoting();
+        }
+      }, 1000);
+    }
+
+    function updateTimerDisplay() {
+      const mins = String(Math.floor(timeLeft / 60)).padStart(2, '0');
+      const secs = String(timeLeft % 60).padStart(2, '0');
+      timerEl.textContent = `${mins}:${secs}`;
+    }
+
+    // --- ГОЛОСОВАНИЕ ---
+    function renderCategories() {
+      categoriesGrid.innerHTML = '';
+      overrideSelectBox.innerHTML = '';
+
+      mockData.categories.forEach(cat => {
+        const btn = document.createElement('button');
+        btn.textContent = cat;
+        btn.onclick = () => handleUserVote(cat);
+        categoriesGrid.appendChild(btn);
+
+        const overrideBtn = document.createElement('button');
+        overrideBtn.textContent = cat;
+        overrideBtn.onclick = () => saveDecision(cat);
+        overrideSelectBox.appendChild(overrideBtn);
+      });
+    }
+
+    function handleUserVote(category) {
+      if (userVotedCategory) return;
+      
+      userVotedCategory = category;
+      votes['user_you'] = category;
+
+      Array.from(categoriesGrid.children).forEach(btn => {
+        if (btn.textContent === category) btn.classList.add('selected');
+        btn.disabled = true;
+      });
+
+      simulateBotVotes();
+
+      if (Object.keys(votes).length >= Math.max(4, eventOnlineCount)) {
+        endVoting();
+      }
+    }
+
+    function simulateBotVotes() {
+      const targetCount = Math.max(4, eventOnlineCount);
+      for (let i = 1; i < targetCount; i++) {
+        if (!votes[`bot_${i}`]) {
+          const randomCat = mockData.categories[Math.floor(Math.random() * mockData.categories.length)];
+          votes[`bot_${i}`] = randomCat;
+        }
+      }
+    }
+
+    function endVoting() {
+      clearInterval(timerInterval);
+      simulateBotVotes();
+
+      hideEventScreens();
+      showReviewScreen();
+    }
+
+    // --- РЕЗУЛЬТАТЫ ГОЛОСОВАНИЯ (ПОКАЗЫВАЮТСЯ ВСЕМ) ---
+    function showReviewScreen() {
+      screenReview.classList.remove('hidden');
+      overrideSelectBox.classList.add('hidden');
+
+      // Подсчет голосов
+      const counts = {};
+      Object.values(votes).forEach(cat => {
+        counts[cat] = (counts[cat] || 0) + 1;
+      });
+
+      let maxVotes = -1;
+      let winnerCategory = 'Неотсортировано';
+      
+      for (const [cat, count] of Object.entries(counts)) {
+        if (count > maxVotes) {
+          maxVotes = count;
+          winnerCategory = cat;
+        }
+      }
+
+      document.getElementById('btn-accept-winner').dataset.winner = winnerCategory;
+
+      // Сводка результатов
+      let html = `<div style="margin-bottom:8px; font-size: 16px;">Победитель голосования: <b style="color:var(--accent-cyan)">${winnerCategory}</b> (${maxVotes} голосов)</div>`;
+      html += `<div style="color: var(--text-muted); font-size: 13px;">Распределение: `;
+      html += Object.entries(counts).map(([c, v]) => `${c}: <b>${v}</b>`).join(' | ');
+      html += `</div>`;
+      
+      resultsSummary.innerHTML = html;
+
+      // Разделение прав на экране результатов
+      if (isHost) {
+        hostActionsPanel.classList.remove('hidden');
+        userWaitMsg.classList.add('hidden');
+      } else {
+        hostActionsPanel.classList.add('hidden');
+        userWaitMsg.classList.remove('hidden');
+      }
+    }
+
+    function saveDecision(finalCategory) {
+      if (finalCategory !== null) {
+        currentEventResults.push({
+          photoUrl: mockData.photos[currentPhotoIndex].url,
+          category: finalCategory,
+          date: "Только что"
+        });
+      }
+
+      hideEventScreens();
+      if (isHost) {
+        screenNext.classList.remove('hidden');
+      } else {
+        // Участник ждет следующего фото
+        userWaitMsg.textContent = "⏳ Ожидание перехода к следующему фото...";
+        screenReview.classList.remove('hidden');
+      }
+    }
+
+    function finishEvent() {
+      clearInterval(timerInterval);
+      
+      // Добавляем новые результаты в начало истории
+      mockData.pastResults.unshift(...currentEventResults);
+      renderPastResults();
+
+      isEventActive = false;
+      eventOnlineCount = 0;
+      updateCounters();
+
+      eventContainer.classList.add('hidden');
+      timerEl.classList.add('hidden');
+      screenIdle.classList.remove('hidden');
+      
+      updateIdleStateUI();
+    }
+
+    // --- ВСПOМОГАТЕЛЬНЫЕ ФУНКЦИИ ---
+    function hideEventScreens() {
+      screenVoting.classList.add('hidden');
+      screenReview.classList.add('hidden');
+      screenNext.classList.add('hidden');
+    }
+
+    function setupEvents() {
+      // Имитация входа через Telegram API
+      btnTgLogin.onclick = () => {
+        // Запрос данных пользователя если запущено внутри Telegram WebApp
+        if (window.Telegram && window.Telegram.WebApp) {
+          window.Telegram.WebApp.ready();
+          window.Telegram.WebApp.expand();
+        }
+        modalTgAuth.classList.add('hidden');
+      };
+
+      // Переключатель ролей
+      roleSwitch.addEventListener('change', (e) => {
+        isHost = e.target.checked;
+        updateIdleStateUI();
+
+        // Динамическое обновление текущего экрана при смене роли
+        if (isEventActive && !screenReview.classList.contains('hidden')) {
+          showReviewScreen();
+        }
+      });
+
+      // Старт и Присоединение
+      btnHostStart.onclick = () => {
+        eventOnlineCount = 1;
+        startNewEvent();
+      };
+
+      btnUserJoin.onclick = () => {
+        startNewEvent();
+      };
+
+      // Кнопки Организатора
+      document.getElementById('btn-accept-winner').onclick = (e) => {
+        saveDecision(e.target.dataset.winner);
+      };
+      document.getElementById('btn-show-override').onclick = () => {
+        overrideSelectBox.classList.toggle('hidden');
+      };
+      document.getElementById('btn-set-unsorted').onclick = () => {
+        saveDecision('Неотсортировано');
+      };
+      document.getElementById('btn-delete-photo').onclick = () => {
+        saveDecision(null);
+      };
+
+      // Переход к следующему фото
+      document.getElementById('btn-next-photo').onclick = () => {
+        currentPhotoIndex++;
+        loadPhoto(currentPhotoIndex);
+      };
+      document.getElementById('btn-finish-event').onclick = () => {
+        finishEvent();
+      };
+    }
+
+    // Инициализация приложения
+    init();
+  </script>
+</body>
+</html>
