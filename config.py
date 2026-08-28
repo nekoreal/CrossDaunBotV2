@@ -27,4 +27,7 @@ SQLALCHEMY_DATABASE_URI = os.getenv(
     f"mysql+pymysql://{os.getenv('MYSQL_USER')}:{os.getenv('MYSQL_PASSWORD')}@{os.getenv('MYSQL_HOST')}:3306/{os.getenv('MYSQL_DATABASE')}"
 )
 TELEGRAM_CHAT_ID = -1001970834344
+#1059959321 sunya
+#874183602
+MODER_ID=1059959321
 

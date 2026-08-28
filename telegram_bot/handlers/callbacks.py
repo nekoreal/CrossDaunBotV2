@@ -14,7 +14,7 @@ from discord_bot.ds_utils.invite_with_role import verify_role
 from ..tg_utils.reaction import send_react
 import io
 from ..tg_db.db_controllers.photo_controller import add_photo
-from .photo_sorting import MODER_ID
+from config import MODER_ID
 
 @bot.callback_query_handler(
         func=lambda call: call.data.startswith('verify|')
@@ -84,7 +84,7 @@ def handle_tts_selection(call:CallbackQuery):
     only_exc=True,
     time_log=True,
 )
-def handle_moderate(call:CallbackQuery):
+def handle_moderate(call:CallbackQuery): 
     if call.from_user.id != MODER_ID:
         bot.answer_callback_query(call.id, f"❌ Отказано в доступе ❌")
         return

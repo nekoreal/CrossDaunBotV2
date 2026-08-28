@@ -7,7 +7,7 @@ class Category(Base):
     __tablename__ = "categories"
 
     id = Column(Integer, primary_key=True, index=True, unique=True, nullable=False, autoincrement=True)
-    name = Column(String(100, collation="utf8mb4_bin"), unique=True, nullable=False) 
+    name = Column(String(100), unique=True, nullable=False) 
 
     photo = relationship("Photo", back_populates="category" )
 
@@ -26,7 +26,7 @@ class Photo(Base):
 
     id = Column(Integer, primary_key=True, index=True, unique=True, nullable=False, autoincrement=True)
     tg_id = Column(BigInteger, unique=False, nullable=False )
-    file_path = Column(String(1000, collation="utf8mb4_bin"), unique=True, nullable=False)
+    file_path = Column(String(255, collation="utf8mb4_bin"), unique=True, nullable=False)
     category_id = Column(Integer, ForeignKey("categories.id", ondelete="SET NULL"), index=True)
 
     category = relationship("Category", back_populates="photo")

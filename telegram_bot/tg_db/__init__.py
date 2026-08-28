@@ -2,7 +2,7 @@ from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 from config import SQLALCHEMY_DATABASE_URI
 
-engine = create_engine(SQLALCHEMY_DATABASE_URI, echo=False) #echo = True для отслеживания запросов
+engine = create_engine(SQLALCHEMY_DATABASE_URI, echo=False,pool_size=10 ) #echo = True для отслеживания запросов
 SessionLocal = sessionmaker(bind=engine)
 
 

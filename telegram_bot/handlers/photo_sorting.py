@@ -8,8 +8,9 @@ from ..tg_utils.reaction import send_react
 from dataclasses import dataclass, field
 from typing import Dict, Optional  
 import io
-from ..tg_db.db_controllers.photo_controller import add_photo, get_random_photo_url, get_random_photo , move_photo_to_category, delete_photo
+from ..tg_db.db_controllers.photo_controller import add_category , add_photo, get_random_photo_url, get_random_photo , move_photo_to_category, delete_photo
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
+from config import MODER_ID
  
 """@dataclass
 class PollData:
@@ -23,10 +24,88 @@ class PollData:
 poll_data:PollData=PollData()
 """
 
-#1059959321 sunya
-#874183602
-MODER_ID=1059959321
- 
+in_adding={}
+
+@logger(
+    txtfile="telegram_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)   
+def delete_from_adding(tg_id:int):
+    try:
+        in_adding.pop(tg_id)
+    except:
+        pass
+
+@bot.message_handler(
+    func=lambda message: ( message.text or "").startswith("/start_add") ,
+    content_types=["text"],
+)
+@logger(
+    txtfile="telegram_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)   
+def start_adding_photo_from_tg(message:Message|None): 
+    if message.from_user.id != MODER_ID:
+        bot.reply_to(message=message, text=f"Функция только для модераторов")
+        return
+    if message.from_user.id in in_adding.keys():
+        bot.reply_to(message=message, text=f"Ты уже начал эту функцию, советую остановить и запустить заного. /stop_add /start_add")
+        return
+    category=message.text[11:] or None
+    in_adding[message.from_user.id]=category
+    if category: add_category(category)
+    bot.reply_to(message=message, text=f"В течении 30 минут все присланные фото идут, чтобы остановить самому /stop_add ")
+    run_in_thread(delete_from_adding, message.from_user.id, time_sleep=1800)
+
+@bot.message_handler(
+    func=lambda message: ( message.text or "").startswith("/stop_add") ,
+    content_types=["text"],
+)
+@logger(
+    txtfile="telegram_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)   
+def stop_adding_photo_from_tg(message:Message|None): 
+    if not (message.from_user.id in in_adding.keys()):
+        bot.reply_to(message=message, text=f"Ты и не начинал")
+        return 
+    delete_from_adding(message.from_user.id)
+    bot.reply_to(message=message, text=f"Остановлено")
+
+@bot.message_handler(
+    func=lambda message: message.from_user.id == MODER_ID and message.from_user.id in in_adding.keys() ,
+    content_types=["photo"],
+)
+@logger(
+    txtfile="telegram_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)   
+def in_adding_photo(message:Message|None): 
+    if message.from_user.id != MODER_ID:
+        bot.reply_to(message=message, text=f"Функция только для модераторов")
+        return
+    category_name=in_adding[message.from_user.id] 
+    photo = message.photo[-1] 
+    file_info = bot.get_file(photo.file_id) 
+    file_bytes = bot.download_file(file_info.file_path) 
+    buffer = io.BytesIO(file_bytes)
+    if not add_photo(tg_id=message.from_user.id, file_bytes=file_bytes, category=category_name):
+        bot.reply_to(message=message, text=f"Ошибка, попробуйте заного чуть позже")
+
+
+
 
 @bot.message_handler(
     func=lambda message: (message.caption or message.text or "").startswith("/add") and ((message.reply_to_message or message).content_type or None)=='photo',
@@ -55,7 +134,7 @@ def add_photo_from_tg_thread(message:Message|None):
         if len(caption[5:])>5:  caption=caption[5:]
         else:                   caption=""
         send_react(chat_id, message_id, status="wait")
-        send_to_moderate_photo(message, caption=caption)
+        send_to_moderate_photo(message, caption=caption, chat_id_for_callback=chat_id, messge_id_for_callback=message_id)
         return
     category_name = None
     if len(caption[5:])>5:
@@ -70,15 +149,20 @@ def add_photo_from_tg_thread(message:Message|None):
 
     send_react(chat_id=chat_id, message_id=message_id)
 
-def send_to_moderate_photo(message:Message|None, caption:str=""):
+def send_to_moderate_photo(
+        message:Message|None,
+        messge_id_for_callback,
+        chat_id_for_callback,
+        caption:str=""
+        ):
     file_id = message.photo[-1].file_id
     if not file_id: return
 
     caption=f"Фото от {message.from_user.username}\n\nПодпись:{caption or ""}"
 
     reply_markup = InlineKeyboardMarkup() 
-    btn_yes = InlineKeyboardButton("✅ Save", callback_data=f"moderate|save|{message.chat.id}|{message.id}|{message.from_user.username}|{message.from_user.id}")
-    btn_no = InlineKeyboardButton("❌ Delete", callback_data=f"moderate|delete|{message.chat.id}|{message.id}|{message.from_user.username}")
+    btn_yes = InlineKeyboardButton("✅ Save", callback_data=f"moderate|save|{chat_id_for_callback}|{messge_id_for_callback}|{message.from_user.username}|{message.from_user.id}")
+    btn_no = InlineKeyboardButton("❌ Delete", callback_data=f"moderate|delete|{chat_id_for_callback}|{messge_id_for_callback}|{message.from_user.username}")
     reply_markup.add(btn_yes, btn_no) 
 
     bot.send_photo(
