@@ -9,16 +9,32 @@ from s3 import s3_client
 
 def generate_s3_key() -> str:  
     return uuid.uuid4().hex  
+ 
+def add_or_find_category(category_name: str, session_from_call) -> Category|dict|None:
+    """Если передать сессию, вернется Category модель бд
+       Если НЕ передать сессию вернется Category.dict()
+       category_name не может быть чисто цифрами""" 
+    if "/" in category_name:
+        return None
+    try:
+        category_name=int(category_name)
+        return None
+    except:
+        pass
+    if session_from_call:
+        return add_category_logic(category_name=category_name, session=session_from_call)
+    with session_scope() as session: 
+        return add_category_logic(category_name=category_name, session=session).to_dict()
 
+def add_category_logic(category_name: str, session):
+    category=(session.query(Category).filter_by(name=category_name).first())
+    if  category :
+        return category
+    category = Category(name=category_name)
+    session.add(category)
+    session.flush()
+    return category
 
-def add_category(category_name: str) -> bool: 
-    with session_scope() as session:
-        if (session.query(Category).filter_by(name=category_name).first())  :
-            return False
-        category = Category(name=category_name)
-        session.add(category)
-        session.commit()
-        return True
 
 def get_all_categories() -> list[tuple[str, int]]:
     with session_scope() as session:
@@ -42,19 +58,18 @@ def get_all_categories() -> list[tuple[str, int]]:
 
 def add_photo(
         tg_id: int,
-        file_bytes: str,
-        category: str | None = None
+        file_bytes: bytes,
+        category_name: str | None = None
 ) -> bool:
-    with session_scope() as session:
-        if category is None:
+    with session_scope() as session: 
+        if category_name is None:
             category_id = None
         else:
-            category_obj = session.query(Category).filter_by(name=category).first() 
-            if category_obj is None:
-                category_obj = Category(name=category)
-                session.add(category_obj)
-                session.commit()
-            category_id = category_obj.id
+            category = add_or_find_category(category_name=category_name, session_from_call=session)
+            if not category:
+                session.rollback()
+                return False
+            category_id= category.id
         file_path = str(category_id) + "/" + generate_s3_key()
         photo = Photo(tg_id=tg_id, file_path=file_path, category_id=category_id)
         session.add(photo)
@@ -72,11 +87,11 @@ def move_photo_to_category(photo_id: int, category_name: str) -> bool:
         photo = session.query(Photo).filter_by(id=photo_id).first()
         if not photo:
             return False
-        category = session.query(Category).filter_by(name=category_name).first()
+        category = add_or_find_category(category_name=category_name, session_from_call=session)
         if not category:
-            category = Category(name=category_name)
-            session.add(category)
-            session.commit()
+            session.rollback()
+            return False
+        category_id= category.id
 
         photo.category_id = category.id
         old_file_path = photo.file_path
@@ -103,14 +118,14 @@ def delete_photo(photo_id: int) -> bool:
         return True
 
 
-def get_photo_by_id(photo_id:int) -> Optional[bytes]:
+def get_photo_by_id(photo_id:int) -> dict:
     with session_scope() as session:
         photo = (
             session.query(Photo)
             .filter(Photo.id == photo_id)
             .first()
         )
-        if not photo_id: return None
+        if not photo: return None
         photo_bytes = s3_client.download_file(photo.file_path)
         return {
                         "id": photo.id,
@@ -122,10 +137,19 @@ def get_photo_by_id(photo_id:int) -> Optional[bytes]:
     
     
 def get_random_photo(
-        with_category: bool = True
+        with_category: bool = True,
+        category:str = None
 ) -> dict | None:
     with session_scope() as session: 
-        if with_category:
+        if category:
+            photo = (
+                session.query(Photo)
+                .join(Photo.category)
+                .filter(Category.name == category)
+                .order_by(func.random())
+                .first()
+            )
+        elif with_category:
             photo = (
                 session.query(Photo)
                 .filter(Photo.category_id.is_not(None))

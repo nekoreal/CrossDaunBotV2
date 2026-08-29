@@ -8,7 +8,7 @@ from ..tg_utils.reaction import send_react
 from dataclasses import dataclass, field
 from typing import Dict, Optional  
 import io
-from ..tg_db.db_controllers.photo_controller import get_all_categories,get_photo_by_id,add_category , add_photo, get_random_photo_url, get_random_photo , move_photo_to_category, delete_photo
+from ..tg_db.db_controllers.photo_controller import get_all_categories,get_photo_by_id,add_or_find_category , add_photo, get_random_photo_url, get_random_photo , move_photo_to_category, delete_photo
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import MODER_ID
  
@@ -59,7 +59,7 @@ def start_adding_photo_from_tg(message:Message|None):
         return
     category=message.text[11:] or None
     in_adding[message.from_user.id]=category
-    if category: add_category(category)
+    if category: add_or_find_category(category)
     bot.reply_to(message=message, text=f"В течении 30 минут все присланные фото идут, чтобы остановить самому /stop_add ")
     run_in_thread(delete_from_adding, message.from_user.id, time_sleep=1800)
 
@@ -101,7 +101,7 @@ def in_adding_photo(message:Message|None):
     file_info = bot.get_file(photo.file_id) 
     file_bytes = bot.download_file(file_info.file_path) 
     buffer = io.BytesIO(file_bytes)
-    if not add_photo(tg_id=message.from_user.id, file_bytes=file_bytes, category=category_name):
+    if not add_photo(tg_id=message.from_user.id, file_bytes=file_bytes, category_name=category_name):
         bot.reply_to(message=message, text=f"Ошибка, попробуйте заного чуть позже")
 
 
@@ -164,19 +164,20 @@ def add_photo_from_tg_thread(message:Message|None):
         else:                   caption=""
         send_react(chat_id, message_id, status="wait")
         send_to_moderate_photo(message, caption=caption, chat_id_for_callback=chat_id, messge_id_for_callback=message_id)
-        return
-    category_name = None
-    if len(caption[5:])>5:
-        category_name = caption[5:]
+        return  
+    category_name = caption[5:] or None
 
     photo = message.photo[-1] 
     file_info = bot.get_file(photo.file_id) 
     file_bytes = bot.download_file(file_info.file_path) 
     buffer = io.BytesIO(file_bytes)
 
-    add_photo(tg_id=user_id, file_bytes=file_bytes, category=category_name)
+    status="yes"
+    if not add_photo(tg_id=user_id, file_bytes=file_bytes, category_name=category_name):
+        status="no"
+    send_react(chat_id=chat_id, message_id=message_id, status=status)
+        
 
-    send_react(chat_id=chat_id, message_id=message_id)
 
 def send_to_moderate_photo(
         message:Message|None,
@@ -218,19 +219,16 @@ def get_photo(message:Message|None):
 
 def get_photo_thread(message:Message|None):
     send_react(chat_id=message.chat.id, message_id=message.message_id) 
-    id = (message.text[7:] or None)
-    if id:
-        try:
-            id = int(id)
-        except:
-            bot.reply_to(message=message, text=f"ID это цифры или в школе не проходил? ")
-            return
-        photo = get_photo_by_id(id) 
-        if not photo:
-            bot.reply_to(message=message, text=f"Такого ID нет, плаки плаки ")
-            return
+    id_or_name = (message.text[7:] or None)
+    category_name,id=None, None
+    try:
+        id = int(id_or_name)
+    except:
+        category_name=id_or_name or None
+    if id: 
+        photo = get_photo_by_id(id)  
     else:
-        photo = get_random_photo() 
+        photo = get_random_photo(category=category_name) 
 
     if photo:
         from_user = bot.get_chat_member(chat_id=TELEGRAM_CHAT_ID, user_id=photo["tg_id"]).user.username or None
@@ -240,7 +238,7 @@ def get_photo_thread(message:Message|None):
             caption=f"Photo ID: {photo['id']}\nCategory: {photo['category']}\nFrom: @{from_user}"
         ) 
     else: 
-        bot.reply_to(message, "No photo found.")    
+        bot.reply_to(message, "No photo found.плаки плаки")    
 
 
  
