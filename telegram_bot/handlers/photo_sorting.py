@@ -8,7 +8,7 @@ from ..tg_utils.reaction import send_react
 from dataclasses import dataclass, field
 from typing import Dict, Optional  
 import io
-from ..tg_db.db_controllers.photo_controller import add_category , add_photo, get_random_photo_url, get_random_photo , move_photo_to_category, delete_photo
+from ..tg_db.db_controllers.photo_controller import get_all_categories,get_photo_by_id,add_category , add_photo, get_random_photo_url, get_random_photo , move_photo_to_category, delete_photo
 from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton
 from config import MODER_ID
  
@@ -108,6 +108,35 @@ def in_adding_photo(message:Message|None):
 
 
 @bot.message_handler(
+    func=lambda message: (message.text or "").startswith("/themes"), 
+    content_types=["text"],
+)
+@logger(
+    txtfile="telegram_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)   
+def get_themes(message:Message|None):  
+    run_in_thread(get_themes_thread, message)
+
+def get_themes_thread(message: Message | None): 
+    categories = get_all_categories()
+
+    lines = ["📊  Статистика по категориям: \n"]
+    total_photos = sum(count for _, count in categories)
+
+    for cat_title, cat_count in categories:
+        lines.append(f"▫️ {cat_title}: {cat_count} шт.")
+
+    lines.append(f"\n📈 Всего фотографий: {total_photos}")
+
+    if message:
+        bot.reply_to(message, text="\n".join(lines), parse_mode="Markdown")
+
+
+@bot.message_handler(
     func=lambda message: (message.caption or message.text or "").startswith("/add") and ((message.reply_to_message or message).content_type or None)=='photo',
     content_types=["photo","text"],
 )
@@ -174,7 +203,7 @@ def send_to_moderate_photo(
 
 
 @bot.message_handler(
-    func=lambda message: (message.text or "") == "/photo", 
+    func=lambda message: (message.text or "").startswith("/photo"), 
     content_types=["text"],
 )
 @logger(
@@ -189,7 +218,19 @@ def get_photo(message:Message|None):
 
 def get_photo_thread(message:Message|None):
     send_react(chat_id=message.chat.id, message_id=message.message_id) 
-    photo = get_random_photo() 
+    id = (message.text[7:] or None)
+    if id:
+        try:
+            id = int(id)
+        except:
+            bot.reply_to(message=message, text=f"ID это цифры или в школе не проходил? ")
+            return
+        photo = get_photo_by_id(id) 
+        if not photo:
+            bot.reply_to(message=message, text=f"Такого ID нет, плаки плаки ")
+            return
+    else:
+        photo = get_random_photo() 
 
     if photo:
         from_user = bot.get_chat_member(chat_id=TELEGRAM_CHAT_ID, user_id=photo["tg_id"]).user.username or None

@@ -1,6 +1,6 @@
 
 from sqlalchemy import func
-
+from typing import Optional
 from ..import session_scope
 from ..models.photo import Photo, Category 
 import uuid 
@@ -19,6 +19,25 @@ def add_category(category_name: str) -> bool:
         session.add(category)
         session.commit()
         return True
+
+def get_all_categories() -> list[tuple[str, int]]:
+    with session_scope() as session:
+        results = (
+            session.query(
+                Category.id,
+                Category.name,
+                func.count(Photo.id).label("photo_count"),
+            )
+            .outerjoin(Photo, Category.id == Photo.category_id)
+            .group_by(Category.id, Category.name)
+            .order_by(func.count(Photo.id).desc())  
+            .all()
+        )
+ 
+        return [
+            (f"{name} (ID {cat_id})", photo_count)
+            for cat_id, name, photo_count in results
+        ]
 
 
 def add_photo(
@@ -83,6 +102,24 @@ def delete_photo(photo_id: int) -> bool:
         session.commit()
         return True
 
+
+def get_photo_by_id(photo_id:int) -> Optional[bytes]:
+    with session_scope() as session:
+        photo = (
+            session.query(Photo)
+            .filter(Photo.id == photo_id)
+            .first()
+        )
+        if not photo_id: return None
+        photo_bytes = s3_client.download_file(photo.file_path)
+        return {
+                        "id": photo.id,
+                        "tg_id": photo.tg_id,
+                        "category": photo.category.name if photo.category else None,
+                        "file_bytes": photo_bytes
+                    } if photo_bytes else None
+
+    
     
 def get_random_photo(
         with_category: bool = True
