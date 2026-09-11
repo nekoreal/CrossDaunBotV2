@@ -28,7 +28,8 @@ services:
       - "9000:9000"
       - "9001:9001"
     volumes:
-      - minio_data:/data
+      - minio_data:/data 
+      - /CrossDaunBotV2/minio-certs:/root/.minio/certs
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
       interval: 5s
