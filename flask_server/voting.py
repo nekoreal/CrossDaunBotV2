@@ -151,7 +151,7 @@ class Poll:
             self.winning_category = category_name 
             if (self.photo_id is not None) and (category_name is not None):
                 try:
-                    #move_photo_to_category(self.photo_id, category_name)
+                    move_photo_to_category(self.photo_id, category_name)
                     pass
                 except Exception as e:
                     print(f"Ошибка при перемещении фото {self.photo_id}: {e}") 
