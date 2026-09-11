@@ -22,12 +22,12 @@ def verify_telegram_data(data: dict, token: str) -> bool:
 voting_bp=Blueprint('voting_bp', __name__)
  
 
-@voting_bp.route("vote/start")
+@voting_bp.route("/vote/start")
 def start_vote():  
     return "Ошибка авторизации: недействительная подпись или вы не член сообщества заводчан", 400
 
 
-@voting_bp.route("vote/connect")
+@voting_bp.route("/vote/connect")
 def start_vote():  
     return "Ошибка авторизации: недействительная подпись или вы не член сообщества заводчан", 400
 
