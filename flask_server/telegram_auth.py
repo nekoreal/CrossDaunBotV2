@@ -4,6 +4,7 @@ from sqlalchemy import text as sql_text#для сырых запросов те�
 from sqlalchemy.sql.functions import current_user
 from io import BytesIO  
 from config import TELEGRAM_BOT_USERNAME, TELEGRAM_TOKEN, MODER_ID
+from flask_server.voting import is_started_poll
 from telegram_bot.tg_db.db_controllers.user_controller import find_user_by_tg_id
 
 def verify_telegram_data(data: dict, token: str) -> bool:
@@ -40,7 +41,7 @@ def auth_telegram():
 @entry_telegram_bp.route("/home")
 def home():
     user = session.get("user")
-    return render_template("home.html", user=user, bot_username=TELEGRAM_BOT_USERNAME, is_started=True)
+    return render_template("home.html", user=user, bot_username=TELEGRAM_BOT_USERNAME, is_started=is_started_poll())
 
 @entry_telegram_bp.route("/logout")
 def logout():

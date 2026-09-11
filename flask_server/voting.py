@@ -176,6 +176,8 @@ class Poll:
             "end_time": self.end_time  # Передаем точное время окончания
         }
 
+def is_started_poll() -> bool:
+    return poll.is_started
 
 poll = Poll()
 voting_bp = Blueprint('voting_bp', __name__)
