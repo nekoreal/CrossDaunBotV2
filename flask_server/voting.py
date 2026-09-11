@@ -28,7 +28,7 @@ def start_vote():
 
 
 @voting_bp.route("/vote/connect")
-def start_vote():  
+def connect_to_voting():  
     return "Ошибка авторизации: недействительная подпись или вы не член сообщества заводчан", 400
 
  
