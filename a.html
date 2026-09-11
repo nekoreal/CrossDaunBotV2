@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель Голосования | Telegram Portal</title>
+    <!-- Socket.IO Client CDN -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0c10;
+            --card-bg: rgba(18, 22, 31, 0.75);
+            --accent-cyan: #00f2fe;
+            --accent-purple: #9d4edd;
+            --text-main: #f0f4f8;
+            --text-muted: #8a99ad;
+            --border-glow: rgba(0, 242, 254, 0.15);
+            --danger: #ff5555;
+            --success: #00e676;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+            padding: 20px;
+        }
+
+        /* Фоновые неоновые пятна */
+        .glow-sphere-1 {
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(157, 78, 221, 0.25) 0%, rgba(0,0,0,0) 70%);
+            top: 10%;
+            left: 15%;
+            z-index: 0;
+            filter: blur(50px);
+            animation: pulse 8s infinite alternate ease-in-out;
+        }
+
+        .glow-sphere-2 {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(0, 242, 254, 0.2) 0%, rgba(0,0,0,0) 70%);
+            bottom: 10%;
+            right: 15%;
+            z-index: 0;
+            filter: blur(60px);
+            animation: pulse 10s infinite alternate-reverse ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.15) translate(20px, -20px); }
+        }
+
+        /* Главная карточка */
+        .auth-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 680px;
+            padding: 35px 30px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6),
+                        0 0 30px rgba(0, 242, 254, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Верхняя информационная плашка */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .badge-cyan {
+            color: var(--accent-cyan);
+            border-color: rgba(0, 242, 254, 0.3);
+            font-weight: 600;
+        }
+
+        .timer-badge {
+            color: var(--accent-cyan);
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        /* Кнопки */
+        .btn-def {
+            display: inline-block;
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #00f2fe;
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-def:hover {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: rgba(0, 242, 254, 0.6);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+        }
+
+        .btn-logout {
+            display: inline-block;
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--danger);
+            border: 1px solid rgba(255, 85, 85, 0.3);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 85, 85, 0.15);
+            border-color: rgba(255, 85, 85, 0.5);
+        }
+
+        /* Анимация ожидания */
+        .loader-ring {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(0, 242, 254, 0.1);
+            border-top: 3px solid var(--accent-cyan);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Изображение */
+        .photo-container {
+            width: 100%;
+            max-height: 380px;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid var(--border-glow);
+            background: #000;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .photo-container img {
+            width: 100%;
+            height: 100%;
+            max-height: 380px;
+            object-fit: contain;
+        }
+
+        /* Сетка категорий */
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        /* Список результатов */
+        .results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px 16px;
+            border-radius: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        /* Блок управления модератора */
+        .moderator-panel {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .cat-select-box {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="glow-sphere-1"></div>
+    <div class="glow-sphere-2"></div> 
+    <div class="auth-card">
+
+        <!-- Верхняя плашка (Таймер и счетчик) -->
+        <div id="topBar" class="top-bar">
+            <div class="badge badge-cyan">
+                👥 Проголосовало: <span id="votedCount">0</span>/<span id="totalUsers">0</span>
+            </div>
+            <div class="badge timer-badge">
+                ⏱ <span id="timer">00:00</span>
+            </div>
+        </div>
+
+        <!-- ================= 1. ЭКРАН ОЖИДАНИЯ ================= -->
+        <div id="screenWaiting" style="text-align: center; padding: 20px 0;" class="hidden">
+            <div class="loader-ring"></div>
+            <h1 style="font-size: 1.4rem; margin-bottom: 10px;">Ожидание решения модератора</h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">
+                {% if user.is_moder %}
+                    Вы зашли как модератор. Нажмите кнопку ниже, чтобы запустить раунд голосования.
+                {% else %}
+                    Организатор подготавливает следующее фото. Ожидайте начала...
+                {% endif %}
+            </p>
+
+            {% if user.is_moder %}
+                <button class="btn-def" style="margin-top: 25px;" onclick="moderStartRound()">
+                    Продолжить голосование
+                </button>
+            {% endif %}
+        </div>
+
+        <!-- ================= 2. ЭКРАН ГОЛОСОВАНИЯ ================= -->
+        <div id="screenVoting" class="hidden">
+            <div class="photo-container">
+                <img id="votingPhoto" src="" alt="Фото для голосования">
+            </div>
+
+            <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">
+                Выберите подходящую категорию для этого изображения:
+            </p>
+
+            <div id="categoriesContainer" class="categories-grid">
+                <!-- Категории рендерятся из JS -->
+            </div>
+        </div>
+
+        <!-- ================= 3. ЭКРАН РЕЗУЛЬТАТОВ ================= -->
+        <div id="screenResults" class="hidden">
+            <h2 style="text-align: center; font-size: 1.3rem; margin-bottom: 15px;">Результаты раунда</h2>
+            
+            <div class="photo-container" style="max-height: 200px;">
+                <img id="resultPhoto" src="" alt="Фото">
+            </div>
+
+            <div class="results-list" id="resultsList">
+                <!-- Результаты рендерятся из JS -->
+            </div>
+
+            <!-- Блок модератора -->
+            {% if user.is_moder %}
+                <div class="moderator-panel">
+                    <p style="font-size: 0.85rem; color: var(--accent-cyan); font-weight: 600;">Управление организатора:</p>
+                    
+                    <button class="btn-def" onclick="sendModerDecision('unsorted')">
+                        Отправить в неотсортированное
+                    </button>
+                    
+                    <button id="btnWinnerCat" class="btn-def" onclick="sendModerDecision('winner')">
+                        Отправить в победившую категорию
+                    </button>
+                    
+                    <button class="btn-def" onclick="toggleCustomCategories()">
+                        Выбрать категорию вручную...
+                    </button>
+                    
+                    <div id="customCatBox" class="cat-select-box">
+                        <!-- Динамический выбор категорий -->
+                    </div>
+
+                    <button class="btn-logout" onclick="sendModerDecision('delete')">
+                        Удалить фото
+                    </button>
+
+                    <div style="display: flex; gap: 10px; margin-top: 15px;">
+                        <button class="btn-def" onclick="moderStartRound()">Продолжить (След. круг)</button>
+                        <a href="{{ url_for('entry_telegram_bp.home') }}" class="btn-logout">Закончить</a>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <script>
+    </script>
+</body>
+</html>

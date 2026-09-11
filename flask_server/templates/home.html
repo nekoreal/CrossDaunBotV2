@@ -201,8 +201,7 @@
 
         .btn-logout:hover {
             background: rgba(255, 85, 85, 0.15);
-            border-color: rgba(255, 85, 85, 0.4);
-            transform: translateY(-2px);
+            border-color: rgba(255, 85, 85, 0.4); 
         }
 
         .btn-def {
@@ -221,8 +220,7 @@
 
         .btn-def:hover {
             background: rgba(51, 254, 251, 0.15);
-            border-color: rgba(13, 238, 250, 0.4);
-            transform: translateY(-2px);
+            border-color: rgba(13, 238, 250, 0.4); 
         }
     </style>
 </head>
@@ -251,13 +249,14 @@
                     <div class="user-id">ID: {{ user.id }}</div>
                 </div>
 
-                <a href="{{ url_for('entry_telegram_bp.logout') }}" class="btn-logout">Выйти из аккаунта</a>
-                {% if user.is_moder %}
-                    <a href="{{ url_for('voting_bp.start_vote') }}" class="btn-def">Начать голосование</a>
-                {% endif %}
                 {% if is_started %}
-                    <a href="{{ url_for('voting_bp.connect_to_voting') }}" class="btn-def">Начать голосование</a>
+                <a href="{{ url_for('voting_bp.connect_to_poll') }}" class="btn-def">Присоединиться к голосованию</a>
+                {% else %}
+                    {% if user.is_moder %}
+                    <a href="{{ url_for('voting_bp.start_poll') }}" class="btn-def">Начать голосование</a>
+                    {% endif %}
                 {% endif %}
+                <a href="{{ url_for('entry_telegram_bp.logout') }}" class="btn-logout">Выйти из аккаунта</a>
             </div>
         {% else %}
             <!-- Состояние авторизации -->

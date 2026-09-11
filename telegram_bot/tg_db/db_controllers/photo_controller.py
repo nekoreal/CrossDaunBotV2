@@ -26,6 +26,14 @@ def add_or_find_category(category_name: str, session_from_call) -> Category|dict
     with session_scope() as session: 
         return add_category_logic(category_name=category_name, session=session).to_dict()
 
+def get_all_categories_names() -> list[str]:
+    with session_scope() as session:
+        results = (
+            session.query( Category )    
+            .all()
+        ) 
+        return [ category.name for category in results ] or None
+
 def add_category_logic(category_name: str, session):
     category=(session.query(Category).filter_by(name=category_name).first())
     if  category :
@@ -200,4 +208,11 @@ def get_random_photo_url(
                 },
                 ExpiresIn=900   
             )
-            return presigned_url 
+            return {
+                        "id": photo.id,
+                        "tg_id": photo.tg_id,
+                        "category": photo.category.name if photo.category else None,
+                        "file_url": presigned_url
+                    } 
+        else:
+            return None
