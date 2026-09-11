@@ -64,8 +64,7 @@ class Poll:
                     try:
                         disconnect(user.sid)
                     except Exception:
-                        pass
-                    new_user.vote = user.vote  # Сохраняем прошлый голос при переподключении
+                        pass 
                     self.users[ind] = new_user
                     return
             self.users.append(new_user)
@@ -83,7 +82,7 @@ class Poll:
             self.change_status("waiting")
 
     def start_round(self, photo_id: int, photo_url: str = None):
-        with self._lock:
+        with self._lock: 
             self.winning_category = None
             self.photo_id = photo_id
             self.photo_url = photo_url
@@ -139,7 +138,6 @@ class Poll:
             for user in self.users:
                 if user.vote and user.vote in results:
                     results[user.vote]["photo_urls"].append(user.photo_url)
-                user.vote = None   
 
             self.results = results 
 
