@@ -16,7 +16,7 @@ from telegram_bot.tg_db.db_controllers.daily_statistic_controller import (
     get_group_stats_period,
 )
 from telegram_bot.bot import bot
-from config import TELEGRAM_CHAT_ID, FLASK_SECRET_KEY 
+from config import TELEGRAM_CHAT_ID, FLASK_SECRET_KEY , FLASK_PORT
 from telegram_bot.tg_utils.avatar import get_and_resize_chat_photo
 from telegram_bot.handlers.statistics import get_day_msg_count
 from sqlalchemy import func
@@ -133,4 +133,4 @@ def index():
     return render_template('index.html', data=data, reverse=True)
 
 def run_flask():
-    app.run(debug=False, host='0.0.0.0', port=5002 )
+    app.run(debug=False, host='0.0.0.0', port=FLASK_PORT, ssl_context='adhoc' )

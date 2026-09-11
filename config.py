@@ -3,6 +3,8 @@ import os
 
 
 FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "default_secret_key")
+FLASK_PORT = 443
+
 
 rabbitmq_user = os.getenv("RABBITMQ_USER" )
 rabbitmq_password = os.getenv("RABBITMQ_PASSWORD" )
