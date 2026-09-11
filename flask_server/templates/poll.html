@@ -417,6 +417,10 @@
         function updatePollUI(state) {
             document.getElementById('votedCount').innerText = state.voted;
             document.getElementById('totalUsers').innerText = state.total;
+            
+            if (state.status === 'in_progress' || state.status === 'waiting') {
+                selectedVote = state.user_vote || null;
+            }
 
             const screenWaiting = document.getElementById('screenWaiting');
             const screenVoting = document.getElementById('screenVoting');
