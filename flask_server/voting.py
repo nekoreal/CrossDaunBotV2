@@ -9,7 +9,7 @@ from telegram_bot.tg_db.db_controllers.photo_controller import (
     move_photo_to_category,
     get_random_photo_url
 )
-from dashboard import socketio
+from flask_server.dashboard import socketio
 
 
 @dataclass
