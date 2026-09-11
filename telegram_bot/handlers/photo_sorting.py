@@ -260,7 +260,7 @@ def get_url_photo_thread(message:Message|None):
     send_react(chat_id=message.chat.id, message_id=message.message_id) 
     url_photo = get_random_photo_url(with_category=False) 
     if url_photo:
-        bot.reply_to(message, url_photo) 
+        bot.reply_to(message, url_photo["file_url"]) 
     else: 
         bot.reply_to(message, "No photo  found.")
     

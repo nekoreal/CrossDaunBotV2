@@ -126,7 +126,7 @@ class Poll:
                 return
 
             self.change_status("results")
-            results = {cat.name: {"count": cat.votes, "photo_urls": []} for cat in self.categories}
+            results = {cat.name: {"count": cat.votes, "photo_urls": []} for cat in self.categories if cat.votes > 0}
             
             self.winning_category = None
             max_votes = -1
@@ -139,16 +139,26 @@ class Poll:
             for user in self.users:
                 if user.vote and user.vote in results:
                     results[user.vote]["photo_urls"].append(user.photo_url)
+                user.vote = None   
 
-            self.results = results
- 
-            """if self.winning_category and self.photo_id and max_votes > 0:
-                try:
-                    move_photo_to_category(self.photo_id, winning_category)
-                except Exception:
-                    pass"""
+            self.results = results 
 
         socketio.emit("poll_state", self.data_poll_state())
+
+    def apply_moder_decision(self, category_name: str | None) -> bool:
+        """Применяет выбор модератора (категория или None) и переводит в статус 'decision'."""
+        with self._lock: 
+            if self.status != "results":
+                return False 
+            self.winning_category = category_name 
+            if (self.photo_id is not None) and (category_name is not None):
+                try:
+                    #move_photo_to_category(self.photo_id, category_name)
+                    pass
+                except Exception as e:
+                    print(f"Ошибка при перемещении фото {self.photo_id}: {e}") 
+            self.change_status("decision")
+            return True
 
     def stop_poll(self):
         with self._lock:
@@ -283,16 +293,23 @@ def handle_start_round(data=None):
         photo_id = photo["id"]
         photo_url = photo["file_url"]
         
-        poll.start_round(photo_id, photo_url)
+        poll.start_round(photo_id, photo_url=photo_url)
         socketio.start_background_task(
             handle_end_round, 
             round_num=poll.round, 
             timeout=poll.timer
         )
 
-
-@socketio.on("moder_end_round")
-def handle_moder_end_round(data=None):
+@socketio.on("moder_decision")
+def handle_moder_decision(data):
     user_data = session.get("user")
-    if user_data and user_data.get("is_moder"):
-        poll.end_round()
+    if not user_data or not user_data.get("is_moder"):
+        emit("alert", {"message": "Недостаточно прав"})
+        return
+ 
+    category_name = data.get("category") if data else None 
+
+    if poll.apply_moder_decision(category_name): 
+        socketio.emit("poll_state", poll.data_poll_state())
+    else:
+        emit("alert", {"message": "Не удалось применить решение модератора"})

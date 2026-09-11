@@ -265,6 +265,12 @@
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
         }
+        .tie-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            margin-bottom: 5px;
+        }
 
         .hidden { display: none !important; }
     </style>
@@ -331,16 +337,37 @@
                 <!-- Результаты рендерятся из JS -->
             </div>
 
-            <!-- Блок модератора -->
+            <!-- Блок модератора --> 
             {% if user.is_moder %}
                 <div class="moderator-panel">
                     <p style="font-size: 0.85rem; color: var(--accent-cyan); font-weight: 600;">Управление организатора:</p>
 
-                    <div style="display: flex; gap: 10px; margin-top: 5px;">
-                        <button class="btn-def" onclick="moderStartRound()">Следующий круг</button>
-                        <button class="btn-logout" onclick="moderEndRound()">Завершить раунд</button>
+                    <!-- Блок принятия решения (видимый в состоянии results) -->
+                    <div id="moderDecisionBlock" class="hidden" style="display: flex; flex-direction: column; gap: 8px;">
+                        
+                        <!-- Кнопка при одиночном победителе -->
+                        <button id="btnAgreeWinner" class="btn-def hidden" onclick="moderChooseCategory('winner')">
+                            Согласиться с победителем
+                        </button>
+
+                        <!-- Кнопки при ничьей -->
+                        <div id="tieCategoriesContainer" class="tie-buttons-grid hidden">
+                            <!-- Категории ничьи сгенерируются из JS -->
+                        </div>
+
+                        <!-- Оставить неотсортированным -->
+                        <button class="btn-def" style="border-color: rgba(255,255,255,0.3); color: var(--text-main);" onclick="moderChooseCategory(null)">
+                            Оставить неотсортированным
+                        </button>
                     </div>
-                    <a href="{{ url_for('voting_bp.stop_poll') }}" class="btn-logout" style="margin-top: 5px;">Остановить всё голосование</a>
+
+                    <!-- Кнопка "Следующий круг" (видимая только в состоянии decision) -->
+                    <div style="display: flex; gap: 10px; margin-top: 5px;">
+                        <button id="moderStartRoundBtn" class="btn-def hidden" onclick="moderStartRound()">Следующий круг</button> 
+                    </div>
+
+                    <!-- Кнопка "Завершить голосование" всегда присутствует на экране результатов -->
+                    <a href="{{ url_for('voting_bp.stop_poll') }}" class="btn-logout" style="margin-top: 5px;">Завершить голосование</a>
                 </div>
             {% endif %}
         </div>
@@ -406,12 +433,15 @@
                 screenVoting.classList.remove('hidden');
                 document.getElementById('votingPhoto').src = state.photo_url || '';
                 renderCategories(state.categories);
-                startTimer(state.end_time);
-            } else if (state.status === 'results') {
+                startTimer(state.end_time); 
+            } else if (state.status === 'results' || state.status === 'decision') {
                 screenResults.classList.remove('hidden');
                 document.getElementById('resultPhoto').src = state.photo_url || '';
                 renderResults(state.results);
                 stopTimer();
+
+                // Добавлен вызов настройки UI модератора
+                setupModeratorDecisionUI(state);
             }
         }
 
@@ -475,11 +505,7 @@
         function moderStartRound() {
             selectedVote = null;
             socket.emit('moder_start_round');
-        }
-
-        function moderEndRound() {
-            socket.emit('moder_end_round');
-        }
+        } 
 
         // Таймер обратного отсчета
         function startTimer(endTimeSeconds) {
@@ -510,6 +536,75 @@
                 timerInterval = null;
             }
             document.getElementById('timer').innerText = "00:00";
+        }
+
+        // Логика отображения элементов управления модератора на экране результатов
+        function setupModeratorDecisionUI(state) {
+            const decisionBlock = document.getElementById('moderDecisionBlock');
+            const startRoundBtn = document.getElementById('moderStartRoundBtn');
+            const agreeWinnerBtn = document.getElementById('btnAgreeWinner');
+            const tieContainer = document.getElementById('tieCategoriesContainer');
+
+            if (!decisionBlock || !startRoundBtn) return; // Проверка, если зашел не модератор
+
+            if (state.status === 'results') {
+                decisionBlock.classList.remove('hidden');
+                startRoundBtn.classList.add('hidden');
+
+                // Определение победителя / ничьи
+                const results = state.results || {};
+                let maxVotes = -1;
+                let topCategories = [];
+
+                for (const [catName, data] of Object.entries(results)) {
+                    if (data.count > maxVotes) {
+                        maxVotes = data.count;
+                        topCategories = [catName];
+                    } else if (data.count === maxVotes && maxVotes > 0) {
+                        topCategories.push(catName);
+                    }
+                }
+
+                agreeWinnerBtn.classList.add('hidden');
+                tieContainer.classList.add('hidden');
+                tieContainer.innerHTML = '';
+
+                // Если есть ровно один лидер с голосами больше 0
+                if (topCategories.length === 1 && maxVotes > 0) {
+                    agreeWinnerBtn.innerText = `Согласиться с победителем (${topCategories[0]})`;
+                    agreeWinnerBtn.dataset.category = topCategories[0];
+                    agreeWinnerBtn.classList.remove('hidden');
+                } 
+                // Если ничья среди 2 и более категорий
+                else if (topCategories.length > 1 && maxVotes > 0) {
+                    topCategories.forEach(cat => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn-def';
+                        btn.innerText = `Победитель: ${cat}`;
+                        btn.onclick = () => moderChooseCategory(cat);
+                        tieContainer.appendChild(btn);
+                    });
+                    tieContainer.classList.remove('hidden');
+                }
+
+            } else if (state.status === 'decision') {
+                // В состоянии decision кнопки решений скрываются, появляется "Следующий круг"
+                decisionBlock.classList.add('hidden');
+                startRoundBtn.classList.remove('hidden');
+            }
+        }
+
+        // Отправка решения модератора на сервер
+        function moderChooseCategory(choice) {
+            let selectedCategory = choice;
+            
+            // Если была нажата кнопка "Согласиться с победителем", берем сохраненную категорию
+            if (choice === 'winner') {
+                const agreeBtn = document.getElementById('btnAgreeWinner');
+                selectedCategory = agreeBtn.dataset.category;
+            }
+
+            socket.emit('moder_decision', { category: selectedCategory });
         }
     </script>
 </body>
