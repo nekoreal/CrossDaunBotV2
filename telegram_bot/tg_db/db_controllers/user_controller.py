@@ -30,7 +30,7 @@ def get_user(tg_id):
             session.commit()
         return user.to_dict()
 
-def find_user_by_tg_id(tg_id)->bool:
+def find_user_by_tg_id(tg_id:int)->bool:
     with session_scope() as session:
         user = session.query(TelegramUser).filter_by(tg_id=tg_id).first()
         if user is not None:

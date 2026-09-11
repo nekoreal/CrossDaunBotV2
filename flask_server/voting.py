@@ -19,32 +19,16 @@ def verify_telegram_data(data: dict, token: str) -> bool:
 
     return hmac.compare_digest(calculated_hash, check_hash)
 
-entry_telegram_bp=Blueprint('entry_telegram_bp', __name__)
-
-
-@entry_telegram_bp.route("/auth_telegram")
-def auth_telegram(): 
-    data = request.args.to_dict()
+voting_bp=Blueprint('voting_bp', __name__)
  
-    if verify_telegram_data(data, TELEGRAM_TOKEN) and find_user_by_tg_id(int(data.get("id"))): 
-        session["user"] = {
-            "id": data.get("id"),
-            "username": data.get("username", ""),
-            "photo_url": data.get("photo_url", ""),
-            "is_moder": MODER_ID==int(data.get("id"))
-        } 
-        return redirect(url_for("entry_telegram_bp.home"))
-    
+
+@voting_bp.route("vote/start")
+def start_vote():  
     return "Ошибка авторизации: недействительная подпись или вы не член сообщества заводчан", 400
 
-@entry_telegram_bp.route("/home")
-def home():
-    user = session.get("user")
-    return render_template("home.html", user=user, bot_username=TELEGRAM_BOT_USERNAME, is_started=True)
 
-@entry_telegram_bp.route("/logout")
-def logout():
-    session.pop("user", None)
-    return redirect(url_for("entry_telegram_bp.home"))
+@voting_bp.route("vote/connect")
+def start_vote():  
+    return "Ошибка авторизации: недействительная подпись или вы не член сообщества заводчан", 400
 
  

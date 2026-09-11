@@ -204,6 +204,26 @@
             border-color: rgba(255, 85, 85, 0.4);
             transform: translateY(-2px);
         }
+
+        .btn-def {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 24px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #00a0a8;
+            border: 1px solid rgba(0, 203, 238, 0.2);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-def:hover {
+            background: rgba(51, 254, 251, 0.15);
+            border-color: rgba(13, 238, 250, 0.4);
+            transform: translateY(-2px);
+        }
     </style>
 </head>
 <body>
@@ -232,6 +252,12 @@
                 </div>
 
                 <a href="{{ url_for('entry_telegram_bp.logout') }}" class="btn-logout">Выйти из аккаунта</a>
+                {% if user.is_moder %}
+                    <a href="{{ url_for('voting_bp.vote/start') }}" class="btn-def">Начать голосование</a>
+                {% endif %}
+                {% if is_started %}
+                    <a href="{{ url_for('voting_bp.vote/connect') }}" class="btn-def">Начать голосование</a>
+                {% endif %}
             </div>
         {% else %}
             <!-- Состояние авторизации -->

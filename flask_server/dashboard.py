@@ -25,7 +25,9 @@ app.config["TELEGRAM_BOT_TOKEN"] = TELEGRAM_TOKEN
 app.config["SECRET_KEY"] = FLASK_SECRET_KEY  
 
 from flask_server.telegram_auth import entry_telegram_bp
+from flask_server.voting import voting_bp
 app.register_blueprint(entry_telegram_bp)  
+app.register_blueprint(voting_bp)
 
 
 from collections import defaultdict
