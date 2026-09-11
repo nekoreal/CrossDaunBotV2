@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Авторизация | Telegram Portal</title>
+    <style>
+        :root {
+            --bg-primary: #0a0c10;
+            --card-bg: rgba(18, 22, 31, 0.75);
+            --accent-cyan: #00f2fe;
+            --accent-purple: #9d4edd;
+            --text-main: #f0f4f8;
+            --text-muted: #8a99ad;
+            --border-glow: rgba(0, 242, 254, 0.15);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Фоновые неоновые пятна */
+        .glow-sphere-1 {
+            position: absolute;
+            width: 350px;
+            height: 350px;
+            background: radial-gradient(circle, rgba(157, 78, 221, 0.25) 0%, rgba(0,0,0,0) 70%);
+            top: 15%;
+            left: 20%;
+            z-index: 0;
+            filter: blur(40px);
+            animation: pulse 8s infinite alternate ease-in-out;
+        }
+
+        .glow-sphere-2 {
+            position: absolute;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(0, 242, 254, 0.2) 0%, rgba(0,0,0,0) 70%);
+            bottom: 15%;
+            right: 20%;
+            z-index: 0;
+            filter: blur(50px);
+            animation: pulse 10s infinite alternate-reverse ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.15) translate(20px, -20px); }
+        }
+
+        /* Карточка авторизации */
+        .auth-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 420px;
+            padding: 40px 30px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6),
+                        0 0 30px rgba(0, 242, 254, 0.05);
+            text-align: center;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .auth-card:hover {
+            border-color: rgba(0, 242, 254, 0.3);
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7),
+                        0 0 40px rgba(0, 242, 254, 0.12);
+        }
+
+        /* Логотип / Иконка */
+        .icon-wrapper {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto 24px;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+        }
+
+        .icon-wrapper svg {
+            width: 42px;
+            height: 42px;
+            fill: #ffffff;
+            transform: translateX(-2px) translateY(1px);
+        }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 8px;
+            letter-spacing: 0.5px;
+            background: linear-gradient(90deg, #ffffff, #dcdcdc);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        p.subtitle {
+            font-size: 0.95rem;
+            color: var(--text-muted);
+            margin-bottom: 30px;
+            line-height: 1.4;
+        }
+
+        /* Контейнер виджета Telegram */
+        .telegram-widget-container {
+            min-height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        /* Блок профиля авторизованного пользователя */
+        .profile-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .avatar {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 2px solid var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+            object-fit: cover;
+        }
+
+        .avatar-placeholder {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 2rem;
+            font-weight: bold;
+            color: #fff;
+        }
+
+        .user-info {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .user-name {
+            font-size: 1.3rem;
+            font-weight: 600;
+        }
+
+        .user-username {
+            font-size: 0.9rem;
+            color: var(--accent-cyan);
+        }
+
+        .user-id {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            margin-top: 4px;
+        }
+
+        .btn-logout {
+            display: inline-block;
+            margin-top: 20px;
+            padding: 10px 24px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #ff5555;
+            border: 1px solid rgba(255, 85, 85, 0.2);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 85, 85, 0.15);
+            border-color: rgba(255, 85, 85, 0.4);
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glow-sphere-1"></div>
+    <div class="glow-sphere-2"></div>
+
+    <div class="auth-card">
+        {% if user %}
+            <!-- Авторизованное состояние -->
+            <div class="profile-box">
+                {% if user.photo_url %}
+                    <img src="{{ user.photo_url }}" alt="Avatar" class="avatar">
+                {% else %}
+                    <div class="avatar-placeholder">
+                        {{ user.first_name[0] | upper }}
+                    </div>
+                {% endif %}
+
+                <div class="user-info">
+                    <div class="user-name">{{ user.first_name }} {{ user.last_name }}</div>
+                    {% if user.username %}
+                        <div class="user-username">@{{ user.username }}</div>
+                    {% endif %}
+                    <div class="user-id">ID: {{ user.id }}</div>
+                </div>
+
+                <a href="{{ url_for('logout') }}" class="btn-logout">Выйти из аккаунта</a>
+            </div>
+        {% else %}
+            <!-- Состояние авторизации -->
+            <div class="icon-wrapper">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.64 6.8c-.15 1.58-.8 5.42-1.13 7.19-.14.75-.42 1-.68 1.03-.58.05-1.02-.38-1.58-.75-.88-.58-1.38-.94-2.23-1.5-.99-.65-.35-1.01.22-1.59.15-.15 2.71-2.48 2.76-2.69a.2.2 0 00-.05-.18c-.06-.05-.14-.03-.21-.02-.09.02-1.49.95-4.22 2.79-.4.27-.76.41-1.08.4-.36-.01-1.04-.2-1.55-.37-.63-.2-1.12-.31-1.08-.66.02-.18.27-.36.74-.55 2.92-1.27 4.86-2.11 5.83-2.51 2.78-1.16 3.35-1.36 3.73-1.36.08 0 .27.02.39.12.1.08.13.19.14.27-.01.06.01.24 0 .38z"/>
+                </svg>
+            </div>
+
+            <h1>Добро пожаловать</h1>
+            <p class="subtitle">Для входа в систему подтвердите свой профиль через Telegram</p>
+
+            <div class="telegram-widget-container">
+                <script async src="https://telegram.org/js/telegram-widget.js?22" 
+                        data-telegram-login="{{ bot_username }}" 
+                        data-size="large" 
+                        data-radius="10"
+                        data-auth-url="{{ url_for('entry_telegram_bp.auth_telegram', _external=True) }}" 
+                        data-request-access="write">
+                </script>
+            </div>
+        {% endif %}
+    </div>
+
+</body>
+</html>

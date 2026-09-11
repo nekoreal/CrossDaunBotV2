@@ -1,8 +1,8 @@
 import json
 
-from flask import Flask, render_template, request
+from flask import Flask, config, render_template, request
 from datetime import date, timedelta, datetime
-
+from config import TELEGRAM_TOKEN
 from rabbitmq import queue_sender
 from telegram_bot.tg_db import session_scope
 from telegram_bot.tg_db.models.tg_user import TelegramUser
@@ -16,11 +16,16 @@ from telegram_bot.tg_db.db_controllers.daily_statistic_controller import (
     get_group_stats_period,
 )
 from telegram_bot.bot import bot
-from config import TELEGRAM_CHAT_ID
+from config import TELEGRAM_CHAT_ID, FLASK_SECRET_KEY 
 from telegram_bot.tg_utils.avatar import get_and_resize_chat_photo
 from telegram_bot.handlers.statistics import get_day_msg_count
 from sqlalchemy import func
 app = Flask(__name__)
+app.config["TELEGRAM_BOT_TOKEN"] = TELEGRAM_TOKEN
+app.config["SECRET_KEY"] = FLASK_SECRET_KEY  
+
+from flask_server.telegram_auth import entry_telegram_bp
+app.register_blueprint(entry_telegram_bp)  
 
 
 from collections import defaultdict

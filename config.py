@@ -1,6 +1,9 @@
 from pika import ConnectionParameters, PlainCredentials
 import os
 
+
+FLASK_SECRET_KEY = os.getenv("FLASK_SECRET_KEY", "default_secret_key")
+
 rabbitmq_user = os.getenv("RABBITMQ_USER" )
 rabbitmq_password = os.getenv("RABBITMQ_PASSWORD" )
 rabbitmq_host = os.getenv("RABBITMQ_HOST" )
@@ -30,4 +33,6 @@ TELEGRAM_CHAT_ID = -1001970834344
 #1059959321 sunya
 #874183602
 MODER_ID=1059959321
+
+TELEGRAM_BOT_USERNAME = "DipNekoBot"
 

@@ -53,6 +53,7 @@ services:
       SQLALCHEMY_DATABASE_URI: "mysql+pymysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}"
       RABBITMQ_USER: ${RABBITMQ_USER}
       RABBITMQ_PASSWORD: ${RABBITMQ_PASSWORD}
+      FLASK_SECRET_KEY: ${FLASK_SECRET_KEY}
     volumes:
       - .:/CrossDaunApp
     command: ["python", "main.py"]
