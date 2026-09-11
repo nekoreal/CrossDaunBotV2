@@ -1,5 +1,5 @@
 import hmac , hashlib
-from flask import Blueprint,request,jsonify, send_file, abort, session, redirect, url_for , render_template
+from flask import Blueprint, flash,request,jsonify, send_file, abort, session, redirect, url_for , render_template
 from sqlalchemy import text as sql_text#для сырых запросов текстом пример: result = db.session.execute(sql_text("update user set is_admin=True where username='admin';"))
 from sqlalchemy.sql.functions import current_user
 from io import BytesIO  
@@ -32,8 +32,9 @@ def auth_telegram():
             "username": data.get("username", ""),
             "photo_url": data.get("photo_url", "")
         } 
+        flash('Действие успешно выполнено!', 'success')
         return redirect(url_for("entry_telegram_bp.home"))
-    
+    flash('Ошибка авторизации: недействительная подпись или вы не член сообщества заводчан', 'error')
     return "Ошибка авторизации: недействительная подпись или вы не член сообщества заводчан", 400
 
 @entry_telegram_bp.route("/home")
