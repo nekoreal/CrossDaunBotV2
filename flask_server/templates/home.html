@@ -231,7 +231,7 @@
                     <div class="user-id">ID: {{ user.id }}</div>
                 </div>
 
-                <a href="{{ url_for('logout') }}" class="btn-logout">Выйти из аккаунта</a>
+                <a href="{{ url_for('entry_telegram_bp.logout') }}" class="btn-logout">Выйти из аккаунта</a>
             </div>
         {% else %}
             <!-- Состояние авторизации -->

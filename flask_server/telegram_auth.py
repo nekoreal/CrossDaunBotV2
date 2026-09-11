@@ -40,4 +40,9 @@ def home():
     user = session.get("user")
     return render_template("home.html", user=user, bot_username=TELEGRAM_BOT_USERNAME)
 
+@entry_telegram_bp.route("/logout")
+def logout():
+    session.pop("user", None)
+    return redirect(url_for("entry_telegram_bp.home"))
+
  
