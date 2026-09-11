@@ -250,7 +250,7 @@
                 </div>
 
                 {% if is_started %}
-                <a href="{{ url_for('voting_bp.poll') }}" class="btn-def">Присоединиться к голосованию</a>
+                <a href="{{ url_for('voting_bp.poll_page') }}" class="btn-def">Присоединиться к голосованию</a>
                 {% else %}
                     {% if user.is_moder %}
                     <a href="{{ url_for('voting_bp.start_poll') }}" class="btn-def">Начать голосование</a>
