@@ -193,7 +193,7 @@ def handle_end_round(round_num: int, timeout: int = 60):
 def poll_page():
     user = session.get("user")
     if poll.is_started and user:
-        return render_template("vote.html", user=session.get("user"))
+        return render_template("poll.html", user=session.get("user"))
     return redirect(url_for("entry_telegram_bp.home"))
 
 
