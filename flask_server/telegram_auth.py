@@ -4,6 +4,7 @@ from sqlalchemy import text as sql_text#для сырых запросов те�
 from sqlalchemy.sql.functions import current_user
 from io import BytesIO  
 from config import TELEGRAM_BOT_USERNAME, TELEGRAM_TOKEN
+from telegram_bot.tg_db.db_controllers.user_controller import find_user_by_tg_id
 
 def verify_telegram_data(data: dict, token: str) -> bool:
     check_hash = data.get("hash")
@@ -25,7 +26,7 @@ entry_telegram_bp=Blueprint('entry_telegram_bp', __name__)
 def auth_telegram(): 
     data = request.args.to_dict()
  
-    if verify_telegram_data(data, TELEGRAM_TOKEN): 
+    if verify_telegram_data(data, TELEGRAM_TOKEN) and find_user_by_tg_id(int(data.get("id"))): 
         session["user"] = {
             "id": data.get("id"),
             "username": data.get("username", ""),
@@ -33,7 +34,7 @@ def auth_telegram():
         } 
         return redirect(url_for("entry_telegram_bp.home"))
     
-    return "Ошибка авторизации: недействительная подпись!", 400
+    return "Ошибка авторизации: недействительная подпись или вы не член сообщества заводчан", 400
 
 @entry_telegram_bp.route("/home")
 def home():
