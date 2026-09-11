@@ -59,8 +59,8 @@ def parse_device_type(user_agent):
         return 'desktop'
 
 
-@app.route('/')
-def index():
+@app.route('/stats')
+def stats():
     user_data = [
     {
         'request_time': datetime.now().isoformat(),

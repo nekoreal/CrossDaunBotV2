@@ -256,6 +256,7 @@
                     <a href="{{ url_for('voting_bp.start_poll') }}" class="btn-def">Начать голосование</a>
                     {% endif %}
                 {% endif %}
+                <a href="{{ url_for('stats') }}" class="btn-def">Статистика</a>
                 <a href="{{ url_for('entry_telegram_bp.logout') }}" class="btn-logout">Выйти из аккаунта</a>
             </div>
         {% else %}
