@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CrossDaun Poll</title>
     <link rel="shortcut icon" href="./static/favicon.ico" />
-    <!-- Socket.IO Client CDN -->
     <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style>
         :root {
@@ -40,7 +39,7 @@
             padding: 20px;
         }
 
-        /* Фоновые неоновые пятна */
+        /* --- АНИМАЦИИ И НЕОН --- */
         .glow-sphere-1 {
             position: absolute;
             width: 450px;
@@ -50,7 +49,7 @@
             left: 15%;
             z-index: 0;
             filter: blur(50px);
-            animation: pulse 8s infinite alternate ease-in-out;
+            animation: floatGlow1 12s infinite alternate ease-in-out;
         }
 
         .glow-sphere-2 {
@@ -62,53 +61,22 @@
             right: 15%;
             z-index: 0;
             filter: blur(60px);
-            animation: pulse 10s infinite alternate-reverse ease-in-out;
+            animation: floatGlow2 14s infinite alternate ease-in-out;
         }
 
-        /* Кнопка "На главную" */
-        .btn-home {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            width: 36px;
-            height: 36px;
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--accent-cyan);
-            border: 1px solid rgba(0, 242, 254, 0.3);
-            border-radius: 10px;
-            text-decoration: none;
-            transition: all 0.2s ease;
-            flex-shrink: 0;
-        }
-
-        .btn-home:hover {
-            background: rgba(0, 242, 254, 0.15);
-            border-color: rgba(0, 242, 254, 0.6);
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
-            color: #fff;
-            transform: translateY(-1px);
-        }
-
-        .btn-home svg {
-            width: 18px;
-            height: 18px;
-            fill: currentColor;
-        }
-
-        /* Обертка для левой части top-bar */
-        .top-bar-left {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            flex-wrap: wrap;
-        }
-
-        @keyframes pulse {
+        @keyframes floatGlow1 {
             0% { transform: scale(1) translate(0, 0); }
-            100% { transform: scale(1.15) translate(20px, -20px); }
+            50% { transform: scale(1.15) translate(30px, -20px); }
+            100% { transform: scale(0.9) translate(-20px, 30px); }
         }
 
-        /* Главная карточка */
+        @keyframes floatGlow2 {
+            0% { transform: scale(1) translate(0, 0); }
+            50% { transform: scale(1.2) translate(-40px, 15px); }
+            100% { transform: scale(0.95) translate(25px, -35px); }
+        }
+
+        /* Карточка */
         .auth-card {
             position: relative;
             z-index: 1;
@@ -122,10 +90,15 @@
             border-radius: 20px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6),
                         0 0 30px rgba(0, 242, 254, 0.05);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            animation: cardAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
-        /* Верхняя информационная плашка */
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Верхняя плашка */
         .top-bar {
             display: flex;
             justify-content: space-between;
@@ -136,31 +109,58 @@
             gap: 10px;
         }
 
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .btn-home {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            flex-shrink: 0;
+        }
+
+        .btn-home:hover {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: rgba(0, 242, 254, 0.6);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+            color: #fff;
+            transform: translateY(-2px) scale(1.05);
+        }
+
+        .btn-home svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
         .badge {
             background: rgba(255, 255, 255, 0.05);
             padding: 6px 12px;
             border-radius: 10px;
             font-size: 0.85rem;
             border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.2s ease, border-color 0.2s ease;
         }
 
-        .badge-cyan {
-            color: var(--accent-cyan);
-            border-color: rgba(0, 242, 254, 0.3);
-            font-weight: 600;
+        .badge:hover {
+            transform: translateY(-1px);
         }
 
-        .badge-purple {
-            color: var(--accent-purple);
-            border-color: rgba(157, 78, 221, 0.4);
-            font-weight: 600;
-        }
-
-        .badge-warning {
-            color: var(--warning);
-            border-color: rgba(255, 183, 3, 0.4);
-            font-weight: 600;
-        }
+        .badge-cyan { color: var(--accent-cyan); border-color: rgba(0, 242, 254, 0.3); font-weight: 600; }
+        .badge-purple { color: var(--accent-purple); border-color: rgba(157, 78, 221, 0.4); font-weight: 600; }
+        .badge-warning { color: var(--warning); border-color: rgba(255, 183, 3, 0.4); font-weight: 600; }
 
         .timer-badge {
             color: var(--accent-cyan);
@@ -168,10 +168,25 @@
             font-size: 1.1rem;
             font-weight: 700;
             white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+            transition: color 0.3s ease, border-color 0.3s ease;
         }
 
-        /* Кнопки */
+        .timer-badge.warning-time {
+            color: var(--danger);
+            border-color: rgba(255, 85, 85, 0.5);
+            animation: timerPulse 0.8s infinite alternate;
+        }
+
+        @keyframes timerPulse {
+            0% { box-shadow: 0 0 5px rgba(255, 85, 85, 0.2); }
+            100% { box-shadow: 0 0 15px rgba(255, 85, 85, 0.6); }
+        }
+
+        /* Кнопки с бликом */
         .btn-def {
+            position: relative;
             display: inline-block;
             width: 100%;
             padding: 12px 20px;
@@ -184,13 +199,32 @@
             font-weight: 600;
             cursor: pointer;
             text-align: center;
-            transition: all 0.2s ease;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .btn-def::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-def:hover:not(:disabled)::before {
+            left: 100%;
         }
 
         .btn-def:hover:not(:disabled) {
             background: rgba(0, 242, 254, 0.15);
             border-color: rgba(0, 242, 254, 0.6);
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .btn-def:active:not(:disabled) {
+            transform: translateY(0) scale(0.98);
         }
 
         .btn-def:disabled, .btn-def.voted {
@@ -198,6 +232,7 @@
             border-color: var(--success);
             color: var(--success);
             cursor: default;
+            box-shadow: 0 0 10px rgba(0, 230, 118, 0.1);
         }
 
         .btn-logout {
@@ -213,23 +248,26 @@
             font-weight: 600;
             cursor: pointer;
             text-align: center;
-            transition: all 0.2s ease;
+            transition: all 0.25s ease;
         }
 
         .btn-logout:hover {
             background: rgba(255, 85, 85, 0.15);
             border-color: rgba(255, 85, 85, 0.5);
+            box-shadow: 0 0 15px rgba(255, 85, 85, 0.2);
+            transform: translateY(-2px);
         }
 
-        /* Анимация ожидания */
+        /* Прелоадер */
         .loader-ring {
             width: 50px;
             height: 50px;
             border: 3px solid rgba(0, 242, 254, 0.1);
             border-top: 3px solid var(--accent-cyan);
+            border-right: 3px solid var(--accent-purple);
             border-radius: 50%;
             margin: 0 auto 20px;
-            animation: spin 1s linear infinite;
+            animation: spin 0.9s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
         }
 
         @keyframes spin { 100% { transform: rotate(360deg); } }
@@ -246,6 +284,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .photo-container:hover {
+            border-color: rgba(0, 242, 254, 0.4);
+            transform: scale(1.01);
         }
 
         .photo-container img {
@@ -253,6 +298,7 @@
             height: 100%;
             max-height: 380px;
             object-fit: contain;
+            transition: opacity 0.4s ease;
         }
 
         /* Сетка категорий */
@@ -263,7 +309,7 @@
             margin-top: 15px;
         }
 
-        /* Список результатов */
+        /* Результаты */
         .results-list {
             display: flex;
             flex-direction: column;
@@ -279,6 +325,13 @@
             flex-direction: column;
             gap: 8px;
             border: 1px solid rgba(255, 255, 255, 0.05);
+            animation: slideInResult 0.4s ease forwards;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        @keyframes slideInResult {
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .result-header {
@@ -294,13 +347,19 @@
         }
 
         .user-avatars img {
-            width: 24px;
-            height: 24px;
+            width: 26px;
+            height: 26px;
             border-radius: 50%;
             border: 1px solid var(--accent-cyan);
+            transition: transform 0.2s ease;
         }
 
-        /* Блок управления модератора */
+        .user-avatars img:hover {
+            transform: scale(1.25);
+            z-index: 2;
+        }
+
+        /* Панель модератора */
         .moderator-panel {
             margin-top: 25px;
             padding-top: 20px;
@@ -317,7 +376,7 @@
             margin-bottom: 5px;
         }
 
-        /* Стили для формы добавления пользовательской категории */
+        /* Кастомный ввод */
         .custom-cat-wrapper {
             position: relative;
             display: flex;
@@ -351,7 +410,7 @@
             opacity: 1;
             padding: 12px 16px;
             border: 1px solid var(--accent-cyan);
-            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
             margin-top: 8px;
         }
 
@@ -375,6 +434,7 @@
             z-index: 10;
             backdrop-filter: blur(10px);
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            animation: fadeIn 0.2s ease;
         }
 
         .suggestion-item {
@@ -382,12 +442,22 @@
             cursor: pointer;
             font-size: 0.9rem;
             color: var(--text-main);
-            transition: background 0.2s ease;
+            transition: background 0.2s ease, color 0.2s ease;
         }
 
         .suggestion-item:hover {
             background: rgba(0, 242, 254, 0.15);
             color: var(--accent-cyan);
+        }
+
+        /* Переключение экранов */
+        .screen-fade {
+            animation: fadeInScreen 0.4s ease forwards;
+        }
+
+        @keyframes fadeInScreen {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         .hidden { display: none !important; }
@@ -399,7 +469,7 @@
     <div class="glow-sphere-2"></div> 
     <div class="auth-card">
 
-        <!-- Верхняя плашка (Кнопка Домой, Раунд, Осталось фото, Счетчик и Таймер) -->
+        <!-- Верхняя плашка -->
         <div id="topBar" class="top-bar">
             <div class="top-bar-left">
                 <a href="/" class="btn-home" title="На главную">
@@ -417,7 +487,7 @@
                     👥 <span id="votedCount">0</span>/<span id="totalUsers">0</span>
                 </div>
             </div>
-            <div class="badge timer-badge">
+            <div class="badge timer-badge" id="timerBadge">
                 ⏱ <span id="timer">00:00</span>
             </div>
         </div>
@@ -465,7 +535,7 @@
             </div>
 
             <!-- Блок с принятым решением модератора -->
-            <div id="decisionBanner" class="hidden" style="margin: 15px 0; padding: 12px 16px; background: rgba(0, 242, 254, 0.1); border: 1px solid var(--accent-cyan); border-radius: 12px; text-align: center;">
+            <div id="decisionBanner" class="hidden" style="margin: 15px 0; padding: 12px 16px; background: rgba(0, 242, 254, 0.1); border: 1px solid var(--accent-cyan); border-radius: 12px; text-align: center; animation: cardAppear 0.3s ease;">
                 <span style="color: var(--text-muted); font-size: 0.9rem; display: block; margin-bottom: 4px;">Решение организатора:</span>
                 <span id="decisionCategoryText" style="color: var(--accent-cyan); font-weight: 700; font-size: 1.1rem;">—</span>
             </div>
@@ -479,20 +549,14 @@
                 <div class="moderator-panel">
                     <p style="font-size: 0.85rem; color: var(--accent-cyan); font-weight: 600;">Управление организатора:</p>
 
-                    <!-- Блок принятия решения (видимый в состоянии results) -->
                     <div id="moderDecisionBlock" class="hidden" style="display: flex; flex-direction: column; gap: 8px;">
                         
-                        <!-- Кнопка при одиночном победителе -->
                         <button id="btnAgreeWinner" class="btn-def hidden" onclick="moderChooseCategory('winner')">
                             Согласиться с победителем
                         </button>
 
-                        <!-- Кнопки при ничьей -->
-                        <div id="tieCategoriesContainer" class="tie-buttons-grid hidden">
-                            <!-- Категории ничьи сгенерируются из JS -->
-                        </div>
+                        <div id="tieCategoriesContainer" class="tie-buttons-grid hidden"></div>
 
-                        <!-- Форма ввода и выбора пользовательской категории -->
                         <div class="custom-cat-wrapper">
                             <button id="btnToggleCustomCat" class="btn-def" style="border-color: rgba(157, 78, 221, 0.4); color: var(--accent-purple);" onclick="toggleCustomCatInput()">
                                 Добавить в категорию
@@ -503,18 +567,15 @@
                             <div id="suggestionsBox" class="suggestions-box hidden"></div>
                         </div>
 
-                        <!-- Оставить неотсортированным -->
                         <button class="btn-def" style="border-color: rgba(255,255,255,0.3); color: var(--text-main);" onclick="moderChooseCategory(null)">
                             Оставить неотсортированным
                         </button>
                     </div>
 
-                    <!-- Кнопка "Следующий круг" (видимая только в состоянии decision) -->
                     <div style="display: flex; gap: 10px; margin-top: 5px;">
                         <button id="moderStartRoundBtn" class="btn-def hidden" onclick="moderStartRound()">Следующий круг</button> 
                     </div>
 
-                    <!-- Кнопка "Завершить голосование" всегда присутствует на экране результатов -->
                     <a href="{{ url_for('voting_bp.stop_poll') }}" class="btn-logout" style="margin-top: 5px;">Завершить голосование</a>
                 </div>
             {% endif %}
@@ -528,12 +589,10 @@
         let selectedVote = null;
         let availableCategories = [];
 
-        // Подключение к комнате после запуска WebSocket соединения
         socket.on('connect', () => {
             socket.emit('join_poll');
         });
 
-        // Основное событие обновления состояния раунда
         socket.on('poll_state', (state) => {
             if (state.categories) {
                 availableCategories = state.categories;
@@ -541,13 +600,11 @@
             updatePollUI(state);
         });
 
-        // Быстрое обновление счетчиков проголосовавших пользователей
         socket.on('update_voted_count', (data) => {
             document.getElementById('votedCount').innerText = data.voted;
             document.getElementById('totalUsers').innerText = data.total;
         });
 
-        // Успешная фиксация голоса текущего клиента
         socket.on('vote_success', (data) => {
             selectedVote = data.category;
             const buttons = document.querySelectorAll('#categoriesContainer .btn-def');
@@ -560,17 +617,14 @@
             });
         });
 
-        // Всплывающие уведомления об ошибках
         socket.on('alert', (data) => {
             alert(data.message);
         });
 
-        // Функция обновления UI в зависимости от текущего статуса
         function updatePollUI(state) {
             document.getElementById('votedCount').innerText = state.voted;
             document.getElementById('totalUsers').innerText = state.total;
             
-            // Обновление раунда и количества неотсортированных элементов
             if (state.round !== undefined) {
                 document.getElementById('roundNumber').innerText = state.round;
             }
@@ -582,24 +636,25 @@
                 selectedVote = state.user_vote || null;
             }
 
-            const screenWaiting = document.getElementById('screenWaiting');
-            const screenVoting = document.getElementById('screenVoting');
-            const screenResults = document.getElementById('screenResults');
+            const screens = [
+                document.getElementById('screenWaiting'),
+                document.getElementById('screenVoting'),
+                document.getElementById('screenResults')
+            ];
 
-            screenWaiting.classList.add('hidden');
-            screenVoting.classList.add('hidden');
-            screenResults.classList.add('hidden');
+            screens.forEach(s => s.classList.add('hidden'));
 
+            let activeScreen = null;
             if (state.status === 'waiting') {
-                screenWaiting.classList.remove('hidden');
+                activeScreen = document.getElementById('screenWaiting');
                 stopTimer();
             } else if (state.status === 'in_progress') {
-                screenVoting.classList.remove('hidden');
+                activeScreen = document.getElementById('screenVoting');
                 document.getElementById('votingPhoto').src = state.photo_url || '';
                 renderCategories(state.categories);
                 startTimer(state.end_time);  
             } else if (state.status === 'results' || state.status === 'decision') {
-                screenResults.classList.remove('hidden');
+                activeScreen = document.getElementById('screenResults');
                 document.getElementById('resultPhoto').src = state.photo_url || '';
                 renderResults(state.results);
                 stopTimer();
@@ -617,17 +672,25 @@
 
                 setupModeratorDecisionUI(state);
             }
+
+            if (activeScreen) {
+                activeScreen.classList.remove('hidden', 'screen-fade');
+                // Перезапуск анимации переключения экранов
+                void activeScreen.offsetWidth;
+                activeScreen.classList.add('screen-fade');
+            }
         }
 
-        // Рендер кнопок выбора категорий
         function renderCategories(categories) {
             const container = document.getElementById('categoriesContainer');
             container.innerHTML = '';
             
-            categories.forEach(cat => {
+            categories.forEach((cat, index) => {
                 const button = document.createElement('button');
                 button.className = 'btn-def';
                 button.innerText = cat;
+                button.style.animation = `slideInResult 0.3s ease forwards ${index * 0.05}s`;
+                button.style.opacity = '0';
                 
                 if (selectedVote === cat) {
                     button.classList.add('voted');
@@ -643,14 +706,16 @@
             });
         }
 
-        // Рендер списка результатов
         function renderResults(results) {
             const container = document.getElementById('resultsList');
             container.innerHTML = '';
 
+            let delay = 0;
             for (const [catName, data] of Object.entries(results)) {
                 const item = document.createElement('div');
                 item.className = 'result-item';
+                item.style.animationDelay = `${delay}s`;
+                delay += 0.06;
 
                 let avatarsHtml = '';
                 if (data.photo_urls && data.photo_urls.length > 0) {
@@ -670,20 +735,18 @@
             }
         }
 
-        // Функция отправки голоса
         function submitVote(category) {
             socket.emit('submit_vote', { category: category });
         }
 
-        // Действия модератора
         function moderStartRound() {
             selectedVote = null;
             socket.emit('moder_start_round');
         } 
 
-        // Таймер обратного отсчета
         function startTimer(endTimeSeconds) {
             stopTimer();
+            const timerBadge = document.getElementById('timerBadge');
 
             function update() {
                 const nowSeconds = Date.now() / 1000;
@@ -694,6 +757,12 @@
 
                 document.getElementById('timer').innerText = 
                     `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+                if (remaining <= 10) {
+                    timerBadge.classList.add('warning-time');
+                } else {
+                    timerBadge.classList.remove('warning-time');
+                }
 
                 if (remaining <= 0) {
                     stopTimer();
@@ -710,9 +779,9 @@
                 timerInterval = null;
             }
             document.getElementById('timer').innerText = "00:00";
+            document.getElementById('timerBadge').classList.remove('warning-time');
         }
 
-        // Логика отображения элементов управления модератора на экране результатов
         function setupModeratorDecisionUI(state) {
             const decisionBlock = document.getElementById('moderDecisionBlock');
             const startRoundBtn = document.getElementById('moderStartRoundBtn');
@@ -764,7 +833,6 @@
             }
         }
 
-        // Отправка решения модератора на сервер
         function moderChooseCategory(choice) {
             let selectedCategory = choice;
             
@@ -776,7 +844,6 @@
             socket.emit('moder_decision', { category: selectedCategory });
         }
 
-        // Логика работы поля ввода пользовательской категории
         function toggleCustomCatInput() {
             const input = document.getElementById('customCatInput');
             input.classList.toggle('active');
