@@ -1,6 +1,6 @@
 import json
 
-from flask import Flask, config, render_template, request
+from flask import Flask, config, render_template, request, redirect, url_for
 from datetime import date, timedelta, datetime
 from config import TELEGRAM_TOKEN
 from rabbitmq import queue_sender
@@ -61,6 +61,9 @@ def parse_device_type(user_agent):
     else:
         return 'desktop'
 
+@app.route('/')
+def index_home():
+    return redirect(url_for("entry_telegram_bp.home"))
 
 @app.route('/stats')
 def stats():
