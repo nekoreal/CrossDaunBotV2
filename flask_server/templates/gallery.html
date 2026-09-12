@@ -3,44 +3,83 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Галерея изображений</title>
+    <title>Галерея изображений | Telegram Portal</title>
     <style>
         :root {
-            --bg-primary: #121214;
-            --bg-secondary: #1a1a1e;
-            --bg-card: #242429;
-            --accent: #6366f1;
-            --accent-hover: #4f46e5;
-            --text-main: #f3f4f6;
-            --text-muted: #9ca3af;
-            --border: #374151;
-            --danger: #ef4444;
-            --radius: 12px;
-            --transition: all 0.2s ease-in-out;
+            --bg-primary: #0a0c10;
+            --card-bg: rgba(18, 22, 31, 0.75);
+            --bg-secondary: rgba(15, 18, 26, 0.85);
+            --accent-cyan: #00f2fe;
+            --accent-purple: #9d4edd;
+            --accent-hover: #00c6ff;
+            --text-main: #f0f4f8;
+            --text-muted: #8a99ad;
+            --border-glow: rgba(0, 242, 254, 0.15);
+            --border-purple: rgba(157, 78, 221, 0.25);
+            --danger: #ff5555;
+            --radius: 14px;
+            --transition: all 0.25s ease;
         }
 
         * {
             box-sizing: border-box;
             margin: 0;
             padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-primary);
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            position: relative;
+            overflow-x: hidden;
+        }
+
+        /* Фоновые неоновые пятна */
+        .glow-sphere-1 {
+            position: fixed;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(157, 78, 221, 0.2) 0%, rgba(0,0,0,0) 70%);
+            top: -50px;
+            left: -50px;
+            z-index: 0;
+            filter: blur(60px);
+            animation: pulse 8s infinite alternate ease-in-out;
+            pointer-events: none;
+        }
+
+        .glow-sphere-2 {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(0, 242, 254, 0.15) 0%, rgba(0,0,0,0) 70%);
+            bottom: 10%;
+            right: -50px;
+            z-index: 0;
+            filter: blur(70px);
+            animation: pulse 10s infinite alternate-reverse ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.15) translate(20px, -20px); }
         }
 
         header {
             background-color: var(--bg-secondary);
-            border-bottom: 1px solid var(--border);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid var(--border-glow);
             padding: 20px 0;
             position: sticky;
             top: 0;
             z-index: 50;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
         }
 
         .container {
@@ -48,12 +87,14 @@
             margin: 0 auto;
             padding: 0 20px;
             width: 100%;
+            position: relative;
+            z-index: 1;
         }
 
         .header-content {
             display: flex;
             flex-direction: column;
-            gap: 16px;
+            gap: 18px;
         }
 
         .title-area {
@@ -67,17 +108,22 @@
         h1 {
             font-size: 1.5rem;
             font-weight: 700;
+            color: var(--text-main);
+            text-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
         }
 
         .photo-counter {
-            color: var(--text-muted);
+            color: var(--accent-cyan);
             font-size: 0.9rem;
+            background: rgba(0, 242, 254, 0.08);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 242, 254, 0.2);
         }
 
-        /* NEW: Стили для удобного выбора среди множества категорий */
         .controls-row {
             display: flex;
-            gap: 12px;
+            gap: 14px;
             align-items: center;
             flex-wrap: wrap;
         }
@@ -90,8 +136,8 @@
         }
 
         .select-trigger {
-            background-color: var(--bg-card);
-            border: 1px solid var(--border);
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-glow);
             border-radius: var(--radius);
             padding: 10px 16px;
             display: flex;
@@ -101,21 +147,24 @@
             transition: var(--transition);
             user-select: none;
             font-size: 0.95rem;
+            color: var(--text-main);
+            backdrop-filter: blur(12px);
         }
 
         .select-trigger:hover {
-            border-color: var(--accent);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
         }
 
         .select-trigger .arrow {
             font-size: 0.75rem;
             transition: transform 0.2s;
-            color: var(--text-muted);
+            color: var(--accent-cyan);
         }
 
         .custom-select-wrapper.open .select-trigger {
-            border-color: var(--accent);
-            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
         }
 
         .custom-select-wrapper.open .arrow {
@@ -127,10 +176,11 @@
             top: calc(100% + 8px);
             left: 0;
             right: 0;
-            background-color: var(--bg-card);
-            border: 1px solid var(--border);
+            background: rgba(14, 18, 27, 0.95);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glow);
             border-radius: var(--radius);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 242, 254, 0.1);
             display: none;
             flex-direction: column;
             max-height: 350px;
@@ -144,30 +194,32 @@
 
         .dropdown-search {
             padding: 10px;
-            border-bottom: 1px solid var(--border);
-            background-color: var(--bg-secondary);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            background-color: rgba(0, 0, 0, 0.2);
         }
 
         .dropdown-search input {
             width: 100%;
-            background-color: var(--bg-primary);
-            border: 1px solid var(--border);
-            border-radius: 6px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid var(--border-glow);
+            border-radius: 8px;
             padding: 8px 12px;
             color: var(--text-main);
             outline: none;
             font-size: 0.85rem;
+            transition: var(--transition);
         }
 
         .dropdown-search input:focus {
-            border-color: var(--accent);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
         }
 
         .dropdown-list {
             overflow-y: auto;
             max-height: 280px;
             scrollbar-width: thin;
-            scrollbar-color: var(--border) transparent;
+            scrollbar-color: var(--accent-cyan) transparent;
         }
 
         .dropdown-item {
@@ -176,29 +228,32 @@
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
-            transition: background 0.15s;
+            transition: var(--transition);
             font-size: 0.9rem;
+            color: var(--text-main);
         }
 
         .dropdown-item:hover {
-            background-color: rgba(99, 102, 241, 0.15);
+            background-color: rgba(0, 242, 254, 0.12);
             color: #fff;
         }
 
         .dropdown-item.selected {
-            background-color: var(--accent);
+            background: linear-gradient(90deg, rgba(0, 242, 254, 0.25) 0%, rgba(157, 78, 221, 0.25) 100%);
+            border-left: 3px solid var(--accent-cyan);
             color: #fff;
         }
 
         .dropdown-item .badge {
             font-size: 0.75rem;
-            opacity: 0.75;
-            background: rgba(0,0,0,0.2);
+            color: var(--accent-cyan);
+            background: rgba(0, 242, 254, 0.1);
             padding: 2px 8px;
             border-radius: 12px;
+            border: 1px solid rgba(0, 242, 254, 0.2);
         }
 
-        /* Чипсы для быстрого доступа (топ категорий) */
+        /* Кнопки быстрого доступа */
         .quick-chips {
             display: flex;
             gap: 8px;
@@ -212,32 +267,37 @@
         }
 
         .chip-btn {
-            background-color: var(--bg-card);
+            background: var(--card-bg);
             color: var(--text-muted);
-            border: 1px solid var(--border);
-            padding: 7px 14px;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            padding: 8px 16px;
             border-radius: 20px;
             cursor: pointer;
             white-space: nowrap;
             transition: var(--transition);
             font-size: 0.85rem;
+            backdrop-filter: blur(10px);
         }
 
         .chip-btn:hover {
-            border-color: var(--accent);
+            border-color: var(--accent-cyan);
             color: var(--text-main);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.15);
         }
 
         .chip-btn.active {
-            background-color: rgba(99, 102, 241, 0.2);
-            border-color: var(--accent);
-            color: var(--accent);
+            background: rgba(0, 242, 254, 0.12);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
             font-weight: 600;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
         }
 
         main {
             flex: 1;
             padding: 30px 0;
+            position: relative;
+            z-index: 1;
         }
 
         .gallery-grid {
@@ -247,20 +307,21 @@
         }
 
         .photo-card {
-            background-color: var(--bg-card);
+            background-color: var(--card-bg);
             border-radius: var(--radius);
             overflow: hidden;
             aspect-ratio: 1 / 1;
             cursor: pointer;
-            border: 1px solid var(--border);
+            border: 1px solid var(--border-glow);
             transition: var(--transition);
             position: relative;
+            backdrop-filter: blur(12px);
         }
 
         .photo-card:hover {
-            transform: translateY(-4px);
-            border-color: var(--accent);
-            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+            transform: translateY(-5px);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 242, 254, 0.25);
         }
 
         .photo-card img {
@@ -268,6 +329,11 @@
             height: 100%;
             object-fit: cover;
             display: block;
+            transition: transform 0.3s ease;
+        }
+
+        .photo-card:hover img {
+            transform: scale(1.03);
         }
 
         .pagination {
@@ -280,34 +346,38 @@
         }
 
         .page-btn {
-            background-color: var(--bg-card);
+            background: var(--card-bg);
             color: var(--text-main);
-            border: 1px solid var(--border);
-            width: 40px;
-            height: 40px;
-            border-radius: 8px;
+            border: 1px solid var(--border-glow);
+            width: 42px;
+            height: 42px;
+            border-radius: 10px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
             transition: var(--transition);
             font-weight: 600;
+            backdrop-filter: blur(10px);
         }
 
         .page-btn:hover:not(:disabled) {
-            border-color: var(--accent);
-            color: var(--accent);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(0, 242, 254, 0.2);
         }
 
         .page-btn.active {
-            background-color: var(--accent);
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.8) 0%, rgba(157, 78, 221, 0.8) 100%);
             color: #ffffff;
-            border-color: var(--accent);
+            border-color: transparent;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
         }
 
         .page-btn:disabled {
-            opacity: 0.3;
+            opacity: 0.25;
             cursor: not-allowed;
+            border-color: rgba(255, 255, 255, 0.05);
         }
 
         /* Lightbox */
@@ -317,7 +387,8 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background-color: rgba(0, 0, 0, 0.9);
+            background-color: rgba(5, 7, 10, 0.92);
+            backdrop-filter: blur(16px);
             display: flex;
             justify-content: center;
             align-items: center;
@@ -343,10 +414,11 @@
 
         .lightbox-content img {
             max-width: 100%;
-            max-height: 80vh;
+            max-height: 78vh;
             object-fit: contain;
-            border-radius: 8px;
-            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+            border-radius: 12px;
+            border: 1px solid var(--border-glow);
+            box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(0, 242, 254, 0.15);
         }
 
         .lightbox-caption {
@@ -354,41 +426,62 @@
             color: var(--text-main);
             font-size: 0.95rem;
             text-align: center;
+            background: rgba(18, 22, 31, 0.8);
+            padding: 8px 18px;
+            border-radius: 20px;
+            border: 1px solid var(--border-glow);
         }
 
         .lightbox-close {
             position: absolute;
             top: 20px;
             right: 25px;
-            background: none;
-            border: none;
-            color: #fff;
-            font-size: 2rem;
-            cursor: pointer;
-            line-height: 1;
-            z-index: 1001;
-        }
-
-        .lightbox-nav {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(255, 255, 255, 0.1);
-            color: #fff;
-            border: none;
-            width: 50px;
-            height: 50px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: var(--accent-cyan);
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
             font-size: 1.5rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
+            z-index: 1001;
             transition: var(--transition);
         }
 
+        .lightbox-close:hover {
+            background: rgba(255, 85, 85, 0.2);
+            border-color: var(--danger);
+            color: var(--danger);
+            box-shadow: 0 0 15px rgba(255, 85, 85, 0.3);
+        }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(18, 22, 31, 0.6);
+            color: var(--accent-cyan);
+            border: 1px solid var(--border-glow);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.3rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            backdrop-filter: blur(8px);
+        }
+
         .lightbox-nav:hover {
-            background: rgba(255, 255, 255, 0.25);
+            background: rgba(0, 242, 254, 0.15);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+            color: #fff;
         }
 
         .lightbox-prev { left: 20px; }
@@ -406,10 +499,16 @@
             .custom-select-wrapper {
                 width: 100%;
             }
+            .lightbox-prev { left: 10px; }
+            .lightbox-next { right: 10px; }
         }
     </style>
 </head>
 <body>
+
+    <!-- Фоновые эффекты свечения -->
+    <div class="glow-sphere-1"></div>
+    <div class="glow-sphere-2"></div>
 
     <header>
         <div class="container">
