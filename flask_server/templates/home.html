@@ -11,6 +11,7 @@
             --card-bg: rgba(18, 22, 31, 0.75);
             --accent-cyan: #00f2fe;
             --accent-purple: #9d4edd;
+            --accent-danger: #ff5555;
             --text-main: #f0f4f8;
             --text-muted: #8a99ad;
             --border-glow: rgba(0, 242, 254, 0.15);
@@ -32,9 +33,10 @@
             justify-content: center;
             overflow: hidden;
             position: relative;
+            perspective: 1000px;
         }
 
-        /* Фоновые неоновые пятна */
+        /* Анимированные фоновые неоновые сферы */
         .glow-sphere-1 {
             position: absolute;
             width: 350px;
@@ -44,7 +46,7 @@
             left: 20%;
             z-index: 0;
             filter: blur(40px);
-            animation: pulse 8s infinite alternate ease-in-out;
+            animation: floatGlow1 8s infinite alternate ease-in-out;
         }
 
         .glow-sphere-2 {
@@ -56,15 +58,20 @@
             right: 20%;
             z-index: 0;
             filter: blur(50px);
-            animation: pulse 10s infinite alternate-reverse ease-in-out;
+            animation: floatGlow2 10s infinite alternate ease-in-out;
         }
 
-        @keyframes pulse {
+        @keyframes floatGlow1 {
             0% { transform: scale(1) translate(0, 0); }
-            100% { transform: scale(1.15) translate(20px, -20px); }
+            100% { transform: scale(1.2) translate(30px, -20px); }
         }
 
-        /* Карточка авторизации */
+        @keyframes floatGlow2 {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.15) translate(-30px, 20px); }
+        }
+
+        /* Карточка авторизации с эффектом стекла и появлением */
         .auth-card {
             position: relative;
             z-index: 1;
@@ -79,13 +86,46 @@
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6),
                         0 0 30px rgba(0, 242, 254, 0.05);
             text-align: center;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            overflow: hidden;
+            opacity: 0;
+            transform: translateY(30px) scale(0.98);
+            animation: cardAppear 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+            transition: border-color 0.4s ease, box-shadow 0.4s ease, transform 0.1s ease-out;
+        }
+
+        @keyframes cardAppear {
+            to {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+            }
         }
 
         .auth-card:hover {
-            border-color: rgba(0, 242, 254, 0.3);
+            border-color: rgba(0, 242, 254, 0.4);
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.7),
-                        0 0 40px rgba(0, 242, 254, 0.12);
+                        0 0 40px rgba(0, 242, 254, 0.18);
+        }
+
+        /* Линия сканирования (Cyber Scanline) */
+        .scanline {
+            position: absolute;
+            top: -100%;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                to bottom,
+                transparent,
+                rgba(0, 242, 254, 0.08) 50%,
+                transparent
+            );
+            pointer-events: none;
+            animation: scan 6s infinite linear;
+        }
+
+        @keyframes scan {
+            0% { top: -100%; }
+            100% { top: 100%; }
         }
 
         /* Логотип / Иконка */
@@ -98,7 +138,13 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.4);
+            animation: pulseGlow 3s infinite alternate ease-in-out;
+        }
+
+        @keyframes pulseGlow {
+            0% { box-shadow: 0 0 15px rgba(0, 242, 254, 0.3); transform: scale(1); }
+            100% { box-shadow: 0 0 30px rgba(0, 242, 254, 0.6), 0 0 15px rgba(157, 78, 221, 0.4); transform: scale(1.03); }
         }
 
         .icon-wrapper svg {
@@ -116,6 +162,7 @@
             background: linear-gradient(90deg, #ffffff, #dcdcdc);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
+            animation: fadeIn 1s ease forwards;
         }
 
         p.subtitle {
@@ -123,15 +170,17 @@
             color: var(--text-muted);
             margin-bottom: 30px;
             line-height: 1.4;
+            animation: fadeIn 1.2s ease forwards;
         }
 
-        /* Контейнер и обертка виджета Telegram */
+        /* Контейнер виджета Telegram */
         .telegram-widget-container {
             min-height: 54px;
             display: flex;
             justify-content: center;
             align-items: center;
             margin-top: 15px;
+            animation: fadeIn 1.4s ease forwards;
         }
 
         .telegram-btn-wrapper {
@@ -156,35 +205,45 @@
             border-radius: 11px !important;
         }
 
-        /* Блок профиля авторизованного пользователя */
+        /* Профиль авторизованного пользователя */
         .profile-box {
             display: flex;
             flex-direction: column;
             align-items: center;
             gap: 12px;
+            animation: slideUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        .avatar {
+        .avatar-container {
+            position: relative;
+            padding: 4px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+            animation: rotateGlow 6s linear infinite;
+        }
+
+        @keyframes rotateGlow {
+            0% { filter: hue-rotate(0deg); }
+            100% { filter: hue-rotate(360deg); }
+        }
+
+        .avatar, .avatar-placeholder {
             width: 90px;
             height: 90px;
             border-radius: 50%;
-            border: 2px solid var(--accent-cyan);
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
             object-fit: cover;
+            display: block;
         }
 
         .avatar-placeholder {
-            width: 90px;
-            height: 90px;
-            border-radius: 50%;
-            background: linear-gradient(135deg, var(--accent-purple), var(--accent-cyan));
+            background: var(--bg-primary);
             display: flex;
             align-items: center;
             justify-content: center;
             font-size: 2rem;
             font-weight: bold;
-            color: #fff;
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+            color: var(--accent-cyan);
         }
 
         .user-info {
@@ -206,11 +265,12 @@
         .user-id {
             font-size: 0.8rem;
             color: var(--text-muted);
-            margin-top: 4px;
+            margin-top: 2px;
         }
 
-        /* Общие стили для кнопок меню */
+        /* Кнопки и микроинтеракции */
         .btn-def, .btn-logout {
+            position: relative;
             width: 100%;
             display: inline-block;
             padding: 12px 24px;
@@ -218,8 +278,32 @@
             text-decoration: none;
             font-size: 0.95rem;
             font-weight: 500;
-            transition: all 0.25 ease;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
             box-sizing: border-box;
+            z-index: 1;
+        }
+
+        /* Блик-эффект (Shimmer) при наведении */
+        .btn-def::before, .btn-logout::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(
+                90deg,
+                transparent,
+                rgba(255, 255, 255, 0.2),
+                transparent
+            );
+            transition: left 0.5s ease;
+            z-index: -1;
+        }
+
+        .btn-def:hover::before, .btn-logout:hover::before {
+            left: 100%;
         }
 
         .btn-def {
@@ -232,22 +316,40 @@
         .btn-def:hover {
             background: rgba(0, 242, 254, 0.15);
             border-color: var(--accent-cyan);
-            box-shadow: 0 0 20px rgba(0, 242, 254, 0.25);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
             transform: translateY(-2px);
+        }
+
+        .btn-def:active {
+            transform: translateY(0);
         }
 
         .btn-logout {
             margin-top: 8px;
             background: rgba(255, 85, 85, 0.05);
-            color: #ff5555;
+            color: var(--accent-danger);
             border: 1px solid rgba(255, 85, 85, 0.25);
         }
 
         .btn-logout:hover {
             background: rgba(255, 85, 85, 0.15);
             border-color: rgba(255, 85, 85, 0.5);
-            box-shadow: 0 0 15px rgba(255, 85, 85, 0.2);
+            box-shadow: 0 0 15px rgba(255, 85, 85, 0.25);
             transform: translateY(-2px);
+        }
+
+        .btn-logout:active {
+            transform: translateY(0);
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(15px); }
+            to { opacity: 1; transform: translateY(0); }
         }
     </style>
 </head>
@@ -256,17 +358,21 @@
     <div class="glow-sphere-1"></div>
     <div class="glow-sphere-2"></div>
 
-    <div class="auth-card">
+    <div class="auth-card" id="authCard">
+        <div class="scanline"></div>
+
         {% if user %}
             <!-- Авторизованное состояние -->
             <div class="profile-box">
-                {% if user.photo_url %}
-                    <img src="{{ user.photo_url }}" alt="Avatar" class="avatar">
-                {% else %}
-                    <div class="avatar-placeholder">
-                        {{ user.first_name[0] | upper }}
-                    </div>
-                {% endif %}
+                <div class="avatar-container">
+                    {% if user.photo_url %}
+                        <img src="{{ user.photo_url }}" alt="Avatar" class="avatar">
+                    {% else %}
+                        <div class="avatar-placeholder">
+                            {{ user.first_name[0] | upper }}
+                        </div>
+                    {% endif %}
+                </div>
 
                 <div class="user-info">
                     <div class="user-name">{{ user.first_name }} {{ user.last_name }}</div>
@@ -312,5 +418,20 @@
         {% endif %}
     </div>
 
+    <script>
+        // Легкий 3D-Tilt эффект для карточки при движении мыши
+        const card = id = document.getElementById('authCard');
+        
+        document.addEventListener('mousemove', (e) => {
+            const xAxis = (window.innerWidth / 2 - e.pageX) / 45;
+            const yAxis = (window.innerHeight / 2 - e.pageY) / 45;
+            card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+        });
+
+        // Сброс положения карточки при уходе курсора
+        document.addEventListener('mouseleave', () => {
+            card.style.transform = 'rotateY(0deg) rotateX(0deg)';
+        });
+    </script>
 </body>
 </html>
