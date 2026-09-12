@@ -45,7 +45,8 @@ class Poll:
         self.results = {}
         self._lock = Lock()
 
-    def remove_voter_by_sid(self, sid: str):
+    def remove_voter_by_sid(self, sid: str) -> bool:
+        """Удаляет пользователя только в том случае, если SID совпадает с его ТЕКУЩИМ SID."""
         with self._lock:
             for ind, user in enumerate(self.users):
                 if user.sid == sid:
@@ -55,20 +56,34 @@ class Poll:
                             if cat.name == user.vote:
                                 cat.votes = max(0, cat.votes - 1)
                                 break
-                    self.users.pop(ind)  # Удаляем по индексу, а не по объекту
-                    break
+                    self.users.pop(ind)
+                    return True
+            return False
 
-    def add_voter(self, new_user: User):
+    def add_voter(self, new_user: User) -> str | None:
+        """
+        Обновляет или добавляет пользователя.
+        Возвращает old_sid, если пользователя нужно принудительно отключить.
+        """
+        old_sid = None
         with self._lock:
-            for ind, user in enumerate(self.users):
+            for user in self.users:
                 if new_user.tg_id == user.tg_id:
-                    try:
-                        disconnect(user.sid)
-                    except Exception:
-                        pass 
-                    self.users[ind] = new_user
-                    return
+                    old_sid = user.sid
+                    # Сохраняем голос, если пользователь уже успел проголосовать
+                    new_user.vote = user.vote
+                    
+                    # Обновляем данные пользователя на актуальные из новой вкладки
+                    user.sid = new_user.sid
+                    user.username = new_user.username
+                    user.photo_url = new_user.photo_url
+                    user.is_moder = new_user.is_moder
+                    user.vote = new_user.vote
+                    return old_sid
+            
+            # Если пользователя нет в списке — добавляем
             self.users.append(new_user)
+            return None
 
     def change_status(self, new_status: str):
         self.status = new_status
@@ -243,7 +258,16 @@ def handle_join():
         photo_url=user_data.get("photo_url", ""),
         is_moder=user_data.get("is_moder", False)
     )
-    poll.add_voter(new_user)
+    
+    # 1. Получаем старый SID (если открыта новая вкладка)
+    old_sid = poll.add_voter(new_user)
+
+    # 2. Кикаем старый сокет ВНЕ блокировки Lock
+    if old_sid and old_sid != request.sid:
+        try:
+            disconnect(old_sid)
+        except Exception:
+            pass
 
     emit("poll_state", poll.data_poll_state())
     socketio.emit("update_voted_count", {
@@ -254,11 +278,14 @@ def handle_join():
 
 @socketio.on("disconnect")
 def handle_disconnect():
-    poll.remove_voter_by_sid(request.sid)
-    socketio.emit("update_voted_count", {
-        "voted": poll.voted_counts,
-        "total": len(poll.users)
-    })
+    # remove_voter_by_sid вернет True только если был удален АКТИВНЫЙ пользователь.
+    # Если это событие от старой закрытой вкладки (SID которой уже изменился в add_voter),
+    # remove_voter_by_sid вернет False и ничего не сбросит.
+    if poll.remove_voter_by_sid(request.sid):
+        socketio.emit("update_voted_count", {
+            "voted": poll.voted_counts,
+            "total": len(poll.users)
+        })
 
 
 @socketio.on("submit_vote")
