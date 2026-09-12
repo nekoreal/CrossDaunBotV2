@@ -18,6 +18,7 @@
             --border-glow: rgba(0, 242, 254, 0.15);
             --danger: #ff5555;
             --success: #00e676;
+            --warning: #ffb703;
         }
 
         * {
@@ -98,7 +99,8 @@
         .top-bar-left {
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         @keyframes pulse {
@@ -131,11 +133,12 @@
             margin-bottom: 20px;
             padding-bottom: 15px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            gap: 10px;
         }
 
         .badge {
             background: rgba(255, 255, 255, 0.05);
-            padding: 8px 14px;
+            padding: 6px 12px;
             border-radius: 10px;
             font-size: 0.85rem;
             border: 1px solid rgba(255, 255, 255, 0.1);
@@ -147,11 +150,24 @@
             font-weight: 600;
         }
 
+        .badge-purple {
+            color: var(--accent-purple);
+            border-color: rgba(157, 78, 221, 0.4);
+            font-weight: 600;
+        }
+
+        .badge-warning {
+            color: var(--warning);
+            border-color: rgba(255, 183, 3, 0.4);
+            font-weight: 600;
+        }
+
         .timer-badge {
             color: var(--accent-cyan);
             font-family: monospace;
             font-size: 1.1rem;
             font-weight: 700;
+            white-space: nowrap;
         }
 
         /* Кнопки */
@@ -294,15 +310,6 @@
             gap: 10px;
         }
 
-        .cat-select-box {
-            display: none;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 8px;
-            margin-top: 10px;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-        }
         .tie-buttons-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
@@ -392,8 +399,7 @@
     <div class="glow-sphere-2"></div> 
     <div class="auth-card">
 
-        <!-- Верхняя плашка (Таймер и счетчик) -->
-        <!-- Верхняя плашка (Кнопка Домой, Счетчик и Таймер) -->
+        <!-- Верхняя плашка (Кнопка Домой, Раунд, Осталось фото, Счетчик и Таймер) -->
         <div id="topBar" class="top-bar">
             <div class="top-bar-left">
                 <a href="/" class="btn-home" title="На главную">
@@ -401,8 +407,14 @@
                         <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
                     </svg>
                 </a>
+                <div class="badge badge-purple" title="Текущий раунд">
+                    🔄 Раунд: <span id="roundNumber">0</span>
+                </div>
+                <div class="badge badge-warning" title="Осталось неотсортированных фото">
+                    🖼️ Осталось: <span id="unsortedCount">0</span>
+                </div>
                 <div class="badge badge-cyan">
-                    👥 Проголосовало: <span id="votedCount">0</span>/<span id="totalUsers">0</span>
+                    👥 <span id="votedCount">0</span>/<span id="totalUsers">0</span>
                 </div>
             </div>
             <div class="badge timer-badge">
@@ -558,6 +570,14 @@
             document.getElementById('votedCount').innerText = state.voted;
             document.getElementById('totalUsers').innerText = state.total;
             
+            // Обновление раунда и количества неотсортированных элементов
+            if (state.round !== undefined) {
+                document.getElementById('roundNumber').innerText = state.round;
+            }
+            if (state.unsorted_count !== undefined) {
+                document.getElementById('unsortedCount').innerText = state.unsorted_count;
+            }
+            
             if (state.status === 'in_progress' || state.status === 'waiting') {
                 selectedVote = state.user_vote || null;
             }
@@ -583,22 +603,18 @@
                 document.getElementById('resultPhoto').src = state.photo_url || '';
                 renderResults(state.results);
                 stopTimer();
- 
+
                 const decisionBanner = document.getElementById('decisionBanner');
                 const decisionCategoryText = document.getElementById('decisionCategoryText');
 
                 if (state.status === 'decision') {
-                    // Определение названия категории из ответа сервера
-                    const finalCategory =  state.decision || 'Неотсортировано';
-                    
+                    const finalCategory = state.decision || 'Неотсортировано';
                     decisionCategoryText.innerText = finalCategory;
                     decisionBanner.classList.remove('hidden');
                 } else {
-                    // В состоянии 'results' решение ещё не принято — скрываем баннер
                     decisionBanner.classList.add('hidden');
                 }
 
-                // Настройка элементов управления для модератора
                 setupModeratorDecisionUI(state);
             }
         }
@@ -703,13 +719,12 @@
             const agreeWinnerBtn = document.getElementById('btnAgreeWinner');
             const tieContainer = document.getElementById('tieCategoriesContainer');
 
-            if (!decisionBlock || !startRoundBtn) return; // Проверка, если зашел не модератор
+            if (!decisionBlock || !startRoundBtn) return;
 
             if (state.status === 'results') {
                 decisionBlock.classList.remove('hidden');
                 startRoundBtn.classList.add('hidden');
 
-                // Определение победителя / ничьи
                 const results = state.results || {};
                 let maxVotes = -1;
                 let topCategories = [];
@@ -727,13 +742,11 @@
                 tieContainer.classList.add('hidden');
                 tieContainer.innerHTML = '';
 
-                // Если есть ровно один лидер с голосами больше 0
                 if (topCategories.length === 1 && maxVotes > 0) {
                     agreeWinnerBtn.innerText = `Согласиться с победителем (${topCategories[0]})`;
                     agreeWinnerBtn.dataset.category = topCategories[0];
                     agreeWinnerBtn.classList.remove('hidden');
                 } 
-                // Если ничья среди 2 и более категорий
                 else if (topCategories.length > 1 && maxVotes > 0) {
                     topCategories.forEach(cat => {
                         const btn = document.createElement('button');
@@ -746,7 +759,6 @@
                 }
 
             } else if (state.status === 'decision') {
-                // В состоянии decision кнопки решений скрываются, появляется "Следующий круг"
                 decisionBlock.classList.add('hidden');
                 startRoundBtn.classList.remove('hidden');
             }
@@ -756,7 +768,6 @@
         function moderChooseCategory(choice) {
             let selectedCategory = choice;
             
-            // Если была нажата кнопка "Согласиться с победителем", берем сохраненную категорию
             if (choice === 'winner') {
                 const agreeBtn = document.getElementById('btnAgreeWinner');
                 selectedCategory = agreeBtn.dataset.category;
@@ -785,7 +796,6 @@
         const suggestionsBox = document.getElementById('suggestionsBox');
 
         if (customInput) {
-            // Обработка ввода для генерации подсказок
             customInput.addEventListener('input', (e) => {
                 const query = e.target.value.trim().toLowerCase();
                 suggestionsBox.innerHTML = '';
@@ -817,7 +827,6 @@
                 }
             });
 
-            // Обработка клавиши Enter
             customInput.addEventListener('keydown', (e) => {
                 if (e.key === 'Enter') {
                     e.preventDefault();
@@ -826,7 +835,6 @@
             });
         }
 
-        // Анимация ухода инпута вправо и отправка данных
         function submitCustomCategory() {
             const input = document.getElementById('customCatInput');
             const value = input.value.trim();
@@ -838,13 +846,11 @@
 
             setTimeout(() => {
                 moderChooseCategory(value);
-                // Сброс состояния поля
                 input.classList.remove('active', 'slide-out');
                 input.value = '';
             }, 450);
         }
 
-        // Закрытие подсказок при клике вне компонента
         document.addEventListener('click', (e) => {
             const wrapper = document.querySelector('.custom-cat-wrapper');
             if (wrapper && !wrapper.contains(e.target)) {

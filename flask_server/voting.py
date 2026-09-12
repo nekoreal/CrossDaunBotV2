@@ -7,7 +7,8 @@ from flask_socketio import emit, disconnect
 from telegram_bot.tg_db.db_controllers.photo_controller import (
     get_all_categories_names,
     move_photo_to_category,
-    get_random_photo_url
+    get_random_photo_url,
+    get_count_unsorted
 )
 from flask_server.dashboard import socketio
 
@@ -193,6 +194,7 @@ class Poll:
 
     def data_poll_state(self) -> dict:
         return { 
+            "unsorted_count":get_count_unsorted(),
             "decision":self.decision,
             "status": self.status,
             "round": self.round,

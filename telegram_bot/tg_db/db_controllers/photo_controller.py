@@ -1,5 +1,5 @@
 
-from sqlalchemy import func
+from sqlalchemy import func, select 
 from typing import Optional
 from ..import session_scope
 from ..models.photo import Photo, Category 
@@ -17,7 +17,12 @@ def find_category_by_name(category_name: str) -> dict | None:
             return category.to_dict()
         else:
             return None
- 
+
+def get_count_unsorted():
+    with session_scope() as session:  # Замените на вашу логику получения сессии
+        stmt = select(func.count(1)).where(Photo.category_id.is_(None))
+        return session.scalar(stmt) or 0
+
 def add_or_find_category(category_name: str, session_from_call) -> Category|dict|None:
     """Если передать сессию, вернется Category модель бд
        Если НЕ передать сессию вернется Category.dict()
