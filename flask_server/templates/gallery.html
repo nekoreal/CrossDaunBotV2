@@ -565,20 +565,111 @@
         .lightbox-prev { left: 20px; }
         .lightbox-next { right: 20px; }
 
-        @media (max-width: 600px) {
-            .gallery-grid {
-                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+        /* Мобильная адаптация */
+        @media (max-width: 768px) {
+            header {
+                padding: 12px 0;
+            }
+
+            .header-content {
                 gap: 12px;
             }
+
+            .title-area {
+                align-items: flex-start;
+                gap: 6px;
+            }
+
+            h1 {
+                font-size: 1.25rem;
+            }
+
+            .photo-counter {
+                font-size: 0.8rem;
+                padding: 4px 10px;
+            }
+
             .controls-row {
                 flex-direction: column;
                 align-items: stretch;
+                gap: 10px;
             }
+
             .custom-select-wrapper {
                 width: 100%;
+                min-width: 0;
             }
-            .lightbox-prev { left: 10px; }
-            .lightbox-next { right: 10px; }
+
+            .quick-chips {
+                width: 100%;
+                padding-bottom: 4px;
+            }
+
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+                gap: 10px;
+            }
+
+            .pagination {
+                margin-top: 24px;
+                gap: 6px;
+                max-width: 100%;
+                overflow-x: auto;
+                padding: 6px 0;
+                justify-content: flex-start;
+                scrollbar-width: none;
+            }
+
+            .pagination::-webkit-scrollbar {
+                display: none;
+            }
+
+            .page-btn {
+                width: 38px;
+                height: 38px;
+                font-size: 0.9rem;
+                flex-shrink: 0;
+            }
+
+            .lightbox-content {
+                max-width: 95vw;
+                max-height: 80vh;
+            }
+
+            .lightbox-content img {
+                max-height: 60vh;
+                border-radius: 8px;
+            }
+
+            .lightbox-close {
+                top: 12px;
+                right: 12px;
+                width: 40px;
+                height: 40px;
+                font-size: 1.3rem;
+                background: rgba(18, 22, 31, 0.8);
+            }
+
+            .lightbox-nav {
+                width: 42px;
+                height: 42px;
+                font-size: 1.1rem;
+                background: rgba(18, 22, 31, 0.75);
+            }
+
+            .lightbox-prev { left: 8px; }
+            .lightbox-next { right: 8px; }
+
+            .lightbox-caption {
+                font-size: 0.85rem;
+                padding: 6px 14px;
+                margin-top: 10px;
+            }
+
+            .btn-action {
+                padding: 8px 16px;
+                font-size: 0.82rem;
+            }
         }
     </style>
 </head>
