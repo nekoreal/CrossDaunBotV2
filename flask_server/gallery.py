@@ -30,7 +30,8 @@ def paginate_photos():
 
     category_id = request.args.get('category', type=str)
     page = request.args.get('page', default=1, type=int)
-    limit = request.args.get('limit', default=25, type=int)
+    limit = request.args.get('limit', default=32, type=int)
+    if limit > 64: limit==64
 
     return photo_urls_paginate(category_id=category_id, page=page, limit=limit), 200
 

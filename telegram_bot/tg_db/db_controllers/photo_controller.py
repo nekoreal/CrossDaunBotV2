@@ -97,7 +97,7 @@ def get_all_categories_dict() :
 def photo_urls_paginate(
     category_id: int,
     page: int = 1,
-    limit: int = 25
+    limit: int = 32
 ) -> dict:
     """
     Возвращает список фотографий выбранной категории с presigned URL из S3,
@@ -107,7 +107,8 @@ def photo_urls_paginate(
         page = 1
     if limit < 1:
         limit = 25
-
+    if limit > 64: 
+        limit==64
     offset = (page - 1) * limit
 
     with session_scope() as session: 

@@ -40,7 +40,7 @@
             padding: 20px 0;
             position: sticky;
             top: 0;
-            z-index: 10;
+            z-index: 50;
         }
 
         .container {
@@ -74,36 +74,165 @@
             font-size: 0.9rem;
         }
 
-        .categories-wrapper {
+        /* NEW: Стили для удобного выбора среди множества категорий */
+        .controls-row {
             display: flex;
-            gap: 10px;
-            overflow-x: auto;
-            padding-bottom: 5px;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        /* Выпадающее меню выбора категории */
+        .custom-select-wrapper {
+            position: relative;
+            min-width: 260px;
+            flex-shrink: 0;
+        }
+
+        .select-trigger {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            transition: var(--transition);
+            user-select: none;
+            font-size: 0.95rem;
+        }
+
+        .select-trigger:hover {
+            border-color: var(--accent);
+        }
+
+        .select-trigger .arrow {
+            font-size: 0.75rem;
+            transition: transform 0.2s;
+            color: var(--text-muted);
+        }
+
+        .custom-select-wrapper.open .select-trigger {
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.2);
+        }
+
+        .custom-select-wrapper.open .arrow {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 8px);
+            left: 0;
+            right: 0;
+            background-color: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            display: none;
+            flex-direction: column;
+            max-height: 350px;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .custom-select-wrapper.open .dropdown-menu {
+            display: flex;
+        }
+
+        .dropdown-search {
+            padding: 10px;
+            border-bottom: 1px solid var(--border);
+            background-color: var(--bg-secondary);
+        }
+
+        .dropdown-search input {
+            width: 100%;
+            background-color: var(--bg-primary);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 8px 12px;
+            color: var(--text-main);
+            outline: none;
+            font-size: 0.85rem;
+        }
+
+        .dropdown-search input:focus {
+            border-color: var(--accent);
+        }
+
+        .dropdown-list {
+            overflow-y: auto;
+            max-height: 280px;
             scrollbar-width: thin;
             scrollbar-color: var(--border) transparent;
         }
 
-        .btn-def {
-            background-color: var(--bg-card);
-            color: var(--text-main);
-            border: 1px solid var(--border);
-            padding: 8px 16px;
-            border-radius: var(--radius);
+        .dropdown-item {
+            padding: 10px 16px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
             cursor: pointer;
-            white-space: nowrap;
-            transition: var(--transition);
+            transition: background 0.15s;
             font-size: 0.9rem;
         }
 
-        .btn-def:hover {
-            border-color: var(--accent);
-            background-color: #2e2e35;
+        .dropdown-item:hover {
+            background-color: rgba(99, 102, 241, 0.15);
+            color: #fff;
         }
 
-        .btn-def.active {
+        .dropdown-item.selected {
             background-color: var(--accent);
-            color: #ffffff;
+            color: #fff;
+        }
+
+        .dropdown-item .badge {
+            font-size: 0.75rem;
+            opacity: 0.75;
+            background: rgba(0,0,0,0.2);
+            padding: 2px 8px;
+            border-radius: 12px;
+        }
+
+        /* Чипсы для быстрого доступа (топ категорий) */
+        .quick-chips {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+            scrollbar-width: none;
+        }
+
+        .quick-chips::-webkit-scrollbar {
+            display: none;
+        }
+
+        .chip-btn {
+            background-color: var(--bg-card);
+            color: var(--text-muted);
+            border: 1px solid var(--border);
+            padding: 7px 14px;
+            border-radius: 20px;
+            cursor: pointer;
+            white-space: nowrap;
+            transition: var(--transition);
+            font-size: 0.85rem;
+        }
+
+        .chip-btn:hover {
             border-color: var(--accent);
+            color: var(--text-main);
+        }
+
+        .chip-btn.active {
+            background-color: rgba(99, 102, 241, 0.2);
+            border-color: var(--accent);
+            color: var(--accent);
+            font-weight: 600;
         }
 
         main {
@@ -181,7 +310,7 @@
             cursor: not-allowed;
         }
 
-        /* Lightbox (Модальное окно просмотра) */
+        /* Lightbox */
         .lightbox {
             position: fixed;
             top: 0;
@@ -192,7 +321,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 100;
+            z-index: 1000;
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.25s ease;
@@ -237,7 +366,7 @@
             font-size: 2rem;
             cursor: pointer;
             line-height: 1;
-            z-index: 101;
+            z-index: 1001;
         }
 
         .lightbox-nav {
@@ -270,13 +399,13 @@
                 grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
                 gap: 12px;
             }
-            .lightbox-nav {
-                width: 40px;
-                height: 40px;
-                font-size: 1.2rem;
+            .controls-row {
+                flex-direction: column;
+                align-items: stretch;
             }
-            .lightbox-prev { left: 10px; }
-            .lightbox-next { right: 10px; }
+            .custom-select-wrapper {
+                width: 100%;
+            }
         }
     </style>
 </head>
@@ -289,9 +418,31 @@
                     <h1 id="categoryTitle">📁 Загрузка категорий...</h1>
                     <span class="photo-counter" id="photoCounter"></span>
                 </div>
-                <div class="categories-wrapper" id="categoriesContainer">
-                    <!-- Кнопки категорий генерируются через JS -->
+                
+                <!-- Панель управления выбором категорий -->
+                <div class="controls-row">
+                    <!-- Кастомный Dropdown с Поиском -->
+                    <div class="custom-select-wrapper" id="categoryDropdown">
+                        <div class="select-trigger" onclick="toggleDropdown()">
+                            <span id="selectedCategoryName">Выберите категорию</span>
+                            <span class="arrow">▼</span>
+                        </div>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-search">
+                                <input type="text" id="catSearchInput" placeholder="Поиск категории..." oninput="filterCategories()">
+                            </div>
+                            <div class="dropdown-list" id="dropdownList">
+                                <!-- Пункты категорий генерируются через JS -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Быстрый доступ (Первые 5 популярных категорий) -->
+                    <div class="quick-chips" id="quickChipsContainer">
+                        <!-- Чипсы генерируются через JS -->
+                    </div>
                 </div>
+
             </div>
         </div>
     </header>
@@ -319,7 +470,7 @@
     </div>
 
     <script>
-        const ITEMS_PER_PAGE = 25;
+        const ITEMS_PER_PAGE = 32;
         let categoriesList = [];       
         let currentCategoryId = null;  
         let currentPage = 1;           
@@ -330,6 +481,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             initGallery();
             setupKeyboardNavigation();
+            setupOutsideClick();
         });
 
         // 1. Инициализация: получение списка категорий
@@ -342,10 +494,11 @@
 
                 if (categoriesList.length === 0) {
                     document.getElementById('categoryTitle').innerText = '📁 Категории отсутствуют';
+                    document.getElementById('selectedCategoryName').innerText = 'Нет категорий';
                     return;
                 }
 
-                renderCategories();
+                renderCategoryControls();
                 selectCategory(categoriesList[0].category_id);
             } catch (error) {
                 console.error('API Error:', error);
@@ -353,17 +506,77 @@
             }
         }
 
-        // 2. Отрисовка кнопок категорий
-        function renderCategories() {
-            const container = document.getElementById('categoriesContainer');
+        // 2. Отрисовка списка элементов в Dropdown и Quick-чипсах
+        function renderCategoryControls() {
+            renderDropdownList(categoriesList);
+            renderQuickChips();
+        }
+
+        function renderDropdownList(list) {
+            const container = document.getElementById('dropdownList');
             container.innerHTML = '';
 
-            categoriesList.forEach(cat => {
+            if (list.length === 0) {
+                container.innerHTML = '<div style="padding: 12px; color: var(--text-muted); text-align: center; font-size: 0.85rem;">Ничего не найдено</div>';
+                return;
+            }
+
+            list.forEach(cat => {
+                const item = document.createElement('div');
+                item.className = `dropdown-item ${cat.category_id === currentCategoryId ? 'selected' : ''}`;
+                item.innerHTML = `
+                    <span>${cat.name}</span>
+                    <span class="badge">${cat.photo_count}</span>
+                `;
+                item.onclick = () => {
+                    selectCategory(cat.category_id);
+                    closeDropdown();
+                };
+                container.appendChild(item);
+            });
+        }
+
+        function renderQuickChips() {
+            const container = document.getElementById('quickChipsContainer');
+            container.innerHTML = '';
+
+            // Отображаем первые 5 категорий в виде быстрых кнопок
+            const topCategories = categoriesList.slice(0, 5);
+            topCategories.forEach(cat => {
                 const btn = document.createElement('button');
-                btn.className = `btn-def ${cat.category_id === currentCategoryId ? 'active' : ''}`;
+                btn.className = `chip-btn ${cat.category_id === currentCategoryId ? 'active' : ''}`;
                 btn.innerText = `${cat.name} (${cat.photo_count})`;
                 btn.onclick = () => selectCategory(cat.category_id);
                 container.appendChild(btn);
+            });
+        }
+
+        // Поиск по категориям
+        function filterCategories() {
+            const query = document.getElementById('catSearchInput').value.toLowerCase().trim();
+            const filtered = categoriesList.filter(c => c.name.toLowerCase().includes(query));
+            renderDropdownList(filtered);
+        }
+
+        // Управление выпадающим списком
+        function toggleDropdown() {
+            const wrapper = document.getElementById('categoryDropdown');
+            wrapper.classList.toggle('open');
+            if (wrapper.classList.contains('open')) {
+                document.getElementById('catSearchInput').focus();
+            }
+        }
+
+        function closeDropdown() {
+            document.getElementById('categoryDropdown').classList.remove('open');
+        }
+
+        function setupOutsideClick() {
+            document.addEventListener('click', (e) => {
+                const wrapper = document.getElementById('categoryDropdown');
+                if (!wrapper.contains(e.target)) {
+                    closeDropdown();
+                }
             });
         }
 
@@ -372,19 +585,16 @@
             currentCategoryId = categoryId;
             currentPage = 1;
 
-            const buttons = document.querySelectorAll('#categoriesContainer .btn-def');
-            buttons.forEach((btn, idx) => {
-                const cat = categoriesList[idx];
-                if (cat) {
-                    btn.classList.toggle('active', cat.category_id === currentCategoryId);
-                }
-            });
-
             const activeCat = categoriesList.find(c => c.category_id === currentCategoryId);
             if (activeCat) {
                 document.getElementById('categoryTitle').innerText = `📁 Категория: ${activeCat.name}`;
+                document.getElementById('selectedCategoryName').innerText = `${activeCat.name} (${activeCat.photo_count})`;
                 document.getElementById('photoCounter').innerText = `🖼 Фотографий: ${activeCat.photo_count}`;
             }
+
+            // Перерисовываем элементы UI для обновления классов active/selected
+            renderDropdownList(categoriesList);
+            renderQuickChips();
 
             loadPhotos();
         }
