@@ -124,13 +124,35 @@
             line-height: 1.4;
         }
 
-        /* Контейнер виджета Telegram */
+        /* Контейнер и обертка виджета Telegram */
         .telegram-widget-container {
-            min-height: 50px;
+            min-height: 54px;
             display: flex;
             justify-content: center;
             align-items: center;
-            margin-top: 10px;
+            margin-top: 15px;
+        }
+
+        .telegram-btn-wrapper {
+            position: relative;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            padding: 3px;
+            border-radius: 14px;
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.3), rgba(157, 78, 221, 0.3));
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        .telegram-btn-wrapper:hover {
+            background: linear-gradient(135deg, var(--accent-cyan), var(--accent-purple));
+            box-shadow: 0 0 25px rgba(0, 242, 254, 0.4), 0 0 10px rgba(157, 78, 221, 0.3);
+            transform: translateY(-2px);
+        }
+
+        .telegram-btn-wrapper iframe {
+            border-radius: 11px !important;
         }
 
         /* Блок профиля авторизованного пользователя */
@@ -138,7 +160,7 @@
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 16px;
+            gap: 12px;
         }
 
         .avatar {
@@ -161,6 +183,7 @@
             font-size: 2rem;
             font-weight: bold;
             color: #fff;
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
         }
 
         .user-info {
@@ -185,42 +208,45 @@
             margin-top: 4px;
         }
 
-        .btn-logout {
+        /* Общие стили для кнопок меню */
+        .btn-def, .btn-logout {
+            width: 100%;
             display: inline-block;
-            margin-top: 20px;
-            padding: 10px 24px;
+            padding: 12px 24px;
             border-radius: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            color: #ff5555;
-            border: 1px solid rgba(255, 85, 85, 0.2);
             text-decoration: none;
-            font-size: 0.9rem;
+            font-size: 0.95rem;
             font-weight: 500;
-            transition: all 0.2s ease;
+            transition: all 0.25 ease;
+            box-sizing: border-box;
+        }
+
+        .btn-def {
+            background: rgba(0, 242, 254, 0.05);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 242, 254, 0.25);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.05);
+        }
+
+        .btn-def:hover {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .btn-logout {
+            margin-top: 8px;
+            background: rgba(255, 85, 85, 0.05);
+            color: #ff5555;
+            border: 1px solid rgba(255, 85, 85, 0.25);
         }
 
         .btn-logout:hover {
             background: rgba(255, 85, 85, 0.15);
-            border-color: rgba(255, 85, 85, 0.4); 
-        }
-
-        .btn-def {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 24px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            color: #00a0a8;
-            border: 1px solid rgba(0, 203, 238, 0.2);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 500;
-            transition: all 0.2s ease;
-        }
-
-        .btn-def:hover {
-            background: rgba(51, 254, 251, 0.15);
-            border-color: rgba(13, 238, 250, 0.4); 
+            border-color: rgba(255, 85, 85, 0.5);
+            box-shadow: 0 0 15px rgba(255, 85, 85, 0.2);
+            transform: translateY(-2px);
         }
     </style>
 </head>
@@ -250,10 +276,10 @@
                 </div>
 
                 {% if is_started %}
-                <a href="{{ url_for('voting_bp.poll_page') }}" class="btn-def">Присоединиться к голосованию</a>
+                    <a href="{{ url_for('voting_bp.poll_page') }}" class="btn-def">Присоединиться к голосованию</a>
                 {% else %}
                     {% if user.is_moder %}
-                    <a href="{{ url_for('voting_bp.start_poll') }}" class="btn-def">Начать голосование</a>
+                        <a href="{{ url_for('voting_bp.start_poll') }}" class="btn-def">Начать голосование</a>
                     {% endif %}
                 {% endif %}
                 <a href="{{ url_for('stats') }}" class="btn-def">Статистика</a>
@@ -272,13 +298,15 @@
             <p class="subtitle">Для входа в систему подтвердите свой профиль через Telegram</p>
 
             <div class="telegram-widget-container">
-                <script async src="https://telegram.org/js/telegram-widget.js?22" 
-                        data-telegram-login="{{ bot_username }}" 
-                        data-size="large" 
-                        data-radius="10"
-                        data-auth-url="{{ url_for('entry_telegram_bp.auth_telegram', _external=True) }}" 
-                        data-request-access="write">
-                </script>
+                <div class="telegram-btn-wrapper">
+                    <script async src="https://telegram.org/js/telegram-widget.js?22" 
+                            data-telegram-login="{{ bot_username }}" 
+                            data-size="large" 
+                            data-radius="10"
+                            data-auth-url="{{ url_for('entry_telegram_bp.auth_telegram', _external=True) }}" 
+                            data-request-access="write">
+                    </script>
+                </div>
             </div>
         {% endif %}
     </div>
