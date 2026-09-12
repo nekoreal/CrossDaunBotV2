@@ -32,7 +32,7 @@ def auth_telegram():
             "id": data.get("id"),
             "username": data.get("username", ""),
             "photo_url": data.get("photo_url", ""),
-            "is_moder": int(data.get("id") in [MODER_ID, ADMIN_ID]) 
+            "is_moder": int(data.get("id")) in [MODER_ID, ADMIN_ID] 
         } 
         return redirect(url_for("entry_telegram_bp.home"))
     
