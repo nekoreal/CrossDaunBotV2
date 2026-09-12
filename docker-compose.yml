@@ -26,6 +26,8 @@ services:
       MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD} 
       MINIO_SERVER_URL: "https://s3-crossdaun.duckdns.org"
       MINIO_BROWSER_REDIRECT_URL: "https://s3-admin-crossdaun.duckdns.org"
+      MINIO_DRIVE_EMPTY_PERCENTAGE: "1.0"
+      MINIO_STORAGE_CLASS_STANDARD: "EC:0"
     ports:
       - "127.0.0.1:9000:9000"
       - "127.0.0.1:9001:9001"
