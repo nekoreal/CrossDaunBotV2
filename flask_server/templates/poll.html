@@ -64,6 +64,43 @@
             animation: pulse 10s infinite alternate-reverse ease-in-out;
         }
 
+        /* Кнопка "На главную" */
+        .btn-home {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 36px;
+            height: 36px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: 10px;
+            text-decoration: none;
+            transition: all 0.2s ease;
+            flex-shrink: 0;
+        }
+
+        .btn-home:hover {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: rgba(0, 242, 254, 0.6);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+            color: #fff;
+            transform: translateY(-1px);
+        }
+
+        .btn-home svg {
+            width: 18px;
+            height: 18px;
+            fill: currentColor;
+        }
+
+        /* Обертка для левой части top-bar */
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
         @keyframes pulse {
             0% { transform: scale(1) translate(0, 0); }
             100% { transform: scale(1.15) translate(20px, -20px); }
@@ -356,9 +393,17 @@
     <div class="auth-card">
 
         <!-- Верхняя плашка (Таймер и счетчик) -->
+        <!-- Верхняя плашка (Кнопка Домой, Счетчик и Таймер) -->
         <div id="topBar" class="top-bar">
-            <div class="badge badge-cyan">
-                👥 Проголосовало: <span id="votedCount">0</span>/<span id="totalUsers">0</span>
+            <div class="top-bar-left">
+                <a href="/" class="btn-home" title="На главную">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                    </svg>
+                </a>
+                <div class="badge badge-cyan">
+                    👥 Проголосовало: <span id="votedCount">0</span>/<span id="totalUsers">0</span>
+                </div>
             </div>
             <div class="badge timer-badge">
                 ⏱ <span id="timer">00:00</span>

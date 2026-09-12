@@ -560,6 +560,43 @@
             border-color: var(--accent-cyan);
             box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
             color: #fff;
+        } 
+        /* Кнопка "На главную" */
+        .btn-home {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+            background: var(--card-bg);
+            color: var(--accent-cyan);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius);
+            text-decoration: none;
+            transition: var(--transition);
+            backdrop-filter: blur(10px);
+            flex-shrink: 0;
+        }
+
+        .btn-home:hover {
+            border-color: var(--accent-cyan);
+            background: rgba(0, 242, 254, 0.15);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+            color: #fff;
+            transform: translateY(-2px);
+        }
+
+        .btn-home svg {
+            width: 20px;
+            height: 20px;
+            fill: currentColor;
+        }
+
+        /* Вспомогательная обертка для заголовка и кнопки */
+        .header-title-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
         .lightbox-prev { left: 20px; }
@@ -670,6 +707,8 @@
                 padding: 8px 16px;
                 font-size: 0.82rem;
             }
+
+
         }
     </style>
 </head>
@@ -686,7 +725,14 @@
         <div class="container">
             <div class="header-content">
                 <div class="title-area">
-                    <h1 id="categoryTitle">📁 Загрузка категорий...</h1>
+                    <div class="header-title-wrapper">
+                        <a href="/" class="btn-home" title="На главную">
+                            <svg viewBox="0 0 24 24">
+                                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                            </svg>
+                        </a>
+                        <h1 id="categoryTitle">📁 Загрузка категорий...</h1>
+                    </div>
                     <span class="photo-counter" id="photoCounter"></span>
                 </div>
                 
