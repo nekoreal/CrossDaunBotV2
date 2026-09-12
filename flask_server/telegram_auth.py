@@ -3,7 +3,7 @@ from flask import Blueprint,request,jsonify, send_file, abort, session, redirect
 from sqlalchemy import text as sql_text#для сырых запросов текстом пример: result = db.session.execute(sql_text("update user set is_admin=True where username='admin';"))
 from sqlalchemy.sql.functions import current_user
 from io import BytesIO  
-from config import TELEGRAM_BOT_USERNAME, TELEGRAM_TOKEN, MODER_ID
+from config import TELEGRAM_BOT_USERNAME, TELEGRAM_TOKEN, MODER_ID, ADMIN_ID
 from flask_server.voting import is_started_poll
 from telegram_bot.tg_db.db_controllers.user_controller import find_user_by_tg_id
 
@@ -32,7 +32,7 @@ def auth_telegram():
             "id": data.get("id"),
             "username": data.get("username", ""),
             "photo_url": data.get("photo_url", ""),
-            "is_moder": MODER_ID==int(data.get("id"))
+            "is_moder": int(data.get("id") in [MODER_ID, ADMIN_ID]) 
         } 
         return redirect(url_for("entry_telegram_bp.home"))
     

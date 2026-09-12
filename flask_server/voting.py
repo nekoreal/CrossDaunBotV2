@@ -31,6 +31,7 @@ class CategoryPoll:
 
 class Poll:
     def __init__(self):
+        self.creator:int|None=None
         self.decision:str|None=None
         self.winning_category: str |None= None
         self.timer: int = 60
@@ -230,7 +231,7 @@ def poll_page():
 @voting_bp.route("/poll/start")
 def start_poll():
     user = session.get("user")
-    if user and user.get("is_moder"):
+    if user and user.get("is_moder") and (poll.is_started==False):
         poll.start_poll()
         return redirect(url_for("voting_bp.poll_page"))
     return "Ошибка авторизации", 400
@@ -239,7 +240,7 @@ def start_poll():
 @voting_bp.route("/poll/stop")
 def stop_poll():
     user = session.get("user")
-    if user and user.get("is_moder"):
+    if user and (user.get("is_moder")):
         poll.stop_poll()
         return redirect(url_for("entry_telegram_bp.home"))
     return "Ошибка авторизации", 400

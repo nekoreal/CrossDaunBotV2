@@ -7,10 +7,20 @@
         <link rel="stylesheet" href="./static/preflight.css" />
         <link rel="stylesheet" href="./static/style.css" />
         <link rel="shortcut icon" href="./static/favicon.ico" />
+        <style>
+            /* Стили для размещения и внешнего вида кнопки Home */
+            
+        </style>
     </head>
     <body>
         <div class="container">
             <div class="header-section align-center">
+                <a href="/" class="btn-home">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                    </svg>
+                    <span>Главная</span>
+                </a>
                 <div class="header-text">
                     <h2 class="font-32">
                         CrossDaun
@@ -31,18 +41,16 @@
                 <div class="day-card">
                     <div class="day-label">Сообщений за сегодня</div>
                     <div class="day-value" id="newToday">
-                        {{ data.today_msg_count if data.today_msg_count else 0
-                        }}
+                        {{ data.today_msg_count if data.today_msg_count else 0 }}
                     </div>
                 </div>
                 <div class="day-card day-grid day-username">
                     <div class="day-label">Топ месяца</div>
                     <img
                         class="day-avatar bordered"
-                        src="{{ data.month_user.avatar if data.month_user else 'https://ui-avatars.com/api/?name=?' }}" />
+                        src="{{ data.month_user.avatar if data.month_user else '[https://ui-avatars.com/api/?name=](https://ui-avatars.com/api/?name=)?' }}" />
                     <div class="day-value text-blue" id="activeToday">
-                        @{{data.month_user.username_plain if data.month_user
-                        else "N/A"}}
+                        @{{data.month_user.username_plain if data.month_user else "N/A"}}
                     </div>
                 </div>
             </div>
@@ -62,41 +70,25 @@
             <div class="cards">
                 <div class="table-header grid-row">
                     <div>
-                        <span onclick="sortTable(0)" class="text-sky white-born"
-                            >ID</span
-                        >
+                        <span onclick="sortTable(0)" class="text-sky white-born">ID</span>
                     </div>
                     <div>
-                        <span
-                            onclick="sortTable(1)"
-                            class="text-sky not-in-mobile"
-                            >Фото</span
-                        >
+                        <span onclick="sortTable(1)" class="text-sky not-in-mobile">Фото</span>
                     </div>
                     <div>
-                        <span onclick="sortTable(2)" class="text-sky white-born"
-                            >Имя</span
-                        >
+                        <span onclick="sortTable(2)" class="text-sky white-born">Имя</span>
                     </div>
                     <div class="align-center">
-                        <span onclick="sortTable(3)" class="text-sky white-born"
-                            >Сообщений</span
-                        >
+                        <span onclick="sortTable(3)" class="text-sky white-born">Сообщений</span>
                     </div>
                     <div class="align-center">
-                        <span onclick="sortTable(4)" class="text-sky white-born"
-                            >Медиа</span
-                        >
+                        <span onclick="sortTable(4)" class="text-sky white-born">Медиа</span>
                     </div>
                     <div class="align-center">
-                        <span onclick="sortTable(5)" class="text-sky white-born"
-                            >Стикеров</span
-                        >
+                        <span onclick="sortTable(5)" class="text-sky white-born">Стикеров</span>
                     </div>
                     <div class="align-center">
-                        <span onclick="sortTable(6)" class="text-sky white-born"
-                            >nya</span
-                        >
+                        <span onclick="sortTable(6)" class="text-sky white-born">nya</span>
                     </div>
                 </div>
                 {% for user in data.users %}
@@ -105,10 +97,9 @@
                         <span>{{ user.id }}</span>
                     </div>
                     <img class="avatar" src="{{ user.avatar }}" />
-                    <span
-                        class="user-info-mobile user-name text-blue filterable sortable"
-                        >@{{ user.username_plain }}</span
-                    >
+                    <span class="user-info-mobile user-name text-blue filterable sortable">
+                        @{{ user.username_plain }}
+                    </span>
                     <div class="align-center msg sortable">
                         <div class="split-box">
                             <span
@@ -151,9 +142,7 @@
             </div>
         </div>
         <script>
-            // Ждем полной загрузки страницы
             window.addEventListener("DOMContentLoaded", () => {
-                // --- 1. Поиск (фильтрация) ---
                 document
                     .getElementById("searchInput")
                     .addEventListener("input", function () {
@@ -161,25 +150,18 @@
                         const cards = document.querySelectorAll(".cards .card");
 
                         cards.forEach((card) => {
-                            const searchableElements =
-                                card.querySelectorAll(".filterable");
-                            const matches = Array.from(searchableElements).some(
-                                (el) =>
-                                    el.textContent
-                                        .toLowerCase()
-                                        .includes(filter),
+                            const searchableElements = card.querySelectorAll(".filterable");
+                            const matches = Array.from(searchableElements).some((el) =>
+                                el.textContent.toLowerCase().includes(filter),
                             );
                             card.style.display = matches ? "" : "none";
                         });
                     });
 
-                // --- 2. Сортировка ---
                 let sortDirections = {};
                 function getActivePeriodKey() {
                     const active = document.querySelector(".switcher.active");
-                    return active && active.id === "alltime"
-                        ? "alltime"
-                        : "month";
+                    return active && active.id === "alltime" ? "alltime" : "month";
                 }
 
                 function getMediaSum(card, periodKey) {
@@ -196,36 +178,26 @@
                 }
 
                 window.sortTable = function (columnIndex) {
-                    // Делаем функцию глобальной для onclick
                     const container = document.querySelector(".cards");
-                    const cards = Array.from(
-                        container.querySelectorAll(".card"),
-                    );
+                    const cards = Array.from(container.querySelectorAll(".card"));
 
                     sortDirections[columnIndex] = !sortDirections[columnIndex];
                     const isAsc = sortDirections[columnIndex];
                     const periodKey = getActivePeriodKey();
 
                     cards.sort((a, b) => {
-                        // Special handling for Name column (index 2)
                         if (columnIndex === 2) {
-                            const valA =
-                                a.children[columnIndex].textContent.trim();
-                            const valB =
-                                b.children[columnIndex].textContent.trim();
-                            return isAsc
-                                ? valA.localeCompare(valB)
-                                : valB.localeCompare(valA);
+                            const valA = a.children[columnIndex].textContent.trim();
+                            const valB = b.children[columnIndex].textContent.trim();
+                            return isAsc ? valA.localeCompare(valB) : valB.localeCompare(valA);
                         }
 
-                        // Special handling for Media column (index 4): sum photos + videos
                         if (columnIndex === 4) {
                             const valA = getMediaSum(a, periodKey);
                             const valB = getMediaSum(b, periodKey);
                             return isAsc ? valA - valB : valB - valA;
                         }
 
-                        // Default numeric handling for other columns
                         let valA = a.children[columnIndex].textContent.trim();
                         let valB = b.children[columnIndex].textContent.trim();
                         valA = parseInt(valA.replace(/\D/g, "")) || 0;
@@ -236,12 +208,9 @@
                     cards.forEach((card) => container.appendChild(card));
                 };
 
-                // --- 3. Переключатель периодов и Инициализация ---
                 const switchButtons = document.querySelectorAll(".switcher");
-                const valuesToUpdate =
-                    document.querySelectorAll(".val-to-update");
+                const valuesToUpdate = document.querySelectorAll(".val-to-update");
 
-                // Функция обновления данных
                 function updatePeriod(periodType) {
                     valuesToUpdate.forEach((el) => {
                         const newValue = el.getAttribute(`data-${periodType}`);
@@ -253,13 +222,9 @@
 
                 switchButtons.forEach((btn) => {
                     btn.addEventListener("click", function () {
-                        switchButtons.forEach((b) =>
-                            b.classList.remove("active"),
-                        );
+                        switchButtons.forEach((b) => b.classList.remove("active"));
                         this.classList.add("active");
-
-                        const period =
-                            this.id === "alltime" ? "alltime" : "month";
+                        const period = this.id === "alltime" ? "alltime" : "month";
                         updatePeriod(period);
                     });
                 });
