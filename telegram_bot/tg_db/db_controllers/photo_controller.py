@@ -177,20 +177,19 @@ def add_photo(
         return True
 
 
-def move_photo_to_category(photo_id: int, category_name: str) -> bool:
+def move_photo_to_category(photo_id: int, category_name: str|None) -> bool:
     with session_scope() as session:
         photo = session.query(Photo).filter_by(id=photo_id).first()
         if not photo:
             return False
-        category = add_or_find_category(category_name=category_name, session_from_call=session)
-        if not category:
-            session.rollback()
-            return False
-        category_id= category.id
+        category_id=None
+        if  category_name: 
+            category = add_or_find_category(category_name=category_name, session_from_call=session)
+            category_id= category.id 
 
-        photo.category_id = category.id
+        photo.category_id = category_id
         old_file_path = photo.file_path
-        new_file_path = str(category.id) + "/" + generate_s3_key()
+        new_file_path = str(category_id) + "/" + generate_s3_key()
         photo.file_path = new_file_path
         if not s3_client.move_file(old_file_path=old_file_path, new_file_path=new_file_path):
             session.rollback()
