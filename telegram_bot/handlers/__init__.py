@@ -12,6 +12,7 @@
 
 
 from .commands_not_from_group import *
+from .photo_sorting import *
 
 from .only_from_group import * #Этот хэндлер забирает на себя все сообщения не из группы, так что если надо не с группы, импорт хэндлера выше
 

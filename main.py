@@ -15,6 +15,7 @@ import logging
 
 
 
+
 from flask import Flask, render_template
 from telegram_bot.tg_db import session_scope
 from telegram_bot.tg_db.models.tg_user import TelegramUser
@@ -25,6 +26,7 @@ from flask_server.dashboard import run_flask
 
 from scheduler.setup import init_scheduler
 
+import s3
 
 @logger(
     txtfile="main.txt",

@@ -1,0 +1,572 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Галерея Категорий | Telegram Portal</title>
+    <style>
+        :root {
+            --bg-primary: #0a0c10;
+            --card-bg: rgba(18, 22, 31, 0.75);
+            --accent-cyan: #00f2fe;
+            --accent-purple: #9d4edd;
+            --text-main: #f0f4f8;
+            --text-muted: #8a99ad;
+            --border-glow: rgba(0, 242, 254, 0.15);
+            --danger: #ff5555;
+            --success: #00e676;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+            padding: 20px;
+        }
+
+        /* Фоновые неоновые пятна */
+        .glow-sphere-1 {
+            position: fixed;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(157, 78, 221, 0.25) 0%, rgba(0,0,0,0) 70%);
+            top: 10%;
+            left: 15%;
+            z-index: 0;
+            filter: blur(50px);
+            animation: pulse 8s infinite alternate ease-in-out;
+            pointer-events: none;
+        }
+
+        .glow-sphere-2 {
+            position: fixed;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(0, 242, 254, 0.2) 0%, rgba(0,0,0,0) 70%);
+            bottom: 10%;
+            right: 15%;
+            z-index: 0;
+            filter: blur(60px);
+            animation: pulse 10s infinite alternate-reverse ease-in-out;
+            pointer-events: none;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.15) translate(20px, -20px); }
+        }
+
+        /* Главная карточка-контейнер */
+        .main-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 1100px;
+            padding: 35px 30px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6),
+                        0 0 30px rgba(0, 242, 254, 0.05);
+        }
+
+        /* Верхняя информационная плашка */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .badge-cyan {
+            color: var(--accent-cyan);
+            border-color: rgba(0, 242, 254, 0.3);
+            font-weight: 600;
+        }
+
+        /* Сетка категорий */
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-bottom: 25px;
+        }
+
+        /* Кнопки категорий */
+        .btn-def {
+            display: inline-block;
+            width: 100%;
+            padding: 10px 16px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            text-decoration: none;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-def:hover {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: rgba(0, 242, 254, 0.6);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+        }
+
+        .btn-def.active {
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.25), rgba(157, 78, 221, 0.25));
+            border-color: var(--accent-cyan);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+        }
+
+        /* Сетка фотографий */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 15px;
+            min-height: 300px;
+        }
+
+        .photo-card {
+            position: relative;
+            aspect-ratio: 1 / 1;
+            border-radius: 12px;
+            overflow: hidden;
+            border: 1px solid var(--border-glow);
+            background: rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .photo-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 8px 20px rgba(0, 242, 254, 0.25);
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Пагинация */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            flex-wrap: wrap;
+        }
+
+        .page-btn {
+            min-width: 38px;
+            height: 38px;
+            padding: 0 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
+        }
+
+        .page-btn.active {
+            background: var(--accent-cyan);
+            color: #0a0c10;
+            border-color: var(--accent-cyan);
+            font-weight: 700;
+        }
+
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Полноэкранный просмотрщик (Lightbox) */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(5, 7, 10, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+
+        .lightbox.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .lightbox-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .lightbox-img {
+            max-width: 90vw;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 12px;
+            border: 1px solid var(--border-glow);
+            box-shadow: 0 0 50px rgba(0, 242, 254, 0.2);
+        }
+
+        .lightbox-caption {
+            margin-top: 15px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .lightbox-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(18, 22, 31, 0.8);
+            border: 1px solid var(--border-glow);
+            color: var(--accent-cyan);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(8px);
+            user-select: none;
+        }
+
+        .lightbox-btn:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.5);
+        }
+
+        .lightbox-prev { left: -70px; }
+        .lightbox-next { right: -70px; }
+
+        .lightbox-close {
+            position: absolute;
+            top: -50px;
+            right: 0;
+            background: rgba(255, 85, 85, 0.15);
+            border: 1px solid rgba(255, 85, 85, 0.4);
+            color: var(--danger);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .lightbox-close:hover {
+            background: var(--danger);
+            color: #fff;
+        }
+
+        @media (max-width: 768px) {
+            .lightbox-prev { left: 10px; top: auto; bottom: -65px; transform: none; }
+            .lightbox-next { right: 10px; top: auto; bottom: -65px; transform: none; }
+            .lightbox-close { top: -45px; right: 0; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="glow-sphere-1"></div>
+    <div class="glow-sphere-2"></div> 
+
+    <div class="main-card">
+        <!-- Верхняя инфо-панель -->
+        <div class="top-bar">
+            <div class="badge badge-cyan" id="categoryTitle">
+                📁 Категория: Загрузка...
+            </div>
+            <div class="badge" id="photoCounter">
+                🖼 Фотографий: 0
+            </div>
+        </div>
+
+        <!-- Сетка категорий -->
+        <div id="categoriesContainer" class="categories-grid">
+            <!-- Категории рендерятся из JS -->
+        </div>
+
+        <!-- Сетка изображений -->
+        <div id="galleryGrid" class="gallery-grid">
+            <!-- Фотографии рендерятся из JS -->
+        </div>
+
+        <!-- Пагинация -->
+        <div id="pagination" class="pagination-container">
+            <!-- Кнопки пагинации рендерятся из JS -->
+        </div>
+    </div>
+
+    <!-- Модальное окно (Lightbox) -->
+    <div id="lightbox" class="lightbox">
+        <div class="lightbox-content">
+            <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+            <button class="lightbox-btn lightbox-prev" onclick="changeLightboxImage(-1)">❮</button>
+            <img id="lightboxImg" class="lightbox-img" src="" alt="Увеличенное фото">
+            <div id="lightboxCaption" class="lightbox-caption"></div>
+            <button class="lightbox-btn lightbox-next" onclick="changeLightboxImage(1)">❯</button>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // ГЕНЕРАЦИЯ МOКОВЫХ ДАННЫХ ДЛЯ ТЕСТИРОВАНИЯ
+        // ==========================================
+        const categoriesData = {
+            "Природа": Array.from({ length: 63 }, (_, i) => ({
+                id: `nature_${i + 1}`,
+                title: `Природа #${i + 1}`,
+                url: `https://picsum.photos/seed/nature_${i + 1}/800/600`
+            })),
+            "Города": Array.from({ length: 42 }, (_, i) => ({
+                id: `city_${i + 1}`,
+                title: `Город #${i + 1}`,
+                url: `https://picsum.photos/seed/city_${i + 1}/800/600`
+            })),
+            "Космос": Array.from({ length: 28 }, (_, i) => ({
+                id: `space_${i + 1}`,
+                title: `Космос #${i + 1}`,
+                url: `https://picsum.photos/seed/space_${i + 1}/800/600`
+            })),
+            "Киберпанк": Array.from({ length: 55 }, (_, i) => ({
+                id: `cyber_${i + 1}`,
+                title: `Киберпанк #${i + 1}`,
+                url: `https://picsum.photos/seed/cyber_${i + 1}/800/600`
+            })),
+            "Абстракция": Array.from({ length: 18 }, (_, i) => ({
+                id: `abstract_${i + 1}`,
+                title: `Абстракция #${i + 1}`,
+                url: `https://picsum.photos/seed/abstract_${i + 1}/800/600`
+            }))
+        };
+
+        // Состояние приложения
+        const ITEMS_PER_PAGE = 25;
+        let currentCategory = Object.keys(categoriesData)[0];
+        let currentPage = 1;
+        let currentLightboxIndex = 0;
+
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCategories();
+            selectCategory(currentCategory);
+            setupKeyboardNavigation();
+        });
+
+        // Отображение списка категорий
+        function renderCategories() {
+            const container = document.getElementById('categoriesContainer');
+            container.innerHTML = '';
+
+            Object.keys(categoriesData).forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = `btn-def ${category === currentCategory ? 'active' : ''}`;
+                btn.innerText = category;
+                btn.onclick = () => selectCategory(category);
+                container.appendChild(btn);
+            });
+        }
+
+        // Выбор категории
+        function selectCategory(category) {
+            currentCategory = category;
+            currentPage = 1;
+
+            // Обновляем активную кнопку
+            const buttons = document.querySelectorAll('#categoriesContainer .btn-def');
+            buttons.forEach(btn => {
+                btn.classList.toggle('active', btn.innerText === category);
+            });
+
+            // Обновляем шапку
+            const totalItems = categoriesData[category].length;
+            document.getElementById('categoryTitle').innerText = `📁 Категория: ${category}`;
+            document.getElementById('photoCounter').innerText = `🖼 Фотографий: ${totalItems}`;
+
+            renderGallery();
+        }
+
+        // Отображение фото текущей страницы
+        function renderGallery() {
+            const grid = document.getElementById('galleryGrid');
+            grid.innerHTML = '';
+
+            const allPhotos = categoriesData[currentCategory];
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const pagePhotos = allPhotos.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+
+            pagePhotos.forEach((photo, idx) => {
+                const card = document.createElement('div');
+                card.className = 'photo-card';
+                
+                const globalIndex = startIndex + idx;
+                card.onclick = () => openLightbox(globalIndex);
+
+                card.innerHTML = `<img src="${photo.url}" alt="${photo.title}" loading="lazy">`;
+                grid.appendChild(card);
+            });
+
+            renderPagination();
+        }
+
+        // Отрисовка кнопок пагинации
+        function renderPagination() {
+            const container = document.getElementById('pagination');
+            container.innerHTML = '';
+
+            const totalItems = categoriesData[currentCategory].length;
+            const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+            if (totalPages <= 1) return;
+
+            // Кнопка «Назад»
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'page-btn';
+            prevBtn.innerText = '‹';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => goToPage(currentPage - 1);
+            container.appendChild(prevBtn);
+
+            // Кнопки страниц
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                pageBtn.innerText = i;
+                pageBtn.onclick = () => goToPage(i);
+                container.appendChild(pageBtn);
+            }
+
+            // Кнопка «Вперед»
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'page-btn';
+            nextBtn.innerText = '›';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => goToPage(currentPage + 1);
+            container.appendChild(nextBtn);
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderGallery();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ==========================================
+        // ЛОГИКА ПРОСМОТРЩИКА (LIGHTBOX)
+        // ==========================================
+        function openLightbox(index) {
+            currentLightboxIndex = index;
+            updateLightboxContent();
+            document.getElementById('lightbox').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function changeLightboxImage(direction) {
+            const photos = categoriesData[currentCategory];
+            currentLightboxIndex += direction;
+
+            if (currentLightboxIndex < 0) {
+                currentLightboxIndex = photos.length - 1;
+            } else if (currentLightboxIndex >= photos.length) {
+                currentLightboxIndex = 0;
+            }
+
+            updateLightboxContent();
+        }
+
+        function updateLightboxContent() {
+            const photo = categoriesData[currentCategory][currentLightboxIndex];
+            const total = categoriesData[currentCategory].length;
+
+            document.getElementById('lightboxImg').src = photo.url;
+            document.getElementById('lightboxCaption').innerText = 
+                `${photo.title} (${currentLightboxIndex + 1} из ${total})`;
+        }
+
+        function setupKeyboardNavigation() {
+            document.addEventListener('keydown', (e) => {
+                const lightbox = document.getElementById('lightbox');
+                if (!lightbox.classList.contains('active')) return;
+
+                if (e.key === 'Escape') closeLightbox();
+                if (e.key === 'ArrowLeft') changeLightboxImage(-1);
+                if (e.key === 'ArrowRight') changeLightboxImage(1);
+            });
+        }
+    </script>
+</body>
+</html>

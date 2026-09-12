@@ -1,8 +1,8 @@
 import json
 
-from flask import Flask, render_template, request
+from flask import Flask, config, render_template, request, redirect, url_for
 from datetime import date, timedelta, datetime
-
+from config import TELEGRAM_TOKEN
 from rabbitmq import queue_sender
 from telegram_bot.tg_db import session_scope
 from telegram_bot.tg_db.models.tg_user import TelegramUser
@@ -16,11 +16,24 @@ from telegram_bot.tg_db.db_controllers.daily_statistic_controller import (
     get_group_stats_period,
 )
 from telegram_bot.bot import bot
-from config import TELEGRAM_CHAT_ID
+from config import TELEGRAM_CHAT_ID, FLASK_SECRET_KEY , FLASK_PORT
 from telegram_bot.tg_utils.avatar import get_and_resize_chat_photo
 from telegram_bot.handlers.statistics import get_day_msg_count
 from sqlalchemy import func
 app = Flask(__name__)
+app.config["TELEGRAM_BOT_TOKEN"] = TELEGRAM_TOKEN
+app.config["SECRET_KEY"] = FLASK_SECRET_KEY  
+
+from flask_socketio import SocketIO
+socketio = SocketIO(app, cors_allowed_origins="*")
+
+from flask_server.telegram_auth import entry_telegram_bp
+from flask_server.voting import voting_bp
+from flask_server.gallery import gallery_bp
+
+app.register_blueprint(gallery_bp)  
+app.register_blueprint(entry_telegram_bp)  
+app.register_blueprint(voting_bp)
 
 
 from collections import defaultdict
@@ -48,9 +61,12 @@ def parse_device_type(user_agent):
     else:
         return 'desktop'
 
-
 @app.route('/')
-def index():
+def index_home():
+    return redirect(url_for("entry_telegram_bp.home"))
+
+@app.route('/stats')
+def stats():
     user_data = [
     {
         'request_time': datetime.now().isoformat(),
@@ -128,4 +144,4 @@ def index():
     return render_template('index.html', data=data, reverse=True)
 
 def run_flask():
-    app.run(debug=False, host='0.0.0.0', port=5002 )
+    app.run(debug=False, host='0.0.0.0', port=FLASK_PORT)

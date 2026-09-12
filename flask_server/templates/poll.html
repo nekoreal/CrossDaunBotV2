@@ -1,0 +1,811 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Панель Голосования | Telegram Portal</title>
+    <link rel="shortcut icon" href="./static/favicon.ico" />
+    <!-- Socket.IO Client CDN -->
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0c10;
+            --card-bg: rgba(18, 22, 31, 0.75);
+            --accent-cyan: #00f2fe;
+            --accent-purple: #9d4edd;
+            --text-main: #f0f4f8;
+            --text-muted: #8a99ad;
+            --border-glow: rgba(0, 242, 254, 0.15);
+            --danger: #ff5555;
+            --success: #00e676;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+            padding: 20px;
+        }
+
+        /* Фоновые неоновые пятна */
+        .glow-sphere-1 {
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(157, 78, 221, 0.25) 0%, rgba(0,0,0,0) 70%);
+            top: 10%;
+            left: 15%;
+            z-index: 0;
+            filter: blur(50px);
+            animation: pulse 8s infinite alternate ease-in-out;
+        }
+
+        .glow-sphere-2 {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(0, 242, 254, 0.2) 0%, rgba(0,0,0,0) 70%);
+            bottom: 10%;
+            right: 15%;
+            z-index: 0;
+            filter: blur(60px);
+            animation: pulse 10s infinite alternate-reverse ease-in-out;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1) translate(0, 0); }
+            100% { transform: scale(1.15) translate(20px, -20px); }
+        }
+
+        /* Главная карточка */
+        .auth-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 680px;
+            padding: 35px 30px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6),
+                        0 0 30px rgba(0, 242, 254, 0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        /* Верхняя информационная плашка */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .badge {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 8px 14px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .badge-cyan {
+            color: var(--accent-cyan);
+            border-color: rgba(0, 242, 254, 0.3);
+            font-weight: 600;
+        }
+
+        .timer-badge {
+            color: var(--accent-cyan);
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+        }
+
+        /* Кнопки */
+        .btn-def {
+            display: inline-block;
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #00f2fe;
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-def:hover:not(:disabled) {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: rgba(0, 242, 254, 0.6);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+        }
+
+        .btn-def:disabled, .btn-def.voted {
+            background: rgba(0, 230, 118, 0.15);
+            border-color: var(--success);
+            color: var(--success);
+            cursor: default;
+        }
+
+        .btn-logout {
+            display: inline-block;
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--danger);
+            border: 1px solid rgba(255, 85, 85, 0.3);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 85, 85, 0.15);
+            border-color: rgba(255, 85, 85, 0.5);
+        }
+
+        /* Анимация ожидания */
+        .loader-ring {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(0, 242, 254, 0.1);
+            border-top: 3px solid var(--accent-cyan);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Изображение */
+        .photo-container {
+            width: 100%;
+            max-height: 380px;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid var(--border-glow);
+            background: #000;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .photo-container img {
+            width: 100%;
+            height: 100%;
+            max-height: 380px;
+            object-fit: contain;
+        }
+
+        /* Сетка категорий */
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        /* Список результатов */
+        .results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px 16px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-avatars {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .user-avatars img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1px solid var(--accent-cyan);
+        }
+
+        /* Блок управления модератора */
+        .moderator-panel {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.15);
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .cat-select-box {
+            display: none;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+        .tie-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        /* Стили для формы добавления пользовательской категории */
+        .custom-cat-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .custom-cat-container {
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .custom-cat-input {
+            width: 0;
+            opacity: 0;
+            padding: 0;
+            border: none;
+            outline: none;
+            background: rgba(255, 255, 255, 0.07);
+            color: var(--text-main);
+            font-size: 0.95rem;
+            border-radius: 12px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .custom-cat-input.active {
+            width: 100%;
+            opacity: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+            margin-top: 8px;
+        }
+
+        .custom-cat-input.slide-out {
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.5s ease-in, opacity 0.4s ease-in;
+        }
+
+        .suggestions-box {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(18, 22, 31, 0.95);
+            border: 1px solid var(--border-glow);
+            border-radius: 10px;
+            margin-top: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .suggestion-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            transition: background 0.2s ease;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(0, 242, 254, 0.15);
+            color: var(--accent-cyan);
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div class="glow-sphere-1"></div>
+    <div class="glow-sphere-2"></div> 
+    <div class="auth-card">
+
+        <!-- Верхняя плашка (Таймер и счетчик) -->
+        <div id="topBar" class="top-bar">
+            <div class="badge badge-cyan">
+                👥 Проголосовало: <span id="votedCount">0</span>/<span id="totalUsers">0</span>
+            </div>
+            <div class="badge timer-badge">
+                ⏱ <span id="timer">00:00</span>
+            </div>
+        </div>
+
+        <!-- ================= 1. ЭКРАН ОЖИДАНИЯ ================= -->
+        <div id="screenWaiting" style="text-align: center; padding: 20px 0;" class="hidden">
+            <div class="loader-ring"></div>
+            <h1 style="font-size: 1.4rem; margin-bottom: 10px;">Ожидание решения модератора</h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">
+                {% if user.is_moder %}
+                    Вы зашли как модератор. Нажмите кнопку ниже, чтобы запустить раунд голосования.
+                {% else %}
+                    Организатор подготавливает следующее фото. Ожидайте начала...
+                {% endif %}
+            </p>
+
+            {% if user.is_moder %}
+                <button class="btn-def" style="margin-top: 25px;" onclick="moderStartRound()">
+                    Запустить следующий раунд
+                </button>
+            {% endif %}
+        </div>
+
+        <!-- ================= 2. ЭКРАН ГОЛОСОВАНИЯ ================= -->
+        <div id="screenVoting" class="hidden">
+            <div class="photo-container">
+                <img id="votingPhoto" src="" alt="Фото для голосования">
+            </div>
+
+            <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">
+                Выберите подходящую категорию для этого изображения:
+            </p>
+
+            <div id="categoriesContainer" class="categories-grid">
+                <!-- Категории рендерятся из JS -->
+            </div>
+        </div>
+
+        <!-- ================= 3. ЭКРАН РЕЗУЛЬТАТОВ ================= -->
+        <div id="screenResults" class="hidden">
+            <h2 style="text-align: center; font-size: 1.3rem; margin-bottom: 15px;">Результаты раунда</h2>
+            
+            <div class="photo-container" style="max-height: 200px;">
+                <img id="resultPhoto" src="" alt="Фото">
+            </div>
+
+            <!-- Блок с принятым решением модератора -->
+            <div id="decisionBanner" class="hidden" style="margin: 15px 0; padding: 12px 16px; background: rgba(0, 242, 254, 0.1); border: 1px solid var(--accent-cyan); border-radius: 12px; text-align: center;">
+                <span style="color: var(--text-muted); font-size: 0.9rem; display: block; margin-bottom: 4px;">Решение организатора:</span>
+                <span id="decisionCategoryText" style="color: var(--accent-cyan); font-weight: 700; font-size: 1.1rem;">—</span>
+            </div>
+
+            <div class="results-list" id="resultsList">
+                <!-- Результаты рендерятся из JS -->
+            </div>
+
+            <!-- Блок модератора --> 
+            {% if user.is_moder %}
+                <div class="moderator-panel">
+                    <p style="font-size: 0.85rem; color: var(--accent-cyan); font-weight: 600;">Управление организатора:</p>
+
+                    <!-- Блок принятия решения (видимый в состоянии results) -->
+                    <div id="moderDecisionBlock" class="hidden" style="display: flex; flex-direction: column; gap: 8px;">
+                        
+                        <!-- Кнопка при одиночном победителе -->
+                        <button id="btnAgreeWinner" class="btn-def hidden" onclick="moderChooseCategory('winner')">
+                            Согласиться с победителем
+                        </button>
+
+                        <!-- Кнопки при ничьей -->
+                        <div id="tieCategoriesContainer" class="tie-buttons-grid hidden">
+                            <!-- Категории ничьи сгенерируются из JS -->
+                        </div>
+
+                        <!-- Форма ввода и выбора пользовательской категории -->
+                        <div class="custom-cat-wrapper">
+                            <button id="btnToggleCustomCat" class="btn-def" style="border-color: rgba(157, 78, 221, 0.4); color: var(--accent-purple);" onclick="toggleCustomCatInput()">
+                                Добавить в категорию
+                            </button>
+                            <div class="custom-cat-container">
+                                <input type="text" id="customCatInput" class="custom-cat-input" placeholder="Введите название категории..." autocomplete="off">
+                            </div>
+                            <div id="suggestionsBox" class="suggestions-box hidden"></div>
+                        </div>
+
+                        <!-- Оставить неотсортированным -->
+                        <button class="btn-def" style="border-color: rgba(255,255,255,0.3); color: var(--text-main);" onclick="moderChooseCategory(null)">
+                            Оставить неотсортированным
+                        </button>
+                    </div>
+
+                    <!-- Кнопка "Следующий круг" (видимая только в состоянии decision) -->
+                    <div style="display: flex; gap: 10px; margin-top: 5px;">
+                        <button id="moderStartRoundBtn" class="btn-def hidden" onclick="moderStartRound()">Следующий круг</button> 
+                    </div>
+
+                    <!-- Кнопка "Завершить голосование" всегда присутствует на экране результатов -->
+                    <a href="{{ url_for('voting_bp.stop_poll') }}" class="btn-logout" style="margin-top: 5px;">Завершить голосование</a>
+                </div>
+            {% endif %}
+        </div>
+
+    </div>
+
+    <script>
+        const socket = io();
+        let timerInterval = null;
+        let selectedVote = null;
+        let availableCategories = [];
+
+        // Подключение к комнате после запуска WebSocket соединения
+        socket.on('connect', () => {
+            socket.emit('join_poll');
+        });
+
+        // Основное событие обновления состояния раунда
+        socket.on('poll_state', (state) => {
+            if (state.categories) {
+                availableCategories = state.categories;
+            }
+            updatePollUI(state);
+        });
+
+        // Быстрое обновление счетчиков проголосовавших пользователей
+        socket.on('update_voted_count', (data) => {
+            document.getElementById('votedCount').innerText = data.voted;
+            document.getElementById('totalUsers').innerText = data.total;
+        });
+
+        // Успешная фиксация голоса текущего клиента
+        socket.on('vote_success', (data) => {
+            selectedVote = data.category;
+            const buttons = document.querySelectorAll('#categoriesContainer .btn-def');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                if (btn.innerText === data.category) {
+                    btn.classList.add('voted');
+                    btn.innerText = `✓ ${data.category}`;
+                }
+            });
+        });
+
+        // Всплывающие уведомления об ошибках
+        socket.on('alert', (data) => {
+            alert(data.message);
+        });
+
+        // Функция обновления UI в зависимости от текущего статуса
+        function updatePollUI(state) {
+            document.getElementById('votedCount').innerText = state.voted;
+            document.getElementById('totalUsers').innerText = state.total;
+            
+            if (state.status === 'in_progress' || state.status === 'waiting') {
+                selectedVote = state.user_vote || null;
+            }
+
+            const screenWaiting = document.getElementById('screenWaiting');
+            const screenVoting = document.getElementById('screenVoting');
+            const screenResults = document.getElementById('screenResults');
+
+            screenWaiting.classList.add('hidden');
+            screenVoting.classList.add('hidden');
+            screenResults.classList.add('hidden');
+
+            if (state.status === 'waiting') {
+                screenWaiting.classList.remove('hidden');
+                stopTimer();
+            } else if (state.status === 'in_progress') {
+                screenVoting.classList.remove('hidden');
+                document.getElementById('votingPhoto').src = state.photo_url || '';
+                renderCategories(state.categories);
+                startTimer(state.end_time);  
+            } else if (state.status === 'results' || state.status === 'decision') {
+                screenResults.classList.remove('hidden');
+                document.getElementById('resultPhoto').src = state.photo_url || '';
+                renderResults(state.results);
+                stopTimer();
+ 
+                const decisionBanner = document.getElementById('decisionBanner');
+                const decisionCategoryText = document.getElementById('decisionCategoryText');
+
+                if (state.status === 'decision') {
+                    // Определение названия категории из ответа сервера
+                    const finalCategory =  state.decision || 'Неотсортировано';
+                    
+                    decisionCategoryText.innerText = finalCategory;
+                    decisionBanner.classList.remove('hidden');
+                } else {
+                    // В состоянии 'results' решение ещё не принято — скрываем баннер
+                    decisionBanner.classList.add('hidden');
+                }
+
+                // Настройка элементов управления для модератора
+                setupModeratorDecisionUI(state);
+            }
+        }
+
+        // Рендер кнопок выбора категорий
+        function renderCategories(categories) {
+            const container = document.getElementById('categoriesContainer');
+            container.innerHTML = '';
+            
+            categories.forEach(cat => {
+                const button = document.createElement('button');
+                button.className = 'btn-def';
+                button.innerText = cat;
+                
+                if (selectedVote === cat) {
+                    button.classList.add('voted');
+                    button.innerText = `✓ ${cat}`;
+                    button.disabled = true;
+                } else if (selectedVote) {
+                    button.disabled = true;
+                } else {
+                    button.onclick = () => submitVote(cat);
+                }
+                
+                container.appendChild(button);
+            });
+        }
+
+        // Рендер списка результатов
+        function renderResults(results) {
+            const container = document.getElementById('resultsList');
+            container.innerHTML = '';
+
+            for (const [catName, data] of Object.entries(results)) {
+                const item = document.createElement('div');
+                item.className = 'result-item';
+
+                let avatarsHtml = '';
+                if (data.photo_urls && data.photo_urls.length > 0) {
+                    avatarsHtml = `<div class="user-avatars">` + 
+                        data.photo_urls.map(url => url ? `<img src="${url}" alt="user">` : '').join('') +
+                        `</div>`;
+                }
+
+                item.innerHTML = `
+                    <div class="result-header">
+                        <span style="font-weight: 600;">${catName}</span>
+                        <span style="color: var(--accent-cyan); font-weight: bold;">${data.count}</span>
+                    </div>
+                    ${avatarsHtml}
+                `;
+                container.appendChild(item);
+            }
+        }
+
+        // Функция отправки голоса
+        function submitVote(category) {
+            socket.emit('submit_vote', { category: category });
+        }
+
+        // Действия модератора
+        function moderStartRound() {
+            selectedVote = null;
+            socket.emit('moder_start_round');
+        } 
+
+        // Таймер обратного отсчета
+        function startTimer(endTimeSeconds) {
+            stopTimer();
+
+            function update() {
+                const nowSeconds = Date.now() / 1000;
+                const remaining = Math.max(0, Math.ceil(endTimeSeconds - nowSeconds));
+
+                const minutes = Math.floor(remaining / 60);
+                const seconds = remaining % 60;
+
+                document.getElementById('timer').innerText = 
+                    `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+                if (remaining <= 0) {
+                    stopTimer();
+                }
+            }
+
+            update();
+            timerInterval = setInterval(update, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            document.getElementById('timer').innerText = "00:00";
+        }
+
+        // Логика отображения элементов управления модератора на экране результатов
+        function setupModeratorDecisionUI(state) {
+            const decisionBlock = document.getElementById('moderDecisionBlock');
+            const startRoundBtn = document.getElementById('moderStartRoundBtn');
+            const agreeWinnerBtn = document.getElementById('btnAgreeWinner');
+            const tieContainer = document.getElementById('tieCategoriesContainer');
+
+            if (!decisionBlock || !startRoundBtn) return; // Проверка, если зашел не модератор
+
+            if (state.status === 'results') {
+                decisionBlock.classList.remove('hidden');
+                startRoundBtn.classList.add('hidden');
+
+                // Определение победителя / ничьи
+                const results = state.results || {};
+                let maxVotes = -1;
+                let topCategories = [];
+
+                for (const [catName, data] of Object.entries(results)) {
+                    if (data.count > maxVotes) {
+                        maxVotes = data.count;
+                        topCategories = [catName];
+                    } else if (data.count === maxVotes && maxVotes > 0) {
+                        topCategories.push(catName);
+                    }
+                }
+
+                agreeWinnerBtn.classList.add('hidden');
+                tieContainer.classList.add('hidden');
+                tieContainer.innerHTML = '';
+
+                // Если есть ровно один лидер с голосами больше 0
+                if (topCategories.length === 1 && maxVotes > 0) {
+                    agreeWinnerBtn.innerText = `Согласиться с победителем (${topCategories[0]})`;
+                    agreeWinnerBtn.dataset.category = topCategories[0];
+                    agreeWinnerBtn.classList.remove('hidden');
+                } 
+                // Если ничья среди 2 и более категорий
+                else if (topCategories.length > 1 && maxVotes > 0) {
+                    topCategories.forEach(cat => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn-def';
+                        btn.innerText = `Победитель: ${cat}`;
+                        btn.onclick = () => moderChooseCategory(cat);
+                        tieContainer.appendChild(btn);
+                    });
+                    tieContainer.classList.remove('hidden');
+                }
+
+            } else if (state.status === 'decision') {
+                // В состоянии decision кнопки решений скрываются, появляется "Следующий круг"
+                decisionBlock.classList.add('hidden');
+                startRoundBtn.classList.remove('hidden');
+            }
+        }
+
+        // Отправка решения модератора на сервер
+        function moderChooseCategory(choice) {
+            let selectedCategory = choice;
+            
+            // Если была нажата кнопка "Согласиться с победителем", берем сохраненную категорию
+            if (choice === 'winner') {
+                const agreeBtn = document.getElementById('btnAgreeWinner');
+                selectedCategory = agreeBtn.dataset.category;
+            }
+
+            socket.emit('moder_decision', { category: selectedCategory });
+        }
+
+        // Логика работы поля ввода пользовательской категории
+        function toggleCustomCatInput() {
+            const input = document.getElementById('customCatInput');
+            input.classList.toggle('active');
+            if (input.classList.contains('active')) {
+                input.focus();
+            } else {
+                hideSuggestions();
+            }
+        }
+
+        function hideSuggestions() {
+            const box = document.getElementById('suggestionsBox');
+            if (box) box.classList.add('hidden');
+        }
+
+        const customInput = document.getElementById('customCatInput');
+        const suggestionsBox = document.getElementById('suggestionsBox');
+
+        if (customInput) {
+            // Обработка ввода для генерации подсказок
+            customInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim().toLowerCase();
+                suggestionsBox.innerHTML = '';
+
+                if (!query) {
+                    hideSuggestions();
+                    return;
+                }
+
+                const matches = availableCategories.filter(cat => 
+                    cat.toLowerCase().includes(query)
+                );
+
+                if (matches.length > 0) {
+                    matches.forEach(cat => {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item';
+                        div.innerText = cat;
+                        div.onclick = () => {
+                            customInput.value = cat;
+                            hideSuggestions();
+                            submitCustomCategory();
+                        };
+                        suggestionsBox.appendChild(div);
+                    });
+                    suggestionsBox.classList.remove('hidden');
+                } else {
+                    hideSuggestions();
+                }
+            });
+
+            // Обработка клавиши Enter
+            customInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitCustomCategory();
+                }
+            });
+        }
+
+        // Анимация ухода инпута вправо и отправка данных
+        function submitCustomCategory() {
+            const input = document.getElementById('customCatInput');
+            const value = input.value.trim();
+
+            if (!value) return;
+
+            hideSuggestions();
+            input.classList.add('slide-out');
+
+            setTimeout(() => {
+                moderChooseCategory(value);
+                // Сброс состояния поля
+                input.classList.remove('active', 'slide-out');
+                input.value = '';
+            }, 450);
+        }
+
+        // Закрытие подсказок при клике вне компонента
+        document.addEventListener('click', (e) => {
+            const wrapper = document.querySelector('.custom-cat-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                hideSuggestions();
+            }
+        });
+    </script>
+</body>
+</html>
