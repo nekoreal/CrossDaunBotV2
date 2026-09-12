@@ -257,7 +257,7 @@
                     {% endif %}
                 {% endif %}
                 <a href="{{ url_for('stats') }}" class="btn-def">Статистика</a>
-                <a href="{{ url_for('gallery') }}" class="btn-def">Галерея</a>
+                <a href="{{ url_for('gallery_bp.gallery_page') }}" class="btn-def">Галерея</a>
                 <a href="{{ url_for('entry_telegram_bp.logout') }}" class="btn-logout">Выйти из аккаунта</a>
             </div>
         {% else %}

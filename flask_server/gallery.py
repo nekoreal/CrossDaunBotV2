@@ -35,7 +35,7 @@ def paginate_photos():
     return photo_urls_paginate(category_id=category_id, page=page, limit=limit), 200
 
 @gallery_bp.route("/gallery")
-def gallery():
+def gallery_page():
     user = session.get("user")
     if not user:
         return redirect(url_for("entry_telegram_bp.home")) 
