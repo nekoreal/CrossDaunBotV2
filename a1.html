@@ -133,10 +133,17 @@
             transition: all 0.2s ease;
         }
 
-        .btn-def:hover {
+        .btn-def:hover:not(:disabled) {
             background: rgba(0, 242, 254, 0.15);
             border-color: rgba(0, 242, 254, 0.6);
             box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+        }
+
+        .btn-def:disabled, .btn-def.voted {
+            background: rgba(0, 230, 118, 0.15);
+            border-color: var(--success);
+            color: var(--success);
+            cursor: default;
         }
 
         .btn-logout {
@@ -215,9 +222,28 @@
             padding: 12px 16px;
             border-radius: 10px;
             display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .result-header {
+            display: flex;
             justify-content: space-between;
             align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .user-avatars {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .user-avatars img {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: 1px solid var(--accent-cyan);
         }
 
         /* Блок управления модератора */
@@ -240,14 +266,108 @@
             border-radius: 10px;
         }
 
+        .tie-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        /* Секция создания новой категории */
+        .new-category-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+        }
+
+        .animation-container {
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
+        }
+ 
+
+        /* Инпут для новой категории */
+        .input-wrapper {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                        opacity 0.4s ease, 
+                        max-height 0.4s ease;
+            max-height: 50px;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .input-wrapper.hidden {
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-20px);
+            pointer-events: none;
+            margin: 0;
+        }
+
+        .input-wrapper.slide-right {
+            opacity: 0;
+            transform: translateX(120%);
+            max-height: 0;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            background: rgba(0, 0, 0, 0.4);
+            color: #fff;
+            outline: none;
+        }
+
+        /* Сообщения фидбека */
+        .feedback-wrapper {
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                        opacity 0.4s ease, 
+                        max-height 0.4s ease;
+            max-height: 50px;
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .feedback-wrapper.success {
+            background: rgba(46, 204, 113, 0.2);
+            border: 1px solid #2ecc71;
+            color: #2ecc71;
+        }
+
+        .feedback-wrapper.error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+        }
+
+        .feedback-wrapper.hidden-left {
+            max-height: 0;
+            opacity: 0;
+            transform: translateX(-120%);
+        }
+
+        .feedback-wrapper.slide-up {
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-20px);
+        }
+
         .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <div class="glow-sphere-1"></div>
-    <div class="glow-sphere-2"></div>
-
+    <div class="glow-sphere-2"></div> 
     <div class="auth-card">
 
         <!-- Верхняя плашка (Таймер и счетчик) -->
@@ -295,7 +415,7 @@
         </div>
 
         <!-- ================= 3. ЭКРАН РЕЗУЛЬТАТОВ ================= -->
-        <div id="screenResults" class="hidden">
+        <div id="screenResults" class="">
             <h2 style="text-align: center; font-size: 1.3rem; margin-bottom: 15px;">Результаты раунда</h2>
             
             <div class="photo-container" style="max-height: 200px;">
@@ -318,11 +438,29 @@
                     <button id="btnWinnerCat" class="btn-def" onclick="sendModerDecision('winner')">
                         Отправить в победившую категорию
                     </button>
-                    
-                    <button class="btn-def" onclick="toggleCustomCategories()">
-                        Выбрать категорию вручную...
-                    </button>
-                    
+
+                    <!-- Добавление новой категории -->
+                    <div class="new-category-section">
+                        <button id="createCategoryBtn" class="btn-def" onclick="toggleCustomCategories()">
+                            Создать категорию
+                        </button>
+                        
+                        <div class="animation-container">
+                            <!-- Поле ввода -->
+                            <div id="categoryInputWrapper" class="input-wrapper hidden">
+                                <input 
+                                    type="text" 
+                                    id="newCategoryInput" 
+                                    placeholder="Название категории" 
+                                    onkeydown="handleCategoryInputKey(event)"
+                                >
+                            </div>
+
+                            <!-- Сообщение от сервера -->
+                            <div id="serverFeedback" class="feedback-wrapper hidden-left"></div>
+                        </div>
+                    </div>
+
                     <div id="customCatBox" class="cat-select-box">
                         <!-- Динамический выбор категорий -->
                     </div>
@@ -342,6 +480,85 @@
     </div>
 
     <script>
+        let isAnimating = false;
+
+        // Переключение видимости инпута и фокус при открытии
+        function toggleCustomCategories() {
+            if (isAnimating) return;
+
+            const wrapper = document.getElementById('categoryInputWrapper');
+            const input = document.getElementById('newCategoryInput');
+            
+            wrapper.classList.remove('slide-right');
+            wrapper.classList.toggle('hidden');
+            
+            if (!wrapper.classList.contains('hidden')) {
+                input.focus();
+            }
+        }
+
+        async function handleCategoryInputKey(event) {
+            if (event.key === 'Enter') {
+                const input = event.target;
+                const categoryName = input.value.trim();
+                if (!categoryName || isAnimating) return;
+
+                const btn = document.getElementById('createCategoryBtn');
+                const inputWrapper = document.getElementById('categoryInputWrapper');
+                const feedback = document.getElementById('serverFeedback');
+
+                // 1. Блокируем элемент и уводим инпут вправо
+                isAnimating = true;
+                btn.disabled = true;
+                inputWrapper.classList.add('slide-right');
+
+                let responseMessage = "";
+                let isSuccess = false;
+
+                // 2. Отправка запроса на сервер
+                try {
+                    const res = await fetch('/api/categories', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: categoryName })
+                    });
+                    const data = await res.json();
+                    
+                    if (res.ok) {
+                        responseMessage = data.message || "Категория создана!";
+                        isSuccess = true;
+                    } else {
+                        responseMessage = data.error || "Ошибка создания";
+                    }
+                } catch (err) {
+                    responseMessage = "Ошибка соединения";
+                }
+
+                // 3. Подготавливаем фидбек
+                feedback.className = `feedback-wrapper hidden-left ${isSuccess ? 'success' : 'error'}`;
+                feedback.innerText = responseMessage;
+
+                // Выезд ответа слева после исчезновения инпута
+                setTimeout(() => {
+                    inputWrapper.classList.add('hidden');
+                    inputWrapper.classList.remove('slide-right');
+                    input.value = '';
+
+                    feedback.classList.remove('hidden-left');
+                }, 300);
+
+                // 4. Закрытие сообщения вверх под кнопку и разблокировка
+                setTimeout(() => {
+                    feedback.classList.add('slide-up');
+
+                    setTimeout(() => {
+                        feedback.className = 'feedback-wrapper hidden-left';
+                        btn.disabled = false;
+                        isAnimating = false;
+                    }, 400); 
+                }, 5300); 
+            }
+        }
     </script>
 </body>
 </html>

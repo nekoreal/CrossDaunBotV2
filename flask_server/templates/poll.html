@@ -272,6 +272,79 @@
             margin-bottom: 5px;
         }
 
+        /* Стили для формы добавления пользовательской категории */
+        .custom-cat-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .custom-cat-container {
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            border-radius: 12px;
+            position: relative;
+        }
+
+        .custom-cat-input {
+            width: 0;
+            opacity: 0;
+            padding: 0;
+            border: none;
+            outline: none;
+            background: rgba(255, 255, 255, 0.07);
+            color: var(--text-main);
+            font-size: 0.95rem;
+            border-radius: 12px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .custom-cat-input.active {
+            width: 100%;
+            opacity: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--accent-cyan);
+            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
+            margin-top: 8px;
+        }
+
+        .custom-cat-input.slide-out {
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.5s ease-in, opacity 0.4s ease-in;
+        }
+
+        .suggestions-box {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(18, 22, 31, 0.95);
+            border: 1px solid var(--border-glow);
+            border-radius: 10px;
+            margin-top: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+        }
+
+        .suggestion-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            transition: background 0.2s ease;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(0, 242, 254, 0.15);
+            color: var(--accent-cyan);
+        }
+
         .hidden { display: none !important; }
     </style>
 </head>
@@ -355,6 +428,17 @@
                             <!-- Категории ничьи сгенерируются из JS -->
                         </div>
 
+                        <!-- Форма ввода и выбора пользовательской категории -->
+                        <div class="custom-cat-wrapper">
+                            <button id="btnToggleCustomCat" class="btn-def" style="border-color: rgba(157, 78, 221, 0.4); color: var(--accent-purple);" onclick="toggleCustomCatInput()">
+                                Добавить в категорию
+                            </button>
+                            <div class="custom-cat-container">
+                                <input type="text" id="customCatInput" class="custom-cat-input" placeholder="Введите название категории..." autocomplete="off">
+                            </div>
+                            <div id="suggestionsBox" class="suggestions-box hidden"></div>
+                        </div>
+
                         <!-- Оставить неотсортированным -->
                         <button class="btn-def" style="border-color: rgba(255,255,255,0.3); color: var(--text-main);" onclick="moderChooseCategory(null)">
                             Оставить неотсортированным
@@ -378,6 +462,7 @@
         const socket = io();
         let timerInterval = null;
         let selectedVote = null;
+        let availableCategories = [];
 
         // Подключение к комнате после запуска WebSocket соединения
         socket.on('connect', () => {
@@ -386,6 +471,9 @@
 
         // Основное событие обновления состояния раунда
         socket.on('poll_state', (state) => {
+            if (state.categories) {
+                availableCategories = state.categories;
+            }
             updatePollUI(state);
         });
 
@@ -610,6 +698,93 @@
 
             socket.emit('moder_decision', { category: selectedCategory });
         }
+
+        // Логика работы поля ввода пользовательской категории
+        function toggleCustomCatInput() {
+            const input = document.getElementById('customCatInput');
+            input.classList.toggle('active');
+            if (input.classList.contains('active')) {
+                input.focus();
+            } else {
+                hideSuggestions();
+            }
+        }
+
+        function hideSuggestions() {
+            const box = document.getElementById('suggestionsBox');
+            if (box) box.classList.add('hidden');
+        }
+
+        const customInput = document.getElementById('customCatInput');
+        const suggestionsBox = document.getElementById('suggestionsBox');
+
+        if (customInput) {
+            // Обработка ввода для генерации подсказок
+            customInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim().toLowerCase();
+                suggestionsBox.innerHTML = '';
+
+                if (!query) {
+                    hideSuggestions();
+                    return;
+                }
+
+                const matches = availableCategories.filter(cat => 
+                    cat.toLowerCase().includes(query)
+                );
+
+                if (matches.length > 0) {
+                    matches.forEach(cat => {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item';
+                        div.innerText = cat;
+                        div.onclick = () => {
+                            customInput.value = cat;
+                            hideSuggestions();
+                            submitCustomCategory();
+                        };
+                        suggestionsBox.appendChild(div);
+                    });
+                    suggestionsBox.classList.remove('hidden');
+                } else {
+                    hideSuggestions();
+                }
+            });
+
+            // Обработка клавиши Enter
+            customInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitCustomCategory();
+                }
+            });
+        }
+
+        // Анимация ухода инпута вправо и отправка данных
+        function submitCustomCategory() {
+            const input = document.getElementById('customCatInput');
+            const value = input.value.trim();
+
+            if (!value) return;
+
+            hideSuggestions();
+            input.classList.add('slide-out');
+
+            setTimeout(() => {
+                moderChooseCategory(value);
+                // Сброс состояния поля
+                input.classList.remove('active', 'slide-out');
+                input.value = '';
+            }, 450);
+        }
+
+        // Закрытие подсказок при клике вне компонента
+        document.addEventListener('click', (e) => {
+            const wrapper = document.querySelector('.custom-cat-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                hideSuggestions();
+            }
+        });
     </script>
 </body>
 </html>

@@ -9,6 +9,14 @@ from s3 import s3_client
 
 def generate_s3_key() -> str:  
     return uuid.uuid4().hex  
+
+def find_category_by_name(category_name: str) -> dict | None:
+    with session_scope() as session:
+        category = session.query(Category).filter_by(name=category_name).first()
+        if category:
+            return category.to_dict()
+        else:
+            return None
  
 def add_or_find_category(category_name: str, session_from_call) -> Category|dict|None:
     """Если передать сессию, вернется Category модель бд

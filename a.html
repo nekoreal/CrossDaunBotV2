@@ -219,7 +219,19 @@
             align-items: center;
             border: 1px solid rgba(255, 255, 255, 0.05);
         }
+        .input-wrapper {
+            max-height: 50px;
+            opacity: 1;
+            overflow: hidden;
+            transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
+        }
 
+        .input-wrapper.hidden {
+            max-height: 0;
+            opacity: 0;
+            pointer-events: none;
+            margin: 0;
+        }
         /* Блок управления модератора */
         .moderator-panel {
             margin-top: 25px;
@@ -240,6 +252,94 @@
             border-radius: 10px;
         }
 
+
+        .new-category-section {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            position: relative;
+        }
+
+        .animation-container {
+            position: relative;
+            overflow: hidden;
+            min-height: 0;
+        }
+
+        /* --- Инпут --- */
+        .input-wrapper {
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                        opacity 0.4s ease, 
+                        max-height 0.4s ease;
+            max-height: 50px;
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        /* Исходное положение: скрыт под кнопкой */
+        .input-wrapper.hidden {
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-20px);
+            pointer-events: none;
+        }
+
+        /* Уезд вправо при отправке */
+        .input-wrapper.slide-right {
+            opacity: 0;
+            transform: translateX(120%);
+            max-height: 0;
+        }
+
+        .input-wrapper input {
+            width: 100%;
+            box-sizing: border-box;
+            padding: 8px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+        }
+
+        /* --- Фидбек от сервера --- */
+        .feedback-wrapper {
+            padding: 8px;
+            border-radius: 8px;
+            font-size: 14px;
+            text-align: center;
+            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
+                        opacity 0.4s ease, 
+                        max-height 0.4s ease;
+            max-height: 50px;
+            opacity: 1;
+            transform: translateX(0);
+        }
+
+        .feedback-wrapper.success {
+            background: rgba(46, 204, 113, 0.2);
+            border: 1px solid #2ecc71;
+            color: #2ecc71;
+        }
+
+        .feedback-wrapper.error {
+            background: rgba(231, 76, 60, 0.2);
+            border: 1px solid #e74c3c;
+            color: #e74c3c;
+        }
+
+        /* Появление слева */
+        .feedback-wrapper.hidden-left {
+            max-height: 0;
+            opacity: 0;
+            transform: translateX(-120%);
+        }
+
+        /* Заплывание вверх под кнопку */
+        .feedback-wrapper.slide-up {
+            max-height: 0;
+            opacity: 0;
+            transform: translateY(-20px);
+        }
         .hidden { display: none !important; }
     </style>
 </head>
@@ -294,7 +394,7 @@
         </div>
 
         <!-- ================= 3. ЭКРАН РЕЗУЛЬТАТОВ ================= -->
-        <div id="screenResults" class="hidden">
+        <div id="screenResults" class=" ">
             <h2 style="text-align: center; font-size: 1.3rem; margin-bottom: 15px;">Результаты раунда</h2>
             
             <div class="photo-container" style="max-height: 200px;">
@@ -317,11 +417,27 @@
                     <button id="btnWinnerCat" class="btn-def" onclick="sendModerDecision('winner')">
                         Отправить в победившую категорию
                     </button>
-                    
-                    <button class="btn-def" onclick="toggleCustomCategories()">
-                        Выбрать категорию вручную...
-                    </button>
-                    
+                    <!-- Добавление новой категории -->
+                    <div class="new-category-section">
+                        <button id="createCategoryBtn" class="btn-def" onclick="toggleCustomCategories()">
+                            Создать категорию
+                        </button>
+                        
+                        <div class="animation-container">
+                            <!-- Поле ввода -->
+                            <div id="categoryInputWrapper" class="input-wrapper hidden">
+                                <input 
+                                    type="text" 
+                                    id="newCategoryInput" 
+                                    placeholder="Название категории" 
+                                    onkeydown="handleCategoryInputKey(event)"
+                                >
+                            </div>
+
+                            <!-- Сообщение от сервера -->
+                            <div id="serverFeedback" class="feedback-wrapper hidden"></div>
+                        </div>
+                    </div>
                     <div id="customCatBox" class="cat-select-box">
                         <!-- Динамический выбор категорий -->
                     </div>
@@ -341,6 +457,86 @@
     </div>
 
     <script>
+        // Переключение видимости инпута и фокус при открытии
+        let isAnimating = false;
+
+        function toggleCustomCategories() {
+            if (isAnimating) return;
+
+            const wrapper = document.getElementById('categoryInputWrapper');
+            const input = document.getElementById('newCategoryInput');
+            
+            wrapper.classList.remove('slide-right');
+            wrapper.classList.toggle('hidden');
+            
+            if (!wrapper.classList.contains('hidden')) {
+                input.focus();
+            }
+        }
+
+        async function handleCategoryInputKey(event) {
+            if (event.key === 'Enter') {
+                const input = event.target;
+                const categoryName = input.value.trim();
+                if (!categoryName || isAnimating) return;
+
+                const btn = document.getElementById('createCategoryBtn');
+                const inputWrapper = document.getElementById('categoryInputWrapper');
+                const feedback = document.getElementById('serverFeedback');
+
+                // 1. Блокируем кнопку и запускаем анимацию уезда инпута вправо
+                isAnimating = true;
+                btn.disabled = true;
+                inputWrapper.classList.add('slide-right');
+
+                let responseMessage = "";
+                let isSuccess = false;
+
+                // 2. Отправка запроса
+                try {
+                    const res = await fetch('/api/categories', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ name: categoryName })
+                    });
+                    const data = await res.json();
+                    
+                    if (res.ok) {
+                        responseMessage = data.message || "Категория создана!";
+                        isSuccess = true;
+                    } else {
+                        responseMessage = data.error || "Ошибка создания";
+                    }
+                } catch (err) {
+                    responseMessage = "Ошибка соединения";
+                }
+
+                // 3. Подготавливаем фидбек: ставим слева и включаем
+                feedback.className = `feedback-wrapper hidden-left ${isSuccess ? 'success' : 'error'}`;
+                feedback.innerText = responseMessage;
+
+                // Ждем завершения уезда инпута (~300ms) перед выездом ответа слева
+                setTimeout(() => {
+                    inputWrapper.classList.add('hidden');
+                    inputWrapper.classList.remove('slide-right');
+                    input.value = '';
+
+                    // Выезд ответа слева
+                    feedback.classList.remove('hidden-left');
+                }, 300);
+
+                // 4. Через 5 секунд заплываем под кнопку и разблокируем ее
+                setTimeout(() => {
+                    feedback.classList.add('slide-up');
+
+                    setTimeout(() => {
+                        feedback.className = 'feedback-wrapper hidden-left';
+                        btn.disabled = false;
+                        isAnimating = false;
+                    }, 400); // Время анимации slide-up
+                }, 5300); // 300ms паузы + 5000ms показа
+            }
+        }
     </script>
 </body>
 </html>
