@@ -277,15 +277,23 @@ def handle_join():
 
 
 @socketio.on("disconnect")
-def handle_disconnect():
-    # remove_voter_by_sid вернет True только если был удален АКТИВНЫЙ пользователь.
-    # Если это событие от старой закрытой вкладки (SID которой уже изменился в add_voter),
-    # remove_voter_by_sid вернет False и ничего не сбросит.
+def handle_disconnect(): 
     if poll.remove_voter_by_sid(request.sid):
-        socketio.emit("update_voted_count", {
-            "voted": poll.voted_counts,
-            "total": len(poll.users)
-        })
+         
+        with poll._lock:
+            should_end = (
+                poll.status == "in_progress" 
+                and len(poll.users) > 0 
+                and poll.voted_counts >= len(poll.users)
+            )
+ 
+        if should_end:
+            poll.end_round()
+        else: 
+            socketio.emit("update_voted_count", {
+                "voted": poll.voted_counts,
+                "total": len(poll.users)
+            })
 
 
 @socketio.on("submit_vote")
