@@ -30,7 +30,8 @@ class CategoryPoll:
 
 class Poll:
     def __init__(self):
-        self.winning_category: str = None
+        self.decision:str|None=None
+        self.winning_category: str |None= None
         self.timer: int = 60
         self.end_time: float = 0  # Timestamp окончания раунда
         self.photo_url = None
@@ -83,6 +84,7 @@ class Poll:
 
     def start_round(self, photo_id: int, photo_url: str = None):
         with self._lock: 
+            self.decision=None
             self.winning_category = None
             self.photo_id = photo_id
             self.photo_url = photo_url
@@ -155,6 +157,8 @@ class Poll:
                     pass
                 except Exception as e:
                     print(f"Ошибка при перемещении фото {self.photo_id}: {e}") 
+
+            self.decision=f"{category_name if category_name else 'Неотсортировано'}"
             self.change_status("decision")
             return True
 
@@ -173,7 +177,8 @@ class Poll:
         return any(user.tg_id == tg_id for user in self.users)
 
     def data_poll_state(self) -> dict:
-        return {
+        return { 
+            "decision":self.decision,
             "status": self.status,
             "round": self.round,
             "photo_url": self.photo_url,

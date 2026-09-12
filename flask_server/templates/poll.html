@@ -406,6 +406,12 @@
                 <img id="resultPhoto" src="" alt="Фото">
             </div>
 
+            <!-- Блок с принятым решением модератора -->
+            <div id="decisionBanner" class="hidden" style="margin: 15px 0; padding: 12px 16px; background: rgba(0, 242, 254, 0.1); border: 1px solid var(--accent-cyan); border-radius: 12px; text-align: center;">
+                <span style="color: var(--text-muted); font-size: 0.9rem; display: block; margin-bottom: 4px;">Решение организатора:</span>
+                <span id="decisionCategoryText" style="color: var(--accent-cyan); font-weight: 700; font-size: 1.1rem;">—</span>
+            </div>
+
             <div class="results-list" id="resultsList">
                 <!-- Результаты рендерятся из JS -->
             </div>
@@ -525,14 +531,28 @@
                 screenVoting.classList.remove('hidden');
                 document.getElementById('votingPhoto').src = state.photo_url || '';
                 renderCategories(state.categories);
-                startTimer(state.end_time); 
+                startTimer(state.end_time);  
             } else if (state.status === 'results' || state.status === 'decision') {
                 screenResults.classList.remove('hidden');
                 document.getElementById('resultPhoto').src = state.photo_url || '';
                 renderResults(state.results);
                 stopTimer();
+ 
+                const decisionBanner = document.getElementById('decisionBanner');
+                const decisionCategoryText = document.getElementById('decisionCategoryText');
 
-                // Добавлен вызов настройки UI модератора
+                if (state.status === 'decision') {
+                    // Определение названия категории из ответа сервера
+                    const finalCategory =  state.decision || 'Неотсортировано';
+                    
+                    decisionCategoryText.innerText = finalCategory;
+                    decisionBanner.classList.remove('hidden');
+                } else {
+                    // В состоянии 'results' решение ещё не принято — скрываем баннер
+                    decisionBanner.classList.add('hidden');
+                }
+
+                // Настройка элементов управления для модератора
                 setupModeratorDecisionUI(state);
             }
         }
