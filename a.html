@@ -3,9 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Панель Голосования | Telegram Portal</title>
-    <!-- Socket.IO Client CDN -->
-    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+    <title>Галерея Категорий | Telegram Portal</title>
     <style>
         :root {
             --bg-primary: #0a0c10;
@@ -40,7 +38,7 @@
 
         /* Фоновые неоновые пятна */
         .glow-sphere-1 {
-            position: absolute;
+            position: fixed;
             width: 450px;
             height: 450px;
             background: radial-gradient(circle, rgba(157, 78, 221, 0.25) 0%, rgba(0,0,0,0) 70%);
@@ -49,10 +47,11 @@
             z-index: 0;
             filter: blur(50px);
             animation: pulse 8s infinite alternate ease-in-out;
+            pointer-events: none;
         }
 
         .glow-sphere-2 {
-            position: absolute;
+            position: fixed;
             width: 500px;
             height: 500px;
             background: radial-gradient(circle, rgba(0, 242, 254, 0.2) 0%, rgba(0,0,0,0) 70%);
@@ -61,6 +60,7 @@
             z-index: 0;
             filter: blur(60px);
             animation: pulse 10s infinite alternate-reverse ease-in-out;
+            pointer-events: none;
         }
 
         @keyframes pulse {
@@ -68,12 +68,12 @@
             100% { transform: scale(1.15) translate(20px, -20px); }
         }
 
-        /* Главная карточка */
-        .auth-card {
+        /* Главная карточка-контейнер */
+        .main-card {
             position: relative;
             z-index: 1;
             width: 100%;
-            max-width: 680px;
+            max-width: 1100px;
             padding: 35px 30px;
             background: var(--card-bg);
             backdrop-filter: blur(16px);
@@ -82,7 +82,6 @@
             border-radius: 20px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6),
                         0 0 30px rgba(0, 242, 254, 0.05);
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
         /* Верхняя информационная плашка */
@@ -90,9 +89,11 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            margin-bottom: 25px;
             padding-bottom: 15px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            flex-wrap: wrap;
+            gap: 10px;
         }
 
         .badge {
@@ -109,24 +110,25 @@
             font-weight: 600;
         }
 
-        .timer-badge {
-            color: var(--accent-cyan);
-            font-family: monospace;
-            font-size: 1.1rem;
-            font-weight: 700;
+        /* Сетка категорий */
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+            margin-bottom: 25px;
         }
 
-        /* Кнопки */
+        /* Кнопки категорий */
         .btn-def {
             display: inline-block;
             width: 100%;
-            padding: 12px 20px;
+            padding: 10px 16px;
             border-radius: 12px;
             background: rgba(255, 255, 255, 0.05);
-            color: #00f2fe;
+            color: var(--accent-cyan);
             border: 1px solid rgba(0, 242, 254, 0.3);
             text-decoration: none;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             font-weight: 600;
             cursor: pointer;
             text-align: center;
@@ -139,403 +141,431 @@
             box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
         }
 
-        .btn-logout {
-            display: inline-block;
-            width: 100%;
-            padding: 12px 20px;
+        .btn-def.active {
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.25), rgba(157, 78, 221, 0.25));
+            border-color: var(--accent-cyan);
+            color: #fff;
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+        }
+
+        /* Сетка фотографий */
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+            gap: 15px;
+            min-height: 300px;
+        }
+
+        .photo-card {
+            position: relative;
+            aspect-ratio: 1 / 1;
             border-radius: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--danger);
-            border: 1px solid rgba(255, 85, 85, 0.3);
-            text-decoration: none;
-            font-size: 0.95rem;
-            font-weight: 600;
-            cursor: pointer;
-            text-align: center;
-            transition: all 0.2s ease;
-        }
-
-        .btn-logout:hover {
-            background: rgba(255, 85, 85, 0.15);
-            border-color: rgba(255, 85, 85, 0.5);
-        }
-
-        /* Анимация ожидания */
-        .loader-ring {
-            width: 50px;
-            height: 50px;
-            border: 3px solid rgba(0, 242, 254, 0.1);
-            border-top: 3px solid var(--accent-cyan);
-            border-radius: 50%;
-            margin: 0 auto 20px;
-            animation: spin 1s linear infinite;
-        }
-
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-
-        /* Изображение */
-        .photo-container {
-            width: 100%;
-            max-height: 380px;
-            border-radius: 14px;
             overflow: hidden;
             border: 1px solid var(--border-glow);
-            background: #000;
-            margin-bottom: 20px;
+            background: rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+        }
+
+        .photo-card:hover {
+            transform: translateY(-4px) scale(1.02);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 8px 20px rgba(0, 242, 254, 0.25);
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        /* Пагинация */
+        .pagination-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 25px;
+            padding-top: 15px;
+            border-top: 1px solid rgba(255, 255, 255, 0.08);
+            flex-wrap: wrap;
+        }
+
+        .page-btn {
+            min-width: 38px;
+            height: 38px;
+            padding: 0 10px;
+            border-radius: 10px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--text-main);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            cursor: pointer;
+            font-weight: 600;
             display: flex;
             align-items: center;
             justify-content: center;
+            transition: all 0.2s ease;
         }
 
-        .photo-container img {
-            width: 100%;
-            height: 100%;
-            max-height: 380px;
-            object-fit: contain;
+        .page-btn:hover:not(:disabled) {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: var(--accent-cyan);
+            color: var(--accent-cyan);
         }
 
-        /* Сетка категорий */
-        .categories-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
-            margin-top: 15px;
+        .page-btn.active {
+            background: var(--accent-cyan);
+            color: #0a0c10;
+            border-color: var(--accent-cyan);
+            font-weight: 700;
         }
 
-        /* Список результатов */
-        .results-list {
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Полноэкранный просмотрщик (Lightbox) */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(5, 7, 10, 0.92);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            z-index: 1000;
             display: flex;
-            flex-direction: column;
-            gap: 10px;
-            margin: 20px 0;
-        }
-
-        .result-item {
-            background: rgba(255, 255, 255, 0.03);
-            padding: 12px 16px;
-            border-radius: 10px;
-            display: flex;
-            justify-content: space-between;
             align-items: center;
-            border: 1px solid rgba(255, 255, 255, 0.05);
-        }
-        .input-wrapper {
-            max-height: 50px;
-            opacity: 1;
-            overflow: hidden;
-            transition: max-height 0.3s ease, opacity 0.3s ease, margin 0.3s ease;
-        }
-
-        .input-wrapper.hidden {
-            max-height: 0;
+            justify-content: center;
             opacity: 0;
             pointer-events: none;
-            margin: 0;
-        }
-        /* Блок управления модератора */
-        .moderator-panel {
-            margin-top: 25px;
-            padding-top: 20px;
-            border-top: 1px dashed rgba(255, 255, 255, 0.15);
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+            transition: opacity 0.3s ease;
         }
 
-        .cat-select-box {
-            display: none;
-            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-            gap: 8px;
-            margin-top: 10px;
-            padding: 10px;
-            background: rgba(0, 0, 0, 0.3);
-            border-radius: 10px;
-        }
-
-
-        .new-category-section {
-            display: flex;
-            flex-direction: column;
-            gap: 8px;
-            position: relative;
-        }
-
-        .animation-container {
-            position: relative;
-            overflow: hidden;
-            min-height: 0;
-        }
-
-        /* --- Инпут --- */
-        .input-wrapper {
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
-                        opacity 0.4s ease, 
-                        max-height 0.4s ease;
-            max-height: 50px;
+        .lightbox.active {
             opacity: 1;
-            transform: translateY(0);
+            pointer-events: auto;
         }
 
-        /* Исходное положение: скрыт под кнопкой */
-        .input-wrapper.hidden {
-            max-height: 0;
-            opacity: 0;
-            transform: translateY(-20px);
-            pointer-events: none;
+        .lightbox-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
         }
 
-        /* Уезд вправо при отправке */
-        .input-wrapper.slide-right {
-            opacity: 0;
-            transform: translateX(120%);
-            max-height: 0;
+        .lightbox-img {
+            max-width: 90vw;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 12px;
+            border: 1px solid var(--border-glow);
+            box-shadow: 0 0 50px rgba(0, 242, 254, 0.2);
         }
 
-        .input-wrapper input {
-            width: 100%;
-            box-sizing: border-box;
-            padding: 8px;
-            border-radius: 8px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            background: rgba(0, 0, 0, 0.3);
+        .lightbox-caption {
+            margin-top: 15px;
+            color: var(--text-muted);
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .lightbox-btn {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(18, 22, 31, 0.8);
+            border: 1px solid var(--border-glow);
+            color: var(--accent-cyan);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+            backdrop-filter: blur(8px);
+            user-select: none;
+        }
+
+        .lightbox-btn:hover {
+            background: var(--accent-cyan);
+            color: var(--bg-primary);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.5);
+        }
+
+        .lightbox-prev { left: -70px; }
+        .lightbox-next { right: -70px; }
+
+        .lightbox-close {
+            position: absolute;
+            top: -50px;
+            right: 0;
+            background: rgba(255, 85, 85, 0.15);
+            border: 1px solid rgba(255, 85, 85, 0.4);
+            color: var(--danger);
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 1.2rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s ease;
+        }
+
+        .lightbox-close:hover {
+            background: var(--danger);
             color: #fff;
         }
 
-        /* --- Фидбек от сервера --- */
-        .feedback-wrapper {
-            padding: 8px;
-            border-radius: 8px;
-            font-size: 14px;
-            text-align: center;
-            transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), 
-                        opacity 0.4s ease, 
-                        max-height 0.4s ease;
-            max-height: 50px;
-            opacity: 1;
-            transform: translateX(0);
+        @media (max-width: 768px) {
+            .lightbox-prev { left: 10px; top: auto; bottom: -65px; transform: none; }
+            .lightbox-next { right: 10px; top: auto; bottom: -65px; transform: none; }
+            .lightbox-close { top: -45px; right: 0; }
         }
-
-        .feedback-wrapper.success {
-            background: rgba(46, 204, 113, 0.2);
-            border: 1px solid #2ecc71;
-            color: #2ecc71;
-        }
-
-        .feedback-wrapper.error {
-            background: rgba(231, 76, 60, 0.2);
-            border: 1px solid #e74c3c;
-            color: #e74c3c;
-        }
-
-        /* Появление слева */
-        .feedback-wrapper.hidden-left {
-            max-height: 0;
-            opacity: 0;
-            transform: translateX(-120%);
-        }
-
-        /* Заплывание вверх под кнопку */
-        .feedback-wrapper.slide-up {
-            max-height: 0;
-            opacity: 0;
-            transform: translateY(-20px);
-        }
-        .hidden { display: none !important; }
     </style>
 </head>
 <body>
 
     <div class="glow-sphere-1"></div>
     <div class="glow-sphere-2"></div> 
-    <div class="auth-card">
 
-        <!-- Верхняя плашка (Таймер и счетчик) -->
-        <div id="topBar" class="top-bar">
-            <div class="badge badge-cyan">
-                👥 Проголосовало: <span id="votedCount">0</span>/<span id="totalUsers">0</span>
+    <div class="main-card">
+        <!-- Верхняя инфо-панель -->
+        <div class="top-bar">
+            <div class="badge badge-cyan" id="categoryTitle">
+                📁 Категория: Загрузка...
             </div>
-            <div class="badge timer-badge">
-                ⏱ <span id="timer">00:00</span>
-            </div>
-        </div>
-
-        <!-- ================= 1. ЭКРАН ОЖИДАНИЯ ================= -->
-        <div id="screenWaiting" style="text-align: center; padding: 20px 0;" class="hidden">
-            <div class="loader-ring"></div>
-            <h1 style="font-size: 1.4rem; margin-bottom: 10px;">Ожидание решения модератора</h1>
-            <p style="color: var(--text-muted); font-size: 0.95rem;">
-                {% if user.is_moder %}
-                    Вы зашли как модератор. Нажмите кнопку ниже, чтобы запустить раунд голосования.
-                {% else %}
-                    Организатор подготавливает следующее фото. Ожидайте начала...
-                {% endif %}
-            </p>
-
-            {% if user.is_moder %}
-                <button class="btn-def" style="margin-top: 25px;" onclick="moderStartRound()">
-                    Продолжить голосование
-                </button>
-            {% endif %}
-        </div>
-
-        <!-- ================= 2. ЭКРАН ГОЛОСОВАНИЯ ================= -->
-        <div id="screenVoting" class="hidden">
-            <div class="photo-container">
-                <img id="votingPhoto" src="" alt="Фото для голосования">
-            </div>
-
-            <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">
-                Выберите подходящую категорию для этого изображения:
-            </p>
-
-            <div id="categoriesContainer" class="categories-grid">
-                <!-- Категории рендерятся из JS -->
+            <div class="badge" id="photoCounter">
+                🖼 Фотографий: 0
             </div>
         </div>
 
-        <!-- ================= 3. ЭКРАН РЕЗУЛЬТАТОВ ================= -->
-        <div id="screenResults" class=" ">
-            <h2 style="text-align: center; font-size: 1.3rem; margin-bottom: 15px;">Результаты раунда</h2>
-            
-            <div class="photo-container" style="max-height: 200px;">
-                <img id="resultPhoto" src="" alt="Фото">
-            </div>
-
-            <div class="results-list" id="resultsList">
-                <!-- Результаты рендерятся из JS -->
-            </div>
-
-            <!-- Блок модератора -->
-            {% if user.is_moder %}
-                <div class="moderator-panel">
-                    <p style="font-size: 0.85rem; color: var(--accent-cyan); font-weight: 600;">Управление организатора:</p>
-                    
-                    <button class="btn-def" onclick="sendModerDecision('unsorted')">
-                        Отправить в неотсортированное
-                    </button>
-                    
-                    <button id="btnWinnerCat" class="btn-def" onclick="sendModerDecision('winner')">
-                        Отправить в победившую категорию
-                    </button>
-                    <!-- Добавление новой категории -->
-                    <div class="new-category-section">
-                        <button id="createCategoryBtn" class="btn-def" onclick="toggleCustomCategories()">
-                            Создать категорию
-                        </button>
-                        
-                        <div class="animation-container">
-                            <!-- Поле ввода -->
-                            <div id="categoryInputWrapper" class="input-wrapper hidden">
-                                <input 
-                                    type="text" 
-                                    id="newCategoryInput" 
-                                    placeholder="Название категории" 
-                                    onkeydown="handleCategoryInputKey(event)"
-                                >
-                            </div>
-
-                            <!-- Сообщение от сервера -->
-                            <div id="serverFeedback" class="feedback-wrapper hidden"></div>
-                        </div>
-                    </div>
-                    <div id="customCatBox" class="cat-select-box">
-                        <!-- Динамический выбор категорий -->
-                    </div>
-
-                    <button class="btn-logout" onclick="sendModerDecision('delete')">
-                        Удалить фото
-                    </button>
-
-                    <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button class="btn-def" onclick="moderStartRound()">Продолжить (След. круг)</button>
-                        <a href="{{ url_for('entry_telegram_bp.home') }}" class="btn-logout">Закончить</a>
-                    </div>
-                </div>
-            {% endif %}
+        <!-- Сетка категорий -->
+        <div id="categoriesContainer" class="categories-grid">
+            <!-- Категории рендерятся из JS -->
         </div>
 
+        <!-- Сетка изображений -->
+        <div id="galleryGrid" class="gallery-grid">
+            <!-- Фотографии рендерятся из JS -->
+        </div>
+
+        <!-- Пагинация -->
+        <div id="pagination" class="pagination-container">
+            <!-- Кнопки пагинации рендерятся из JS -->
+        </div>
+    </div>
+
+    <!-- Модальное окно (Lightbox) -->
+    <div id="lightbox" class="lightbox">
+        <div class="lightbox-content">
+            <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+            <button class="lightbox-btn lightbox-prev" onclick="changeLightboxImage(-1)">❮</button>
+            <img id="lightboxImg" class="lightbox-img" src="" alt="Увеличенное фото">
+            <div id="lightboxCaption" class="lightbox-caption"></div>
+            <button class="lightbox-btn lightbox-next" onclick="changeLightboxImage(1)">❯</button>
+        </div>
     </div>
 
     <script>
-        // Переключение видимости инпута и фокус при открытии
-        let isAnimating = false;
+        // ==========================================
+        // ГЕНЕРАЦИЯ МOКОВЫХ ДАННЫХ ДЛЯ ТЕСТИРОВАНИЯ
+        // ==========================================
+        const categoriesData = {
+            "Природа": Array.from({ length: 63 }, (_, i) => ({
+                id: `nature_${i + 1}`,
+                title: `Природа #${i + 1}`,
+                url: `https://picsum.photos/seed/nature_${i + 1}/800/600`
+            })),
+            "Города": Array.from({ length: 42 }, (_, i) => ({
+                id: `city_${i + 1}`,
+                title: `Город #${i + 1}`,
+                url: `https://picsum.photos/seed/city_${i + 1}/800/600`
+            })),
+            "Космос": Array.from({ length: 28 }, (_, i) => ({
+                id: `space_${i + 1}`,
+                title: `Космос #${i + 1}`,
+                url: `https://picsum.photos/seed/space_${i + 1}/800/600`
+            })),
+            "Киберпанк": Array.from({ length: 55 }, (_, i) => ({
+                id: `cyber_${i + 1}`,
+                title: `Киберпанк #${i + 1}`,
+                url: `https://picsum.photos/seed/cyber_${i + 1}/800/600`
+            })),
+            "Абстракция": Array.from({ length: 18 }, (_, i) => ({
+                id: `abstract_${i + 1}`,
+                title: `Абстракция #${i + 1}`,
+                url: `https://picsum.photos/seed/abstract_${i + 1}/800/600`
+            }))
+        };
 
-        function toggleCustomCategories() {
-            if (isAnimating) return;
+        // Состояние приложения
+        const ITEMS_PER_PAGE = 25;
+        let currentCategory = Object.keys(categoriesData)[0];
+        let currentPage = 1;
+        let currentLightboxIndex = 0;
 
-            const wrapper = document.getElementById('categoryInputWrapper');
-            const input = document.getElementById('newCategoryInput');
-            
-            wrapper.classList.remove('slide-right');
-            wrapper.classList.toggle('hidden');
-            
-            if (!wrapper.classList.contains('hidden')) {
-                input.focus();
-            }
+        // Инициализация
+        document.addEventListener('DOMContentLoaded', () => {
+            renderCategories();
+            selectCategory(currentCategory);
+            setupKeyboardNavigation();
+        });
+
+        // Отображение списка категорий
+        function renderCategories() {
+            const container = document.getElementById('categoriesContainer');
+            container.innerHTML = '';
+
+            Object.keys(categoriesData).forEach(category => {
+                const btn = document.createElement('button');
+                btn.className = `btn-def ${category === currentCategory ? 'active' : ''}`;
+                btn.innerText = category;
+                btn.onclick = () => selectCategory(category);
+                container.appendChild(btn);
+            });
         }
 
-        async function handleCategoryInputKey(event) {
-            if (event.key === 'Enter') {
-                const input = event.target;
-                const categoryName = input.value.trim();
-                if (!categoryName || isAnimating) return;
+        // Выбор категории
+        function selectCategory(category) {
+            currentCategory = category;
+            currentPage = 1;
 
-                const btn = document.getElementById('createCategoryBtn');
-                const inputWrapper = document.getElementById('categoryInputWrapper');
-                const feedback = document.getElementById('serverFeedback');
+            // Обновляем активную кнопку
+            const buttons = document.querySelectorAll('#categoriesContainer .btn-def');
+            buttons.forEach(btn => {
+                btn.classList.toggle('active', btn.innerText === category);
+            });
 
-                // 1. Блокируем кнопку и запускаем анимацию уезда инпута вправо
-                isAnimating = true;
-                btn.disabled = true;
-                inputWrapper.classList.add('slide-right');
+            // Обновляем шапку
+            const totalItems = categoriesData[category].length;
+            document.getElementById('categoryTitle').innerText = `📁 Категория: ${category}`;
+            document.getElementById('photoCounter').innerText = `🖼 Фотографий: ${totalItems}`;
 
-                let responseMessage = "";
-                let isSuccess = false;
+            renderGallery();
+        }
 
-                // 2. Отправка запроса
-                try {
-                    const res = await fetch('/api/categories', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ name: categoryName })
-                    });
-                    const data = await res.json();
-                    
-                    if (res.ok) {
-                        responseMessage = data.message || "Категория создана!";
-                        isSuccess = true;
-                    } else {
-                        responseMessage = data.error || "Ошибка создания";
-                    }
-                } catch (err) {
-                    responseMessage = "Ошибка соединения";
-                }
+        // Отображение фото текущей страницы
+        function renderGallery() {
+            const grid = document.getElementById('galleryGrid');
+            grid.innerHTML = '';
 
-                // 3. Подготавливаем фидбек: ставим слева и включаем
-                feedback.className = `feedback-wrapper hidden-left ${isSuccess ? 'success' : 'error'}`;
-                feedback.innerText = responseMessage;
+            const allPhotos = categoriesData[currentCategory];
+            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+            const pagePhotos = allPhotos.slice(startIndex, startIndex + ITEMS_PER_PAGE);
 
-                // Ждем завершения уезда инпута (~300ms) перед выездом ответа слева
-                setTimeout(() => {
-                    inputWrapper.classList.add('hidden');
-                    inputWrapper.classList.remove('slide-right');
-                    input.value = '';
+            pagePhotos.forEach((photo, idx) => {
+                const card = document.createElement('div');
+                card.className = 'photo-card';
+                
+                const globalIndex = startIndex + idx;
+                card.onclick = () => openLightbox(globalIndex);
 
-                    // Выезд ответа слева
-                    feedback.classList.remove('hidden-left');
-                }, 300);
+                card.innerHTML = `<img src="${photo.url}" alt="${photo.title}" loading="lazy">`;
+                grid.appendChild(card);
+            });
 
-                // 4. Через 5 секунд заплываем под кнопку и разблокируем ее
-                setTimeout(() => {
-                    feedback.classList.add('slide-up');
+            renderPagination();
+        }
 
-                    setTimeout(() => {
-                        feedback.className = 'feedback-wrapper hidden-left';
-                        btn.disabled = false;
-                        isAnimating = false;
-                    }, 400); // Время анимации slide-up
-                }, 5300); // 300ms паузы + 5000ms показа
+        // Отрисовка кнопок пагинации
+        function renderPagination() {
+            const container = document.getElementById('pagination');
+            container.innerHTML = '';
+
+            const totalItems = categoriesData[currentCategory].length;
+            const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
+
+            if (totalPages <= 1) return;
+
+            // Кнопка «Назад»
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'page-btn';
+            prevBtn.innerText = '‹';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => goToPage(currentPage - 1);
+            container.appendChild(prevBtn);
+
+            // Кнопки страниц
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                pageBtn.innerText = i;
+                pageBtn.onclick = () => goToPage(i);
+                container.appendChild(pageBtn);
             }
+
+            // Кнопка «Вперед»
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'page-btn';
+            nextBtn.innerText = '›';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => goToPage(currentPage + 1);
+            container.appendChild(nextBtn);
+        }
+
+        function goToPage(page) {
+            currentPage = page;
+            renderGallery();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // ==========================================
+        // ЛОГИКА ПРОСМОТРЩИКА (LIGHTBOX)
+        // ==========================================
+        function openLightbox(index) {
+            currentLightboxIndex = index;
+            updateLightboxContent();
+            document.getElementById('lightbox').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function changeLightboxImage(direction) {
+            const photos = categoriesData[currentCategory];
+            currentLightboxIndex += direction;
+
+            if (currentLightboxIndex < 0) {
+                currentLightboxIndex = photos.length - 1;
+            } else if (currentLightboxIndex >= photos.length) {
+                currentLightboxIndex = 0;
+            }
+
+            updateLightboxContent();
+        }
+
+        function updateLightboxContent() {
+            const photo = categoriesData[currentCategory][currentLightboxIndex];
+            const total = categoriesData[currentCategory].length;
+
+            document.getElementById('lightboxImg').src = photo.url;
+            document.getElementById('lightboxCaption').innerText = 
+                `${photo.title} (${currentLightboxIndex + 1} из ${total})`;
+        }
+
+        function setupKeyboardNavigation() {
+            document.addEventListener('keydown', (e) => {
+                const lightbox = document.getElementById('lightbox');
+                if (!lightbox.classList.contains('active')) return;
+
+                if (e.key === 'Escape') closeLightbox();
+                if (e.key === 'ArrowLeft') changeLightboxImage(-1);
+                if (e.key === 'ArrowRight') changeLightboxImage(1);
+            });
         }
     </script>
 </body>

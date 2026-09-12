@@ -1,0 +1,518 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Галерея изображений</title>
+    <style>
+        :root {
+            --bg-primary: #121214;
+            --bg-secondary: #1a1a1e;
+            --bg-card: #242429;
+            --accent: #6366f1;
+            --accent-hover: #4f46e5;
+            --text-main: #f3f4f6;
+            --text-muted: #9ca3af;
+            --border: #374151;
+            --danger: #ef4444;
+            --radius: 12px;
+            --transition: all 0.2s ease-in-out;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-primary);
+            color: var(--text-main);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            width: 100%;
+        }
+
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .title-area {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+        }
+
+        .photo-counter {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+        }
+
+        .categories-wrapper {
+            display: flex;
+            gap: 10px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+            scrollbar-width: thin;
+            scrollbar-color: var(--border) transparent;
+        }
+
+        .btn-def {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            padding: 8px 16px;
+            border-radius: var(--radius);
+            cursor: pointer;
+            white-space: nowrap;
+            transition: var(--transition);
+            font-size: 0.9rem;
+        }
+
+        .btn-def:hover {
+            border-color: var(--accent);
+            background-color: #2e2e35;
+        }
+
+        .btn-def.active {
+            background-color: var(--accent);
+            color: #ffffff;
+            border-color: var(--accent);
+        }
+
+        main {
+            flex: 1;
+            padding: 30px 0;
+        }
+
+        .gallery-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+            gap: 20px;
+        }
+
+        .photo-card {
+            background-color: var(--bg-card);
+            border-radius: var(--radius);
+            overflow: hidden;
+            aspect-ratio: 1 / 1;
+            cursor: pointer;
+            border: 1px solid var(--border);
+            transition: var(--transition);
+            position: relative;
+        }
+
+        .photo-card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        .photo-card img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+        }
+
+        .pagination {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 8px;
+            margin-top: 40px;
+            flex-wrap: wrap;
+        }
+
+        .page-btn {
+            background-color: var(--bg-card);
+            color: var(--text-main);
+            border: 1px solid var(--border);
+            width: 40px;
+            height: 40px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+            font-weight: 600;
+        }
+
+        .page-btn:hover:not(:disabled) {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .page-btn.active {
+            background-color: var(--accent);
+            color: #ffffff;
+            border-color: var(--accent);
+        }
+
+        .page-btn:disabled {
+            opacity: 0.3;
+            cursor: not-allowed;
+        }
+
+        /* Lightbox (Модальное окно просмотра) */
+        .lightbox {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background-color: rgba(0, 0, 0, 0.9);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.25s ease;
+        }
+
+        .lightbox.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .lightbox-content {
+            position: relative;
+            max-width: 90vw;
+            max-height: 85vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .lightbox-content img {
+            max-width: 100%;
+            max-height: 80vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+        }
+
+        .lightbox-caption {
+            margin-top: 15px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            text-align: center;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            background: none;
+            border: none;
+            color: #fff;
+            font-size: 2rem;
+            cursor: pointer;
+            line-height: 1;
+            z-index: 101;
+        }
+
+        .lightbox-nav {
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            background: rgba(255, 255, 255, 0.1);
+            color: #fff;
+            border: none;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            font-size: 1.5rem;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: var(--transition);
+        }
+
+        .lightbox-nav:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        .lightbox-prev { left: 20px; }
+        .lightbox-next { right: 20px; }
+
+        @media (max-width: 600px) {
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+                gap: 12px;
+            }
+            .lightbox-nav {
+                width: 40px;
+                height: 40px;
+                font-size: 1.2rem;
+            }
+            .lightbox-prev { left: 10px; }
+            .lightbox-next { right: 10px; }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="title-area">
+                    <h1 id="categoryTitle">📁 Загрузка категорий...</h1>
+                    <span class="photo-counter" id="photoCounter"></span>
+                </div>
+                <div class="categories-wrapper" id="categoriesContainer">
+                    <!-- Кнопки категорий генерируются через JS -->
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="container">
+            <div class="gallery-grid" id="galleryGrid">
+                <!-- Карточки фотографий генерируются через JS -->
+            </div>
+            <div class="pagination" id="pagination">
+                <!-- Пагинация генерируется через JS -->
+            </div>
+        </div>
+    </main>
+
+    <!-- Lightbox Modal -->
+    <div class="lightbox" id="lightbox">
+        <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
+        <button class="lightbox-nav lightbox-prev" onclick="changeLightboxImage(-1)">&#10094;</button>
+        <div class="lightbox-content">
+            <img id="lightboxImg" src="" alt="Enlarged image">
+            <div class="lightbox-caption" id="lightboxCaption"></div>
+        </div>
+        <button class="lightbox-nav lightbox-next" onclick="changeLightboxImage(1)">&#10095;</button>
+    </div>
+
+    <script>
+        const ITEMS_PER_PAGE = 25;
+        let categoriesList = [];       
+        let currentCategoryId = null;  
+        let currentPage = 1;           
+        let currentPhotos = [];        
+        let currentLightboxIndex = 0;  
+        let totalPages = 1;            
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initGallery();
+            setupKeyboardNavigation();
+        });
+
+        // 1. Инициализация: получение списка категорий
+        async function initGallery() {
+            try {
+                const response = await fetch('/gallery/get_categories');
+                if (!response.ok) throw new Error('Ошибка при загрузке категорий');
+                
+                categoriesList = await response.json();
+
+                if (categoriesList.length === 0) {
+                    document.getElementById('categoryTitle').innerText = '📁 Категории отсутствуют';
+                    return;
+                }
+
+                renderCategories();
+                selectCategory(categoriesList[0].category_id);
+            } catch (error) {
+                console.error('API Error:', error);
+                document.getElementById('categoryTitle').innerText = '❌ Ошибка загрузки данных';
+            }
+        }
+
+        // 2. Отрисовка кнопок категорий
+        function renderCategories() {
+            const container = document.getElementById('categoriesContainer');
+            container.innerHTML = '';
+
+            categoriesList.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = `btn-def ${cat.category_id === currentCategoryId ? 'active' : ''}`;
+                btn.innerText = `${cat.name} (${cat.photo_count})`;
+                btn.onclick = () => selectCategory(cat.category_id);
+                container.appendChild(btn);
+            });
+        }
+
+        // 3. Выбор категории
+        function selectCategory(categoryId) {
+            currentCategoryId = categoryId;
+            currentPage = 1;
+
+            const buttons = document.querySelectorAll('#categoriesContainer .btn-def');
+            buttons.forEach((btn, idx) => {
+                const cat = categoriesList[idx];
+                if (cat) {
+                    btn.classList.toggle('active', cat.category_id === currentCategoryId);
+                }
+            });
+
+            const activeCat = categoriesList.find(c => c.category_id === currentCategoryId);
+            if (activeCat) {
+                document.getElementById('categoryTitle').innerText = `📁 Категория: ${activeCat.name}`;
+                document.getElementById('photoCounter').innerText = `🖼 Фотографий: ${activeCat.photo_count}`;
+            }
+
+            loadPhotos();
+        }
+
+        // 4. Загрузка фотографий через API с пагинацией
+        async function loadPhotos() {
+            const grid = document.getElementById('galleryGrid');
+            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">Загрузка изображений...</div>';
+
+            try {
+                const url = `/gallery/paginate_photos?category=${currentCategoryId}&page=${currentPage}&limit=${ITEMS_PER_PAGE}`;
+                const response = await fetch(url);
+                if (!response.ok) throw new Error('Ошибка загрузки фото');
+
+                const data = await response.json();
+                
+                currentPhotos = data.items;
+                totalPages = data.pages_total;
+
+                renderGallery();
+                renderPagination();
+            } catch (error) {
+                console.error('API Error:', error);
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--danger); padding: 40px;">Ошибка загрузки фотографий</div>';
+            }
+        }
+
+        // 5. Отрисовка сетки фотографий
+        function renderGallery() {
+            const grid = document.getElementById('galleryGrid');
+            grid.innerHTML = '';
+
+            if (currentPhotos.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">В этой категории пока нет фото</div>';
+                return;
+            }
+
+            currentPhotos.forEach((photo, idx) => {
+                const card = document.createElement('div');
+                card.className = 'photo-card';
+                card.onclick = () => openLightbox(idx);
+                card.innerHTML = `<img src="${photo.file_url}" alt="Photo #${photo.id}" loading="lazy">`;
+                grid.appendChild(card);
+            });
+        }
+
+        // 6. Отрисовка кнопок пагинации
+        function renderPagination() {
+            const container = document.getElementById('pagination');
+            container.innerHTML = '';
+
+            if (totalPages <= 1) return;
+
+            const prevBtn = document.createElement('button');
+            prevBtn.className = 'page-btn';
+            prevBtn.innerText = '‹';
+            prevBtn.disabled = currentPage === 1;
+            prevBtn.onclick = () => goToPage(currentPage - 1);
+            container.appendChild(prevBtn);
+
+            for (let i = 1; i <= totalPages; i++) {
+                const pageBtn = document.createElement('button');
+                pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                pageBtn.innerText = i;
+                pageBtn.onclick = () => goToPage(i);
+                container.appendChild(pageBtn);
+            }
+
+            const nextBtn = document.createElement('button');
+            nextBtn.className = 'page-btn';
+            nextBtn.innerText = '›';
+            nextBtn.disabled = currentPage === totalPages;
+            nextBtn.onclick = () => goToPage(currentPage + 1);
+            container.appendChild(nextBtn);
+        }
+
+        function goToPage(page) {
+            if (page < 1 || page > totalPages) return;
+            currentPage = page;
+            loadPhotos();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        // 7. Управление Lightbox
+        function openLightbox(index) {
+            if (!currentPhotos[index]) return;
+            currentLightboxIndex = index;
+            updateLightboxContent();
+            document.getElementById('lightbox').classList.add('active');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeLightbox() {
+            document.getElementById('lightbox').classList.remove('active');
+            document.body.style.overflow = 'auto';
+        }
+
+        function changeLightboxImage(direction) {
+            currentLightboxIndex += direction;
+
+            if (currentLightboxIndex < 0) {
+                currentLightboxIndex = currentPhotos.length - 1;
+            } else if (currentLightboxIndex >= currentPhotos.length) {
+                currentLightboxIndex = 0;
+            }
+
+            updateLightboxContent();
+        }
+
+        function updateLightboxContent() {
+            const photo = currentPhotos[currentLightboxIndex];
+            if (!photo) return;
+
+            document.getElementById('lightboxImg').src = photo.file_url;
+            document.getElementById('lightboxCaption').innerText = 
+                `Фото ID: ${photo.id} (${currentLightboxIndex + 1} из ${currentPhotos.length} на странице)`;
+        }
+
+        function setupKeyboardNavigation() {
+            document.addEventListener('keydown', (e) => {
+                const lightbox = document.getElementById('lightbox');
+                if (!lightbox.classList.contains('active')) return;
+
+                if (e.key === 'Escape') closeLightbox();
+                if (e.key === 'ArrowLeft') changeLightboxImage(-1);
+                if (e.key === 'ArrowRight') changeLightboxImage(1);
+            });
+        }
+    </script>
+</body>
+</html>

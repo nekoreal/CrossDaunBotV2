@@ -29,6 +29,9 @@ socketio = SocketIO(app, cors_allowed_origins="*")
 
 from flask_server.telegram_auth import entry_telegram_bp
 from flask_server.voting import voting_bp
+from flask_server.gallery import gallery_bp
+
+app.register_blueprint(gallery_bp)  
 app.register_blueprint(entry_telegram_bp)  
 app.register_blueprint(voting_bp)
 

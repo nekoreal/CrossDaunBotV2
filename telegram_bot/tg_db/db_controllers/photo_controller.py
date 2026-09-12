@@ -5,7 +5,7 @@ from ..import session_scope
 from ..models.photo import Photo, Category 
 import uuid 
 from s3 import s3_client
-
+import math
 
 def generate_s3_key() -> str:  
     return uuid.uuid4().hex  
@@ -71,6 +71,84 @@ def get_all_categories() -> list[tuple[str, int]]:
             for cat_id, name, photo_count in results
         ]
 
+def get_all_categories_dict() :
+    with session_scope() as session:
+        results = (
+            session.query(
+                Category.id,
+                Category.name,
+                func.count(Photo.id).label("photo_count"),
+            )
+            .outerjoin(Photo, Category.id == Photo.category_id)
+            .group_by(Category.id, Category.name)
+            .order_by(func.count(Photo.id).desc())  
+            .all()
+        ) 
+        return [
+            {
+                "category_id":cat_id,
+                "name":name,
+                "photo_count":photo_count
+            }
+            for cat_id, name, photo_count in results
+        ]
+
+
+def photo_urls_paginate(
+    category_id: int,
+    page: int = 1,
+    limit: int = 25
+) -> dict:
+    """
+    Возвращает список фотографий выбранной категории с presigned URL из S3,
+    а также метаданные пагинации (total, pages_total и т.д.).
+    """
+    if page < 1:
+        page = 1
+    if limit < 1:
+        limit = 25
+
+    offset = (page - 1) * limit
+
+    with session_scope() as session: 
+        total = (
+            session.query(func.count(Photo.id))
+            .filter(Photo.category_id == category_id)
+            .scalar() or 0
+        ) 
+        photos = (
+            session.query(Photo)
+            .filter(Photo.category_id == category_id)
+            .order_by(Photo.id.desc())
+            .offset(offset)
+            .limit(limit)
+            .all()
+        ) 
+        items = []
+        for photo in photos:
+            presigned_url = s3_client.s3_client.generate_presigned_url(
+                'get_object',
+                Params={
+                    'Bucket': s3_client.bucket_name,
+                    'Key': photo.file_path
+                },
+                ExpiresIn=900   
+            ) 
+            items.append({
+                "id": photo.id,
+                "tg_id": photo.tg_id,
+                "category_id": photo.category_id,
+                "file_url": presigned_url
+            }) 
+        pages_total = math.ceil(total / limit) if total > 0 else 1 
+        return {
+            "total": total,
+            "page": page,
+            "limit": limit,
+            "pages_total": pages_total,
+            "items": items
+        }
+        
 
 def add_photo(
         tg_id: int,
