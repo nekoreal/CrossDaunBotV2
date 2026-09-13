@@ -37,6 +37,100 @@
             overflow-x: hidden;
             position: relative;
             padding: 20px;
+            gap: 20px;
+        }
+
+        /* --- БОКОВАЯ ПАНЕЛЬ ИСТОРИИ (СЛЕВА) --- */
+        .history-sidebar {
+            width: 280px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6),
+                        0 0 30px rgba(0, 242, 254, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 1;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: cardAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .history-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .history-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 10px;
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            animation: slideInResult 0.3s ease forwards;
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .history-card:hover {
+            transform: translateX(3px);
+            border-color: rgba(0, 242, 254, 0.3);
+        }
+
+        .history-card img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: transform 0.2s ease;
+        }
+
+        .history-card img:hover {
+            transform: scale(1.08);
+        }
+
+        .history-info {
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            overflow: hidden;
+        }
+
+        .history-round {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .history-category {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-purple);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
 
         /* --- АНИМАЦИИ И НЕОН --- */
@@ -535,12 +629,36 @@
         }
 
         .hidden { display: none !important; }
+
+        /* Адаптивность для мобильных устройств */
+        @media (max-width: 900px) {
+            body {
+                flex-direction: column;
+                align-items: center;
+            }
+            .history-sidebar {
+                width: 100%;
+                max-width: 680px;
+                max-height: 250px;
+            }
+        }
     </style>
 </head>
 <body>
 
     <div class="glow-sphere-1"></div>
     <div class="glow-sphere-2"></div> 
+
+    <!-- БОКОВАЯ ПАНЕЛЬ ИСТОРИИ (СЛЕВА) -->
+    <aside id="historySidebar" class="history-sidebar">
+        <div class="history-title">📜 Последние решения</div>
+        <div id="historyList" class="history-list">
+            <div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 10px 0;">
+                История пока пуста
+            </div>
+        </div>
+    </aside>
+
     <div class="auth-card">
 
         <!-- Верхняя плашка -->
@@ -670,6 +788,38 @@
         let selectedVote = null;
         let availableCategories = [];
 
+        /* --- ХРАНЕНИЕ ИСТОРИИ НА СТОРОНЕ КЛИЕНТА (БЕЗ API) --- */
+        let roundHistory = [];
+        let lastSavedRound = null;
+
+        function addRoundToHistory(data) {
+            roundHistory.unshift(data);
+            if (roundHistory.length > 5) {
+                roundHistory.pop();
+            }
+            renderHistoryUI();
+        }
+
+        function renderHistoryUI() {
+            const container = document.getElementById('historyList');
+            if (roundHistory.length === 0) return;
+
+            container.innerHTML = '';
+
+            roundHistory.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'history-card';
+                card.innerHTML = `
+                    <img src="${item.photo_url}" alt="Раунд ${item.round}" onclick="openLightbox('${item.photo_url}')">
+                    <div class="history-info">
+                        <span class="history-round">Раунд #${item.round}</span>
+                        <span class="history-category" title="${item.category}">${item.category}</span>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
         /* --- ЛОГИКА LIGHTBOX (ПРОСМОТР И ЗУМ ФОТО) --- */
         let currentScale = 1;
         const lightbox = document.getElementById('lightbox');
@@ -792,6 +942,16 @@
                     const finalCategory = state.decision || 'Неотсортировано';
                     decisionCategoryText.innerText = finalCategory;
                     decisionBanner.classList.remove('hidden');
+
+                    // Сохранение решения в левую панель без запроса к API
+                    if (lastSavedRound !== state.round) {
+                        lastSavedRound = state.round;
+                        addRoundToHistory({
+                            round: state.round,
+                            photo_url: state.photo_url,
+                            category: finalCategory
+                        });
+                    }
                 } else {
                     decisionBanner.classList.add('hidden');
                 }
