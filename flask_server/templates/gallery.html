@@ -373,7 +373,7 @@
             cursor: not-allowed;
         }
 
-        /* Lightbox */
+        /* Lightbox Modal */
         .lightbox {
             position: fixed;
             top: 0;
@@ -388,7 +388,7 @@
             opacity: 0;
             pointer-events: none;
             transition: opacity 0.2s ease;
-            touch-action: none; /* Отключаем дефолтный скролл браузера в модалке */
+            touch-action: none;
         }
 
         .lightbox.active {
@@ -514,7 +514,7 @@
         /* Оптимизация для мобильных устройств */
         @media (max-width: 768px) {
             .glow-sphere-1, .glow-sphere-2 {
-                display: none; /* Выключаем тяжелые градиентные пятна на мобильных */
+                display: none;
             }
 
             .gallery-grid {
@@ -611,8 +611,7 @@
     <script> 
         const IS_MODER = document.body.dataset.isModer === 'true';
 
-        // Меньше картинок на страницу на мобилках для экономии памяти
-        const ITEMS_PER_PAGE = window.innerWidth <= 768 ? 16 : 32;
+        const ITEMS_PER_PAGE = 32;
         let categoriesList = [];       
         let currentCategoryId = null;  
         let currentPage = 1;           
@@ -910,7 +909,7 @@
             });
         }
 
-        // Поддержка свайпов на смартфонах (Влево/Вправо — переключение, Вверх/Вниз — закрытие)
+        // Обработка тач-жестов для мобильных устройств
         function setupSwipeGestures() {
             const lightbox = document.getElementById('lightbox');
             let touchStartX = 0;
@@ -934,16 +933,16 @@
                 const deltaY = touchEndY - touchStartY;
                 const threshold = 50;
 
-                // Проверяем, преобладает ли горизонтальный или вертикальный свайп
+                // Определение доминирующего направления жеста
                 if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                    // Горизонтальный свайп (переключение фото)
+                    // Свайп по горизонтали (листание)
                     if (deltaX < -threshold) {
-                        changeLightboxImage(1);  // Свайп влево -> следующее фото
+                        changeLightboxImage(1);  // Влево -> Следующее
                     } else if (deltaX > threshold) {
-                        changeLightboxImage(-1); // Свайп вправо -> предыдущее фото
+                        changeLightboxImage(-1); // Вправо -> Предыдущее
                     }
                 } else {
-                    // Вертикальный свайп (закрытие Lightbox)
+                    // Свайп по вертикали (закрытие)
                     if (Math.abs(deltaY) > threshold) {
                         closeLightbox();
                     }
