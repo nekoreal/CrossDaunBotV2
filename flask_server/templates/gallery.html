@@ -8,8 +8,8 @@
     <style>
         :root {
             --bg-primary: #0a0c10;
-            --card-bg: rgba(18, 22, 31, 0.75);
-            --bg-secondary: rgba(15, 18, 26, 0.85);
+            --card-bg: rgba(18, 22, 31, 0.9);
+            --bg-secondary: rgba(15, 18, 26, 0.95);
             --accent-cyan: #00f2fe;
             --accent-purple: #9d4edd;
             --accent-hover: #00c6ff;
@@ -20,7 +20,7 @@
             --danger: #ff5555;
             --success: #2ecc71;
             --radius: 14px;
-            --transition: all 0.25s ease;
+            --transition: transform 0.2s ease, opacity 0.2s ease;
         }
 
         * {
@@ -38,6 +38,7 @@
             flex-direction: column;
             position: relative;
             overflow-x: hidden;
+            -webkit-tap-highlight-color: transparent;
         }
 
         /* Контейнер для всплывающих уведомлений */
@@ -54,20 +55,18 @@
         }
 
         .toast {
-            min-width: 300px;
-            padding: 12px 24px;
+            min-width: 280px;
+            padding: 12px 20px;
             border-radius: var(--radius);
             background: rgba(14, 18, 27, 0.95);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border-glow);
             color: var(--text-main);
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             text-align: center;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 242, 254, 0.2);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
             opacity: 0;
             transform: translateY(-20px);
-            transition: all 0.3s ease;
+            transition: var(--transition);
             pointer-events: auto;
         }
 
@@ -78,63 +77,66 @@
 
         .toast.success {
             border-color: rgba(0, 242, 254, 0.4);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 242, 254, 0.3);
         }
 
         .toast.error {
             border-color: rgba(255, 85, 85, 0.4);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(255, 85, 85, 0.3);
             color: var(--danger);
         }
 
         /* Фоновые неоновые пятна */
-        .glow-sphere-1 {
+        .glow-sphere-1, .glow-sphere-2 {
             position: fixed;
+            pointer-events: none;
+            z-index: 0;
+            will-change: transform;
+        }
+
+        .glow-sphere-1 {
             width: 450px;
             height: 450px;
-            background: radial-gradient(circle, rgba(157, 78, 221, 0.2) 0%, rgba(0,0,0,0) 70%);
+            background: radial-gradient(circle, rgba(157, 78, 221, 0.15) 0%, rgba(0,0,0,0) 70%);
             top: -50px;
             left: -50px;
-            z-index: 0;
-            filter: blur(60px);
             animation: pulse 8s infinite alternate ease-in-out;
-            pointer-events: none;
         }
 
         .glow-sphere-2 {
-            position: fixed;
             width: 500px;
             height: 500px;
-            background: radial-gradient(circle, rgba(0, 242, 254, 0.15) 0%, rgba(0,0,0,0) 70%);
+            background: radial-gradient(circle, rgba(0, 242, 254, 0.12) 0%, rgba(0,0,0,0) 70%);
             bottom: 10%;
             right: -50px;
-            z-index: 0;
-            filter: blur(70px);
             animation: pulse 10s infinite alternate-reverse ease-in-out;
-            pointer-events: none;
         }
 
         @keyframes pulse {
             0% { transform: scale(1) translate(0, 0); }
-            100% { transform: scale(1.15) translate(20px, -20px); }
+            100% { transform: scale(1.1) translate(15px, -15px); }
         }
 
         header {
             background-color: var(--bg-secondary);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
             border-bottom: 1px solid var(--border-glow);
-            padding: 20px 0;
+            padding: 16px 0;
             position: sticky;
             top: 0;
             z-index: 50;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
+            @media (min-width: 769px) {
+                header {
+                    backdrop-filter: blur(12px);
+                    -webkit-backdrop-filter: blur(12px);
+                }
+            }
         }
 
         .container {
             max-width: 1200px;
             margin: 0 auto;
-            padding: 0 20px;
+            padding: 0 16px;
             width: 100%;
             position: relative;
             z-index: 1;
@@ -143,7 +145,7 @@
         .header-content {
             display: flex;
             flex-direction: column;
-            gap: 18px;
+            gap: 14px;
         }
 
         .title-area {
@@ -155,32 +157,30 @@
         }
 
         h1 {
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             font-weight: 700;
             color: var(--text-main);
-            text-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
         }
 
         .photo-counter {
             color: var(--accent-cyan);
-            font-size: 0.9rem;
+            font-size: 0.85rem;
             background: rgba(0, 242, 254, 0.08);
-            padding: 6px 14px;
+            padding: 5px 12px;
             border-radius: 20px;
             border: 1px solid rgba(0, 242, 254, 0.2);
         }
 
         .controls-row {
             display: flex;
-            gap: 14px;
+            gap: 12px;
             align-items: center;
             flex-wrap: wrap;
         }
 
-        /* Выпадающее меню выбора категории */
         .custom-select-wrapper {
             position: relative;
-            min-width: 260px;
+            min-width: 240px;
             flex-shrink: 0;
         }
 
@@ -188,21 +188,14 @@
             background-color: var(--card-bg);
             border: 1px solid var(--border-glow);
             border-radius: var(--radius);
-            padding: 10px 16px;
+            padding: 10px 14px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
-            transition: var(--transition);
             user-select: none;
-            font-size: 0.95rem;
+            font-size: 0.9rem;
             color: var(--text-main);
-            backdrop-filter: blur(12px);
-        }
-
-        .select-trigger:hover {
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
         }
 
         .select-trigger .arrow {
@@ -211,28 +204,22 @@
             color: var(--accent-cyan);
         }
 
-        .custom-select-wrapper.open .select-trigger {
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
-        }
-
         .custom-select-wrapper.open .arrow {
             transform: rotate(180deg);
         }
 
         .dropdown-menu {
             position: absolute;
-            top: calc(100% + 8px);
+            top: calc(100% + 6px);
             left: 0;
             right: 0;
-            background: rgba(14, 18, 27, 0.95);
-            backdrop-filter: blur(20px);
+            background: rgba(14, 18, 27, 0.98);
             border: 1px solid var(--border-glow);
             border-radius: var(--radius);
-            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 242, 254, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
             display: none;
             flex-direction: column;
-            max-height: 350px;
+            max-height: 300px;
             z-index: 100;
             overflow: hidden;
         }
@@ -242,7 +229,7 @@
         }
 
         .dropdown-search {
-            padding: 10px;
+            padding: 8px;
             border-bottom: 1px solid rgba(255, 255, 255, 0.08);
             background-color: rgba(0, 0, 0, 0.2);
         }
@@ -256,41 +243,27 @@
             color: var(--text-main);
             outline: none;
             font-size: 0.85rem;
-            transition: var(--transition);
-        }
-
-        .dropdown-search input:focus {
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
         }
 
         .dropdown-list {
             overflow-y: auto;
-            max-height: 280px;
-            scrollbar-width: thin;
-            scrollbar-color: var(--accent-cyan) transparent;
+            max-height: 240px;
+            -webkit-overflow-scrolling: touch;
         }
 
         .dropdown-item {
-            padding: 10px 16px;
+            padding: 10px 14px;
             display: flex;
             justify-content: space-between;
             align-items: center;
             cursor: pointer;
-            transition: var(--transition);
-            font-size: 0.9rem;
+            font-size: 0.88rem;
             color: var(--text-main);
         }
 
-        .dropdown-item:hover {
-            background-color: rgba(0, 242, 254, 0.12);
-            color: #fff;
-        }
-
         .dropdown-item.selected {
-            background: linear-gradient(90deg, rgba(0, 242, 254, 0.25) 0%, rgba(157, 78, 221, 0.25) 100%);
+            background: rgba(0, 242, 254, 0.15);
             border-left: 3px solid var(--accent-cyan);
-            color: #fff;
         }
 
         .dropdown-item .badge {
@@ -299,15 +272,14 @@
             background: rgba(0, 242, 254, 0.1);
             padding: 2px 8px;
             border-radius: 12px;
-            border: 1px solid rgba(0, 242, 254, 0.2);
         }
 
-        /* Кнопки быстрого доступа */
         .quick-chips {
             display: flex;
             gap: 8px;
             overflow-x: auto;
-            padding-bottom: 2px;
+            padding-bottom: 4px;
+            -webkit-overflow-scrolling: touch;
             scrollbar-width: none;
         }
 
@@ -319,40 +291,31 @@
             background: var(--card-bg);
             color: var(--text-muted);
             border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 8px 16px;
+            padding: 6px 14px;
             border-radius: 20px;
             cursor: pointer;
             white-space: nowrap;
-            transition: var(--transition);
-            font-size: 0.85rem;
-            backdrop-filter: blur(10px);
-        }
-
-        .chip-btn:hover {
-            border-color: var(--accent-cyan);
-            color: var(--text-main);
-            box-shadow: 0 0 10px rgba(0, 242, 254, 0.15);
+            font-size: 0.82rem;
         }
 
         .chip-btn.active {
-            background: rgba(0, 242, 254, 0.12);
+            background: rgba(0, 242, 254, 0.15);
             border-color: var(--accent-cyan);
             color: var(--accent-cyan);
             font-weight: 600;
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
         }
 
         main {
             flex: 1;
-            padding: 30px 0;
+            padding: 20px 0;
             position: relative;
             z-index: 1;
         }
 
         .gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-            gap: 20px;
+            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+            gap: 12px;
         }
 
         .photo-card {
@@ -362,15 +325,10 @@
             aspect-ratio: 1 / 1;
             cursor: pointer;
             border: 1px solid var(--border-glow);
-            transition: var(--transition);
             position: relative;
-            backdrop-filter: blur(12px);
-        }
-
-        .photo-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--accent-cyan);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.7), 0 0 20px rgba(0, 242, 254, 0.25);
+            transform: translateZ(0);
+            content-visibility: auto;
+            contain-intrinsic-size: 160px;
         }
 
         .photo-card img {
@@ -378,19 +336,14 @@
             height: 100%;
             object-fit: cover;
             display: block;
-            transition: transform 0.3s ease;
-        }
-
-        .photo-card:hover img {
-            transform: scale(1.03);
         }
 
         .pagination {
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 8px;
-            margin-top: 40px;
+            gap: 6px;
+            margin-top: 30px;
             flex-wrap: wrap;
         }
 
@@ -398,35 +351,26 @@
             background: var(--card-bg);
             color: var(--text-main);
             border: 1px solid var(--border-glow);
-            width: 42px;
-            height: 42px;
-            border-radius: 10px;
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: var(--transition);
             font-weight: 600;
-            backdrop-filter: blur(10px);
-        }
-
-        .page-btn:hover:not(:disabled) {
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
-            box-shadow: 0 0 12px rgba(0, 242, 254, 0.2);
+            font-size: 0.9rem;
         }
 
         .page-btn.active {
-            background: linear-gradient(135deg, rgba(0, 242, 254, 0.8) 0%, rgba(157, 78, 221, 0.8) 100%);
-            color: #ffffff;
-            border-color: transparent;
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
+            background: var(--accent-cyan);
+            color: #000;
+            border-color: var(--accent-cyan);
         }
 
         .page-btn:disabled {
-            opacity: 0.25;
+            opacity: 0.2;
             cursor: not-allowed;
-            border-color: rgba(255, 255, 255, 0.05);
         }
 
         /* Lightbox */
@@ -436,15 +380,15 @@
             left: 0;
             width: 100vw;
             height: 100vh;
-            background-color: rgba(5, 7, 10, 0.92);
-            backdrop-filter: blur(16px);
+            background-color: rgba(5, 7, 10, 0.95);
             display: flex;
             justify-content: center;
             align-items: center;
             z-index: 1000;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.25s ease;
+            transition: opacity 0.2s ease;
+            touch-action: none; /* Отключаем дефолтный скролл браузера в модалке */
         }
 
         .lightbox.active {
@@ -454,7 +398,7 @@
 
         .lightbox-content {
             position: relative;
-            max-width: 90vw;
+            max-width: 95vw;
             max-height: 85vh;
             display: flex;
             flex-direction: column;
@@ -462,263 +406,151 @@
         }
 
         .lightbox-content img {
-            max-width: 100%;
-            max-height: 72vh;
+            max-width: calc(100vw - 100px);
+            max-height: 70vh;
             object-fit: contain;
-            border-radius: 12px;
+            border-radius: 8px;
             border: 1px solid var(--border-glow);
-            box-shadow: 0 0 40px rgba(0, 0, 0, 0.9), 0 0 25px rgba(0, 242, 254, 0.15);
+            user-select: none;
+            -webkit-user-drag: none;
         }
 
         .lightbox-caption {
-            margin-top: 15px;
+            margin-top: 10px;
             color: var(--text-main);
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             text-align: center;
-            background: rgba(18, 22, 31, 0.8);
-            padding: 8px 18px;
-            border-radius: 20px;
+            background: rgba(18, 22, 31, 0.9);
+            padding: 6px 14px;
+            border-radius: 16px;
             border: 1px solid var(--border-glow);
         }
 
         .lightbox-actions {
-            margin-top: 12px;
+            margin-top: 10px;
             display: flex;
-            gap: 10px;
+            gap: 8px;
         }
 
         .btn-action {
             background: var(--card-bg);
             color: var(--accent-cyan);
             border: 1px solid var(--border-glow);
-            padding: 8px 20px;
-            border-radius: 20px;
+            padding: 8px 16px;
+            border-radius: 16px;
             cursor: pointer;
-            font-size: 0.88rem;
+            font-size: 0.82rem;
             font-weight: 600;
-            transition: var(--transition);
-            backdrop-filter: blur(10px);
             display: flex;
             align-items: center;
             gap: 6px;
         }
 
-        .btn-action:hover {
-            border-color: var(--accent-cyan);
-            background: rgba(0, 242, 254, 0.15);
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
-            color: #fff;
-        }
-
         .lightbox-close {
             position: absolute;
-            top: 20px;
-            right: 25px;
-            background: rgba(255, 255, 255, 0.05);
+            top: 15px;
+            right: 15px;
+            background: rgba(18, 22, 31, 0.8);
             border: 1px solid rgba(255, 255, 255, 0.1);
             color: var(--accent-cyan);
-            width: 44px;
-            height: 44px;
+            width: 40px;
+            height: 40px;
             border-radius: 50%;
-            font-size: 1.5rem;
+            font-size: 1.4rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            z-index: 1001;
-            transition: var(--transition);
-        }
-
-        .lightbox-close:hover {
-            background: rgba(255, 85, 85, 0.2);
-            border-color: var(--danger);
-            color: var(--danger);
-            box-shadow: 0 0 15px rgba(255, 85, 85, 0.3);
+            z-index: 1006;
         }
 
         .lightbox-nav {
             position: absolute;
             top: 50%;
             transform: translateY(-50%);
-            background: rgba(18, 22, 31, 0.6);
+            background: rgba(18, 22, 31, 0.75);
             color: var(--accent-cyan);
             border: 1px solid var(--border-glow);
-            width: 50px;
-            height: 50px;
+            width: 44px;
+            height: 44px;
             border-radius: 50%;
-            font-size: 1.3rem;
+            font-size: 1.2rem;
             cursor: pointer;
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: var(--transition);
-            backdrop-filter: blur(8px);
             z-index: 1005;
         }
 
-        .lightbox-nav:hover {
-            background: rgba(0, 242, 254, 0.15);
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
-            color: #fff;
-        } 
-        /* Кнопка "На главную" */
         .btn-home {
             display: inline-flex;
             align-items: center;
             justify-content: center;
-            width: 40px;
-            height: 40px;
+            width: 36px;
+            height: 36px;
             background: var(--card-bg);
             color: var(--accent-cyan);
             border: 1px solid var(--border-glow);
             border-radius: var(--radius);
             text-decoration: none;
-            transition: var(--transition);
-            backdrop-filter: blur(10px);
             flex-shrink: 0;
         }
 
-        .btn-home:hover {
-            border-color: var(--accent-cyan);
-            background: rgba(0, 242, 254, 0.15);
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
-            color: #fff;
-            transform: translateY(-2px);
-        }
-
         .btn-home svg {
-            width: 20px;
-            height: 20px;
+            width: 18px;
+            height: 18px;
             fill: currentColor;
         }
 
-        /* Вспомогательная обертка для заголовка и кнопки */
         .header-title-wrapper {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
         }
 
-        .lightbox-prev { left: 20px; }
-        .lightbox-next { right: 20px; }
+        .lightbox-prev { left: 10px; }
+        .lightbox-next { right: 10px; }
 
-        /* Мобильная адаптация */
+        /* Оптимизация для мобильных устройств */
         @media (max-width: 768px) {
-            header {
-                padding: 12px 0;
+            .glow-sphere-1, .glow-sphere-2 {
+                display: none; /* Выключаем тяжелые градиентные пятна на мобильных */
             }
 
-            .header-content {
-                gap: 12px;
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
+                gap: 8px;
             }
 
-            .title-area {
-                align-items: flex-start;
-                gap: 6px;
+            .lightbox-content img {
+                max-width: calc(100vw - 20px);
+                max-height: 65vh;
             }
 
-            h1 {
-                font-size: 1.25rem;
-            }
+            .lightbox-prev { left: 5px; }
+            .lightbox-next { right: 5px; }
 
-            .photo-counter {
-                font-size: 0.8rem;
-                padding: 4px 10px;
+            .lightbox-nav {
+                width: 38px;
+                height: 38px;
+                font-size: 1rem;
             }
 
             .controls-row {
                 flex-direction: column;
                 align-items: stretch;
-                gap: 10px;
             }
 
             .custom-select-wrapper {
                 width: 100%;
-                min-width: 0;
             }
-
-            .quick-chips {
-                width: 100%;
-                padding-bottom: 4px;
-            }
-
-            .gallery-grid {
-                grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
-                gap: 10px;
-            }
-
-            .pagination {
-                margin-top: 24px;
-                gap: 6px;
-                max-width: 100%;
-                overflow-x: auto;
-                padding: 6px 0;
-                justify-content: flex-start;
-                scrollbar-width: none;
-            }
-
-            .pagination::-webkit-scrollbar {
-                display: none;
-            }
-
-            .page-btn {
-                width: 38px;
-                height: 38px;
-                font-size: 0.9rem;
-                flex-shrink: 0;
-            }
-
-            .lightbox-content {
-                max-width: 95vw;
-                max-height: 80vh;
-            }
-
-            .lightbox-content img {
-                max-height: 60vh;
-                border-radius: 8px;
-            }
-
-            .lightbox-close {
-                top: 12px;
-                right: 12px;
-                width: 40px;
-                height: 40px;
-                font-size: 1.3rem;
-                background: rgba(18, 22, 31, 0.8);
-            }
-
-            .lightbox-nav {
-                width: 42px;
-                height: 42px;
-                font-size: 1.1rem;
-                background: rgba(18, 22, 31, 0.75);
-            }
-
-            .lightbox-prev { left: 8px; }
-            .lightbox-next { right: 8px; }
-
-            .lightbox-caption {
-                font-size: 0.85rem;
-                padding: 6px 14px;
-                margin-top: 10px;
-            }
-
-            .btn-action {
-                padding: 8px 16px;
-                font-size: 0.82rem;
-            }
-
-
         }
     </style>
 </head>
 <body data-is-moder="{{ 'true' if user and user.is_moder else 'false' }}"> 
 
-    <!-- Контейнер для всплывающих уведомлений -->
     <div class="toast-container" id="toastContainer"></div>
 
-    <!-- Фоновые эффекты свечения -->
     <div class="glow-sphere-1"></div>
     <div class="glow-sphere-2"></div>
 
@@ -747,29 +579,20 @@
                             <div class="dropdown-search">
                                 <input type="text" id="catSearchInput" placeholder="Поиск категории..." oninput="filterCategories()">
                             </div>
-                            <div class="dropdown-list" id="dropdownList">
-                                <!-- Элементы категорий -->
-                            </div>
+                            <div class="dropdown-list" id="dropdownList"></div>
                         </div>
                     </div>
 
-                    <div class="quick-chips" id="quickChipsContainer">
-                        <!-- Чипсы категорий -->
-                    </div>
+                    <div class="quick-chips" id="quickChipsContainer"></div>
                 </div>
-
             </div>
         </div>
     </header>
 
     <main>
         <div class="container">
-            <div class="gallery-grid" id="galleryGrid">
-                <!-- Карточки фотографий -->
-            </div>
-            <div class="pagination" id="pagination">
-                <!-- Пагинация -->
-            </div>
+            <div class="gallery-grid" id="galleryGrid"></div>
+            <div class="pagination" id="pagination"></div>
         </div>
     </main>
 
@@ -777,7 +600,7 @@
     <div class="lightbox" id="lightbox">
         <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
         <button class="lightbox-nav lightbox-prev" onclick="changeLightboxImage(-1)">&#10094;</button>
-        <div class="lightbox-content">
+        <div class="lightbox-content" id="lightboxContent">
             <img id="lightboxImg" src="" alt="Enlarged image">
             <div class="lightbox-caption" id="lightboxCaption"></div>
             <div class="lightbox-actions" id="lightboxActions"></div>
@@ -788,7 +611,8 @@
     <script> 
         const IS_MODER = document.body.dataset.isModer === 'true';
 
-        const ITEMS_PER_PAGE = 32;
+        // Меньше картинок на страницу на мобилках для экономии памяти
+        const ITEMS_PER_PAGE = window.innerWidth <= 768 ? 16 : 32;
         let categoriesList = [];       
         let currentCategoryId = null;  
         let currentPage = 1;           
@@ -800,6 +624,7 @@
             initGallery();
             setupKeyboardNavigation();
             setupOutsideClick();
+            setupSwipeGestures();
         });
 
         function showToast(message, isError = false) {
@@ -809,13 +634,12 @@
             toast.innerText = message;
             
             container.appendChild(toast);
-
-            setTimeout(() => toast.classList.add('show'), 10);
+            requestAnimationFrame(() => toast.classList.add('show'));
 
             setTimeout(() => {
                 toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 300);
-            }, 4000);
+                setTimeout(() => toast.remove(), 200);
+            }, 3000);
         }
 
         async function initGallery() {
@@ -853,6 +677,7 @@
                 return;
             }
 
+            const fragment = document.createDocumentFragment();
             list.forEach(cat => {
                 const item = document.createElement('div');
                 item.className = `dropdown-item ${cat.category_id === currentCategoryId ? 'selected' : ''}`;
@@ -864,8 +689,9 @@
                     selectCategory(cat.category_id);
                     closeDropdown();
                 };
-                container.appendChild(item);
+                fragment.appendChild(item);
             });
+            container.appendChild(fragment);
         }
 
         function renderQuickChips() {
@@ -873,13 +699,15 @@
             container.innerHTML = '';
 
             const topCategories = categoriesList.slice(0, 5);
+            const fragment = document.createDocumentFragment();
             topCategories.forEach(cat => {
                 const btn = document.createElement('button');
                 btn.className = `chip-btn ${cat.category_id === currentCategoryId ? 'active' : ''}`;
                 btn.innerText = `${cat.name} (${cat.photo_count})`;
                 btn.onclick = () => selectCategory(cat.category_id);
-                container.appendChild(btn);
+                fragment.appendChild(btn);
             });
+            container.appendChild(fragment);
         }
 
         function filterCategories() {
@@ -957,13 +785,15 @@
                 return;
             }
 
+            const fragment = document.createDocumentFragment();
             currentPhotos.forEach((photo, idx) => {
                 const card = document.createElement('div');
                 card.className = 'photo-card';
                 card.onclick = () => openLightbox(idx);
-                card.innerHTML = `<img src="${photo.file_url}" alt="Photo #${photo.id}" loading="lazy">`;
-                grid.appendChild(card);
+                card.innerHTML = `<img src="${photo.file_url}" alt="Photo #${photo.id}" loading="lazy" decoding="async">`;
+                fragment.appendChild(card);
             });
+            grid.appendChild(fragment);
         }
 
         function renderPagination() {
@@ -972,19 +802,21 @@
 
             if (totalPages <= 1) return;
 
+            const fragment = document.createDocumentFragment();
+
             const prevBtn = document.createElement('button');
             prevBtn.className = 'page-btn';
             prevBtn.innerText = '‹';
             prevBtn.disabled = currentPage === 1;
             prevBtn.onclick = () => goToPage(currentPage - 1);
-            container.appendChild(prevBtn);
+            fragment.appendChild(prevBtn);
 
             for (let i = 1; i <= totalPages; i++) {
                 const pageBtn = document.createElement('button');
                 pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
                 pageBtn.innerText = i;
                 pageBtn.onclick = () => goToPage(i);
-                container.appendChild(pageBtn);
+                fragment.appendChild(pageBtn);
             }
 
             const nextBtn = document.createElement('button');
@@ -992,7 +824,9 @@
             nextBtn.innerText = '›';
             nextBtn.disabled = currentPage === totalPages;
             nextBtn.onclick = () => goToPage(currentPage + 1);
-            container.appendChild(nextBtn);
+            fragment.appendChild(nextBtn);
+
+            container.appendChild(fragment);
         }
 
         function goToPage(page) {
@@ -1074,6 +908,47 @@
                 if (e.key === 'ArrowLeft') changeLightboxImage(-1);
                 if (e.key === 'ArrowRight') changeLightboxImage(1);
             });
+        }
+
+        // Поддержка свайпов на смартфонах (Влево/Вправо — переключение, Вверх/Вниз — закрытие)
+        function setupSwipeGestures() {
+            const lightbox = document.getElementById('lightbox');
+            let touchStartX = 0;
+            let touchStartY = 0;
+            let touchEndX = 0;
+            let touchEndY = 0;
+
+            lightbox.addEventListener('touchstart', (e) => {
+                touchStartX = e.changedTouches[0].screenX;
+                touchStartY = e.changedTouches[0].screenY;
+            }, { passive: true });
+
+            lightbox.addEventListener('touchend', (e) => {
+                touchEndX = e.changedTouches[0].screenX;
+                touchEndY = e.changedTouches[0].screenY;
+                handleSwipe();
+            }, { passive: true });
+
+            function handleSwipe() {
+                const deltaX = touchEndX - touchStartX;
+                const deltaY = touchEndY - touchStartY;
+                const threshold = 50;
+
+                // Проверяем, преобладает ли горизонтальный или вертикальный свайп
+                if (Math.abs(deltaX) > Math.abs(deltaY)) {
+                    // Горизонтальный свайп (переключение фото)
+                    if (deltaX < -threshold) {
+                        changeLightboxImage(1);  // Свайп влево -> следующее фото
+                    } else if (deltaX > threshold) {
+                        changeLightboxImage(-1); // Свайп вправо -> предыдущее фото
+                    }
+                } else {
+                    // Вертикальный свайп (закрытие Lightbox)
+                    if (Math.abs(deltaY) > threshold) {
+                        closeLightbox();
+                    }
+                }
+            }
         }
     </script>
 </body>
