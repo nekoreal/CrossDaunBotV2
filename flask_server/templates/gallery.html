@@ -338,13 +338,14 @@
             z-index: 1;
         }
 
+        /* Десктопная сетка: ровно 4 фото в ряд */
         .gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-            gap: 12px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
         }
 
-        /* Карточка фотографии с эффектом наведения */
+        /* Карточка фотографии */
         .photo-card {
             background-color: var(--card-bg);
             border-radius: var(--radius);
@@ -354,7 +355,7 @@
             border: 1px solid var(--border-glow);
             position: relative;
             content-visibility: auto;
-            contain-intrinsic-size: 160px;
+            contain-intrinsic-size: 250px;
             transition: var(--transition);
         }
 
@@ -366,7 +367,6 @@
             transition: transform 0.3s ease;
         }
 
-        /* Ховеры на карточке только для устройств с курсором */
         @media (hover: hover) and (pointer: fine) {
             .photo-card:hover {
                 transform: translateY(-4px);
@@ -422,7 +422,7 @@
             cursor: not-allowed;
         }
 
-        /* Lightbox Modal */
+        /* Lightbox Modal: выравнивание по центру */
         .lightbox {
             position: fixed;
             top: 0;
@@ -452,6 +452,8 @@
             display: flex;
             flex-direction: column;
             align-items: center;
+            justify-content: center;
+            margin: auto;
         }
 
         .lightbox-content img {
@@ -596,13 +598,26 @@
                 display: none;
             }
 
+            /* Скрытие чипсов категорий на мобилках */
+            .quick-chips {
+                display: none !important;
+            }
+
             .gallery-grid {
                 grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
                 gap: 8px;
             }
 
+            /* Строгое выравнивание фото по центру на мобильных */
+            .lightbox-content {
+                width: 100%;
+                height: 100%;
+                max-width: 100vw;
+                max-height: 100vh;
+            }
+
             .lightbox-content img {
-                max-width: calc(100vw - 20px);
+                max-width: calc(100vw - 30px);
                 max-height: 65vh;
             }
 
@@ -988,7 +1003,6 @@
             });
         }
 
-        // Обработка тач-жестов для мобильных устройств
         function setupSwipeGestures() {
             const lightbox = document.getElementById('lightbox');
             let touchStartX = 0;
