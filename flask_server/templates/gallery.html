@@ -453,7 +453,7 @@
         }
 
         .lightbox-content {
-            position: relative;
+            position: relative; /* Обязательно: точка отсчета для абсолютного позиционирования кнопок */
             max-width: 90vw;
             max-height: 85vh;
             display: flex;
@@ -553,14 +553,15 @@
             justify-content: center;
             transition: var(--transition);
             backdrop-filter: blur(8px);
+            z-index: 10; /* Кнопки показываются поверх изображения */
         }
 
         .lightbox-nav:hover {
-            background: rgba(0, 242, 254, 0.15);
+            background: rgba(0, 242, 254, 0.25);
             border-color: var(--accent-cyan);
-            box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.4);
             color: #fff;
-        } 
+        }
         /* Кнопка "На главную" */
         .btn-home {
             display: inline-flex;
@@ -599,8 +600,8 @@
             gap: 12px;
         }
 
-        .lightbox-prev { left: 20px; }
-        .lightbox-next { right: 20px; }
+        .lightbox-prev { left: 15px; }
+        .lightbox-next { right: 15px; }
 
         /* Мобильная адаптация */
         @media (max-width: 768px) {
@@ -773,15 +774,19 @@
     </main>
 
     <!-- Lightbox Modal -->
+    <!-- Lightbox Modal -->
     <div class="lightbox" id="lightbox">
         <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
-        <button class="lightbox-nav lightbox-prev" onclick="changeLightboxImage(-1)">&#10094;</button>
+        
         <div class="lightbox-content">
+            <!-- Кнопки пролистывания теперь внутри контейнера с фото -->
+            <button class="lightbox-nav lightbox-prev" onclick="changeLightboxImage(-1)">&#10094;</button>
             <img id="lightboxImg" src="" alt="Enlarged image">
+            <button class="lightbox-nav lightbox-next" onclick="changeLightboxImage(1)">&#10095;</button>
+
             <div class="lightbox-caption" id="lightboxCaption"></div>
             <div class="lightbox-actions" id="lightboxActions"></div>
         </div>
-        <button class="lightbox-nav lightbox-next" onclick="changeLightboxImage(1)">&#10095;</button>
     </div>
 
     <script> 
