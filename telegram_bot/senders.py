@@ -19,7 +19,7 @@ from .tg_db.db_controllers.user_controller import get_followers
 def send_telegram_clear_message(text:str):
     bot.send_message(
         chat_id=TELEGRAM_CHAT_ID,
-        text=text,parse_mode="MarkdownV2"
+        text=text,parse_mode=None
     )
 
 @logger(
