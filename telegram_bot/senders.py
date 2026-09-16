@@ -9,6 +9,18 @@ from telegram_markdown_converter  import convert_markdown
 
 from .tg_db.db_controllers.user_controller import get_followers
 
+@logger(
+    txtfile="telegram_bot.txt",
+    print_log=True,
+    raise_exc=False,
+    only_exc=True,
+    time_log=True,
+)
+def send_telegram_clear_message(text:str):
+    bot.send_message(
+        chat_id=TELEGRAM_CHAT_ID,
+        text=text,parse_mode="MarkdownV2"
+    )
 
 @logger(
     txtfile="telegram_bot.txt",
