@@ -4,7 +4,7 @@ from threading import Lock
 from flask import Blueprint, request, session, redirect, url_for, render_template
 from flask_socketio import emit, disconnect
 from telegram_bot.senders import send_telegram_clear_message
-
+from config import FLASK_DOMAIN
 
 from telegram_bot.tg_db.db_controllers.photo_controller import (
     get_all_categories_names,
@@ -235,7 +235,7 @@ def start_poll():
     user = session.get("user")
     if user and user.get("is_moder") and (poll.is_started==False):
         poll.start_poll()
-        send_telegram_clear_message(f"Была начата сортировка\n\nПрисоедениться по ссылке \n\n{url_for("voting_bp.poll_page")}")
+        send_telegram_clear_message(f"Была начата сортировка\n\nПрисоедениться по ссылке \n\n{FLASK_DOMAIN+str(url_for("voting_bp.poll_page"))}")
         return redirect(url_for("voting_bp.poll_page"))
     return "Ошибка авторизации", 400
 
@@ -245,7 +245,7 @@ def stop_poll():
     user = session.get("user")
     if user and (user.get("is_moder")):
         if poll.is_started:
-            send_telegram_clear_message(f"Сортировка закончилась\n\Раунд: {poll.round}")
+            send_telegram_clear_message(f"Сортировка закончилась\n\nРаунд: {poll.round}")
         poll.stop_poll()
         return redirect(url_for("entry_telegram_bp.home"))
     return "Ошибка авторизации", 400
