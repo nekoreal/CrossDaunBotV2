@@ -1,8 +1,10 @@
 import time
 from dataclasses import dataclass
 from threading import Lock
-from flask import Blueprint, request, session, redirect, url_for, render_template
+from flask import Blueprint, jsonify, request, session, redirect, url_for, render_template
 from flask_socketio import emit, disconnect
+from flask_pydantic import validate
+from validator.gallery_validator import GalleryPaginateParams
 
 from telegram_bot.tg_db.db_controllers.photo_controller import (
     photo_urls_paginate,
@@ -18,12 +20,22 @@ def get_categories():
     return get_all_categories_dict(), 200 
 
 @gallery_bp.route("/gallery/paginate_photos")
-def paginate_photos():  
-    category_id = request.args.get('category', type=str)
-    page = request.args.get('page', default=1, type=int)
-    limit = request.args.get('limit', default=32, type=int) 
+@validate(
+     query=GalleryPaginateParams
+)
+@gallery_bp.route("/gallery/paginate_photos", methods=["GET"])
+@validate(query=GalleryPaginateParams)
+def paginate_photos(query: GalleryPaginateParams): 
 
-    return photo_urls_paginate(category_id=category_id, page=page, limit=limit), 200
+    result = photo_urls_paginate(
+        categories=query.categories,
+        page=query.page,
+        limit=query.limit,
+        sort_by=query.sort_by,
+        sort_order=query.sort_order,
+    )
+
+    return jsonify(result), 200
 
 @gallery_bp.route("/gallery")
 def gallery_page(): 

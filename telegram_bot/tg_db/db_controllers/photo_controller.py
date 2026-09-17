@@ -1,11 +1,12 @@
 
-from sqlalchemy import func, select 
+from sqlalchemy import func, select, asc, desc 
 from typing import Optional
 from ..import session_scope
 from ..models.photo import Photo, Category 
 import uuid 
 from s3 import s3_client
 import math
+from typing import List
 
 def generate_s3_key() -> str:  
     return uuid.uuid4().hex  
@@ -100,59 +101,64 @@ def get_all_categories_dict() :
 
 
 def photo_urls_paginate(
-    category_id: int,
+    categories: Optional[List[str]] = None,
     page: int = 1,
-    limit: int = 32
+    limit: int = 32,
+    sort_by: str = "edit_date",
+    sort_order: str = "DESC",
 ) -> dict:
-    """
-    Возвращает список фотографий выбранной категории с presigned URL из S3,
-    а также метаданные пагинации (total, pages_total и т.д.).
-    """
-    if page < 1:
-        page = 1
-    if limit < 1:
-        limit = 25
-    if limit > 64: 
-        limit==64
+    """Возвращает список фотографий с presigned URL из S3 и метаданными пагинации. 
+    - Если categories передан список — фильтрует по этим категориям.
+    - Если categories is None — ищет ВСЕ фото, у которых есть какая-либо
+    категория (IS NOT NULL).
+    """ 
+    page = max(1, page)
+    limit = max(1, min(limit, 64))
     offset = (page - 1) * limit
 
     with session_scope() as session: 
-        total = (
-            session.query(func.count(Photo.id))
-            .filter(Photo.category_id == category_id)
-            .scalar() or 0
-        ) 
-        photos = (
-            session.query(Photo)
-            .filter(Photo.category_id == category_id)
-            .order_by(Photo.id.desc())
-            .offset(offset)
-            .limit(limit)
-            .all()
-        ) 
+        query = session.query(Photo) 
+        if categories:
+            query = query.filter(Photo.category_id.in_(categories))
+        else: 
+            query = query.filter(Photo.category_id.isnot(None))
+ 
+        total = query.with_entities(func.count(Photo.id)).scalar() or 0
+ 
+        sort_column = getattr(Photo, sort_by, Photo.edit_date)
+        order_func = desc if sort_order.upper() == "DESC" else asc
+        query = query.order_by(order_func(sort_column))
+ 
+        photos = query.offset(offset).limit(limit).all()
+ 
         items = []
         for photo in photos:
             presigned_url = s3_client.s3_client.generate_presigned_url(
-                'get_object',
+                "get_object",
                 Params={
-                    'Bucket': s3_client.bucket_name,
-                    'Key': photo.file_path
+                    "Bucket": s3_client.bucket_name,
+                    "Key": photo.file_path,
                 },
-                ExpiresIn=900   
-            ) 
+                ExpiresIn=900,
+            )
             items.append({
                 "id": photo.id,
                 "tg_id": photo.tg_id,
                 "category_id": photo.category_id,
-                "file_url": presigned_url
-            }) 
-        pages_total = math.ceil(total / limit) if total > 0 else 1 
+                "file_url": presigned_url,
+                "edit_date": (
+                    photo.edit_date.isoformat() if photo.edit_date else None
+                ),
+            })
+
+        pages_total = math.ceil(total / limit) if total > 0 else 1
+
         return {
             "total": total,
             "page": page,
             "limit": limit,
             "pages_total": pages_total,
-            "items": items
+            "items": items,
         }
         
 

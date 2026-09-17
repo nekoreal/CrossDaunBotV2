@@ -178,9 +178,10 @@
             flex-wrap: wrap;
         }
 
+        /* Выпадающие меню */
         .custom-select-wrapper {
             position: relative;
-            min-width: 240px;
+            min-width: 200px;
             flex-shrink: 0;
         }
 
@@ -292,6 +293,57 @@
             border-radius: 12px;
         }
 
+        /* Стиль кастомного чекбокса для мультивыбора категорий */
+        .dropdown-item input[type="checkbox"] {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border: 1px solid var(--border-glow);
+            border-radius: 4px;
+            background: var(--card-bg);
+            cursor: pointer;
+            position: relative;
+            margin-right: 8px;
+            transition: var(--transition);
+        }
+
+        .dropdown-item input[type="checkbox"]:checked {
+            background: var(--accent-cyan);
+            border-color: var(--accent-cyan);
+        }
+
+        .dropdown-item input[type="checkbox"]:checked::after {
+            content: '✓';
+            position: absolute;
+            color: #000;
+            font-size: 11px;
+            font-weight: bold;
+            top: -2px;
+            left: 3px;
+        }
+
+        /* Кнопка переключения порядка сортировки ASC/DESC */
+        .btn-toggle-sort {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius);
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            transition: var(--transition);
+            user-select: none;
+        }
+
+        .btn-toggle-sort:hover {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(0, 242, 254, 0.25);
+            color: var(--accent-cyan);
+        }
+
         .quick-chips {
             display: flex;
             gap: 8px;
@@ -337,7 +389,7 @@
             z-index: 1;
         }
 
-        /* Десктопная сетка: ровно 4 фото в ряд */
+        /* Десктопная сетка: 4 фото в ряд */
         .gallery-grid {
             display: grid;
             grid-template-columns: repeat(4, 1fr);
@@ -421,7 +473,7 @@
             cursor: not-allowed;
         }
 
-        /* Lightbox Modal: выравнивание по центру */
+        /* Lightbox Modal */
         .lightbox {
             position: fixed;
             top: 0;
@@ -591,13 +643,11 @@
         .lightbox-prev { left: 10px; }
         .lightbox-next { right: 10px; }
 
-        /* Оптимизация для мобильных устройств */
         @media (max-width: 768px) {
             .glow-sphere-1, .glow-sphere-2 {
                 display: none;
             }
 
-            /* Скрытие чипсов категорий на мобилках */
             .quick-chips {
                 display: none !important;
             }
@@ -607,7 +657,6 @@
                 gap: 8px;
             }
 
-            /* Строгое выравнивание фото по центру на мобильных */
             .lightbox-content {
                 width: 100%;
                 height: 100%;
@@ -663,9 +712,10 @@
                 </div>
                 
                 <div class="controls-row">
+                    <!-- Мультиселект категорий -->
                     <div class="custom-select-wrapper" id="categoryDropdown">
-                        <div class="select-trigger" onclick="toggleDropdown()">
-                            <span id="selectedCategoryName">Выберите категорию</span>
+                        <div class="select-trigger" onclick="toggleDropdown('categoryDropdown')">
+                            <span id="selectedCategoryName">Все категории</span>
                             <span class="arrow">▼</span>
                         </div>
                         <div class="dropdown-menu">
@@ -675,6 +725,26 @@
                             <div class="dropdown-list" id="dropdownList"></div>
                         </div>
                     </div>
+
+                    <!-- Выбор поля сортировки (Sort By) -->
+                    <div class="custom-select-wrapper" id="sortByDropdown" style="min-width: 150px;">
+                        <div class="select-trigger" onclick="toggleDropdown('sortByDropdown')">
+                            <span id="selectedSortBy">Дата</span>
+                            <span class="arrow">▼</span>
+                        </div>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-list">
+                                <div class="dropdown-item" onclick="setSortBy('edit_date', 'Дата')">Дата</div>
+                                <div class="dropdown-item" onclick="setSortBy('id', 'ID')">ID</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Направление сортировки (Sort Order) -->
+                    <button class="btn-toggle-sort" onclick="toggleSortOrder()">
+                        <span id="sortOrderLabel">По убыванию</span>
+                        <span id="sortOrderIcon" style="color: var(--accent-cyan)">▼</span>
+                    </button>
 
                     <div class="quick-chips" id="quickChipsContainer"></div>
                 </div>
@@ -706,7 +776,10 @@
 
         const ITEMS_PER_PAGE = 32;
         let categoriesList = [];       
-        let currentCategoryId = null;  
+        let selectedCategoryIds = []; // Массив для мультивыбора категорий
+        let currentSortBy = 'edit_date'; // "edit_date" или "id"
+        let currentSortOrder = 'DESC';   // "DESC" или "ASC"
+        
         let currentPage = 1;           
         let currentPhotos = [];        
         let currentLightboxIndex = 0;  
@@ -741,14 +814,8 @@
                 
                 categoriesList = await response.json();
 
-                if (categoriesList.length === 0) {
-                    document.getElementById('categoryTitle').innerText = '📁 Категории отсутствуют';
-                    document.getElementById('selectedCategoryName').innerText = 'Нет категорий';
-                    return;
-                }
-
                 renderCategoryControls();
-                selectCategory(categoriesList[0].category_id);
+                loadPhotos();
             } catch (error) {
                 console.error('API Error:', error);
                 document.getElementById('categoryTitle').innerText = '❌ Ошибка загрузки данных';
@@ -772,18 +839,56 @@
             const fragment = document.createDocumentFragment();
             list.forEach(cat => {
                 const item = document.createElement('div');
-                item.className = `dropdown-item ${cat.category_id === currentCategoryId ? 'selected' : ''}`;
+                const isChecked = selectedCategoryIds.includes(String(cat.category_id));
+                
+                item.className = `dropdown-item ${isChecked ? 'selected' : ''}`;
                 item.innerHTML = `
-                    <span>${cat.name}</span>
+                    <div style="display: flex; align-items: center;">
+                        <input type="checkbox" ${isChecked ? 'checked' : ''}>
+                        <span>${cat.name}</span>
+                    </div>
                     <span class="badge">${cat.photo_count}</span>
                 `;
-                item.onclick = () => {
-                    selectCategory(cat.category_id);
-                    closeDropdown();
+                
+                item.onclick = (e) => {
+                    e.stopPropagation();
+                    toggleCategorySelection(String(cat.category_id));
                 };
                 fragment.appendChild(item);
             });
             container.appendChild(fragment);
+        }
+
+        function toggleCategorySelection(catId) {
+            const index = selectedCategoryIds.indexOf(catId);
+            if (index > -1) {
+                selectedCategoryIds.splice(index, 1);
+            } else {
+                selectedCategoryIds.push(catId);
+            }
+
+            currentPage = 1;
+            updateCategoryHeader();
+            renderDropdownList(categoriesList);
+            renderQuickChips();
+            loadPhotos();
+        }
+
+        function updateCategoryHeader() {
+            const triggerText = document.getElementById('selectedCategoryName');
+            const titleText = document.getElementById('categoryTitle');
+
+            if (selectedCategoryIds.length === 0) {
+                triggerText.innerText = 'Все категории';
+                titleText.innerText = '📁 Все категории';
+            } else if (selectedCategoryIds.length === 1) {
+                const cat = categoriesList.find(c => String(c.category_id) === selectedCategoryIds[0]);
+                triggerText.innerText = cat ? cat.name : 'Выбрана 1';
+                titleText.innerText = `📁 Категория: ${cat ? cat.name : ''}`;
+            } else {
+                triggerText.innerText = `Выбрано: ${selectedCategoryIds.length}`;
+                titleText.innerText = `📁 Выбрано категорий: ${selectedCategoryIds.length}`;
+            }
         }
 
         function renderQuickChips() {
@@ -792,11 +897,15 @@
 
             const topCategories = categoriesList.slice(0, 5);
             const fragment = document.createDocumentFragment();
+            
             topCategories.forEach(cat => {
+                const catIdStr = String(cat.category_id);
                 const btn = document.createElement('button');
-                btn.className = `chip-btn ${cat.category_id === currentCategoryId ? 'active' : ''}`;
+                const isActive = selectedCategoryIds.includes(catIdStr);
+                
+                btn.className = `chip-btn ${isActive ? 'active' : ''}`;
                 btn.innerText = `${cat.name} (${cat.photo_count})`;
-                btn.onclick = () => selectCategory(cat.category_id);
+                btn.onclick = () => toggleCategorySelection(catIdStr);
                 fragment.appendChild(btn);
             });
             container.appendChild(fragment);
@@ -808,41 +917,55 @@
             renderDropdownList(filtered);
         }
 
-        function toggleDropdown() {
-            const wrapper = document.getElementById('categoryDropdown');
-            wrapper.classList.toggle('open');
-            if (wrapper.classList.contains('open')) {
-                document.getElementById('catSearchInput').focus();
+        function toggleDropdown(dropdownId) {
+            const targetWrapper = document.getElementById(dropdownId);
+            const isOpen = targetWrapper.classList.contains('open');
+            
+            closeAllDropdowns();
+
+            if (!isOpen) {
+                targetWrapper.classList.add('open');
+                if (dropdownId === 'categoryDropdown') {
+                    document.getElementById('catSearchInput').focus();
+                }
             }
         }
 
-        function closeDropdown() {
-            document.getElementById('categoryDropdown').classList.remove('open');
+        function closeAllDropdowns() {
+            document.querySelectorAll('.custom-select-wrapper').forEach(w => w.classList.remove('open'));
         }
 
         function setupOutsideClick() {
             document.addEventListener('click', (e) => {
-                const wrapper = document.getElementById('categoryDropdown');
-                if (!wrapper.contains(e.target)) {
-                    closeDropdown();
+                if (!e.target.closest('.custom-select-wrapper')) {
+                    closeAllDropdowns();
                 }
             });
         }
 
-        function selectCategory(categoryId) {
-            currentCategoryId = categoryId;
+        function setSortBy(field, label) {
+            currentSortBy = field;
+            document.getElementById('selectedSortBy').innerText = label;
+            closeAllDropdowns();
             currentPage = 1;
+            loadPhotos();
+        }
 
-            const activeCat = categoriesList.find(c => c.category_id === currentCategoryId);
-            if (activeCat) {
-                document.getElementById('categoryTitle').innerText = `📁 Категория: ${activeCat.name}`;
-                document.getElementById('selectedCategoryName').innerText = `${activeCat.name} (${activeCat.photo_count})`;
-                document.getElementById('photoCounter').innerText = `🖼 Фотографий: ${activeCat.photo_count}`;
+        function toggleSortOrder() {
+            currentSortOrder = currentSortOrder === 'DESC' ? 'ASC' : 'DESC';
+            
+            const label = document.getElementById('sortOrderLabel');
+            const icon = document.getElementById('sortOrderIcon');
+            
+            if (currentSortOrder === 'DESC') {
+                label.innerText = 'По убыванию';
+                icon.innerText = '▼';
+            } else {
+                label.innerText = 'По возрастанию';
+                icon.innerText = '▲';
             }
-
-            renderDropdownList(categoriesList);
-            renderQuickChips();
-
+            
+            currentPage = 1;
             loadPhotos();
         }
 
@@ -851,14 +974,28 @@
             grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">Загрузка изображений...</div>';
 
             try {
-                const url = `/gallery/paginate_photos?category=${currentCategoryId}&page=${currentPage}&limit=${ITEMS_PER_PAGE}`;
-                const response = await fetch(url);
+                // Сбор параметров запроса
+                const params = new URLSearchParams({
+                    page: currentPage,
+                    limit: ITEMS_PER_PAGE,
+                    sort_by: currentSortBy,
+                    sort_order: currentSortOrder
+                });
+
+                // Передаем несколько параметров categories=... если категории выбраны
+                if (selectedCategoryIds.length > 0) {
+                    selectedCategoryIds.forEach(id => params.append('categories', id));
+                }
+
+                const response = await fetch(`/gallery/paginate_photos?${params.toString()}`);
                 if (!response.ok) throw new Error('Ошибка загрузки фото');
 
                 const data = await response.json();
                 
                 currentPhotos = data.items;
                 totalPages = data.pages_total;
+
+                document.getElementById('photoCounter').innerText = `🖼 Фотографий: ${data.total}`;
 
                 renderGallery();
                 renderPagination();
@@ -873,7 +1010,7 @@
             grid.innerHTML = '';
 
             if (currentPhotos.length === 0) {
-                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">В этой категории пока нет фото</div>';
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">По вашему запросу фото не найдены</div>';
                 return;
             }
 
