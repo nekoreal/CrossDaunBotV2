@@ -18,11 +18,7 @@ gallery_bp = Blueprint('gallery_bp', __name__)
 @gallery_bp.route("/gallery/get_categories")
 def get_categories():  
     return get_all_categories_dict(), 200 
-
-@gallery_bp.route("/gallery/paginate_photos")
-@validate(
-     query=GalleryPaginateParams
-)
+ 
 @gallery_bp.route("/gallery/paginate_photos", methods=["GET"])
 @validate(query=GalleryPaginateParams)
 def paginate_photos(query: GalleryPaginateParams): 
