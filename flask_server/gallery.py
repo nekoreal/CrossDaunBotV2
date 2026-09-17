@@ -4,7 +4,7 @@ from threading import Lock
 from flask import Blueprint, jsonify, request, session, redirect, url_for, render_template
 from flask_socketio import emit, disconnect
 from flask_pydantic import validate
-from validator.gallery_validator import GalleryPaginateParams
+from flask_server.validator.gallery_validator import GalleryPaginateParams
 
 from telegram_bot.tg_db.db_controllers.photo_controller import (
     photo_urls_paginate,
