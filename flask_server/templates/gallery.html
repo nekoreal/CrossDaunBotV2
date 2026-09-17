@@ -719,8 +719,10 @@
                             <span class="arrow">▼</span>
                         </div>
                         <div class="dropdown-menu">
-                            <div class="dropdown-search">
+                            <!-- Блок поиска с кнопкой сброса -->
+                            <div class="dropdown-search" style="display: flex; gap: 6px; align-items: center;">
                                 <input type="text" id="catSearchInput" placeholder="Поиск категории..." oninput="filterCategories()">
+                                <button class="chip-btn" onclick="clearCategoryFilters()" style="padding: 6px 10px; font-size: 0.78rem;" title="Сбросить выбранные категории">Сброс</button>
                             </div>
                             <div class="dropdown-list" id="dropdownList"></div>
                         </div>
@@ -791,6 +793,18 @@
             setupOutsideClick();
             setupSwipeGestures();
         });
+
+        function clearCategoryFilters() {
+            if (selectedCategoryIds.length === 0) return; // Если уже ничего не выбрано, ничего не делаем
+
+            selectedCategoryIds = [];
+            currentPage = 1;
+
+            updateCategoryHeader();
+            renderDropdownList(categoriesList);
+            renderQuickChips();
+            loadPhotos();
+        }
 
         function showToast(message, isError = false) {
             const container = document.getElementById('toastContainer');

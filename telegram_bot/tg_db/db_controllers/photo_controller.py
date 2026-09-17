@@ -122,15 +122,21 @@ def photo_urls_paginate(
             query = query.filter(Photo.category_id.in_(categories))
         else: 
             query = query.filter(Photo.category_id.isnot(None))
- 
+
         total = query.with_entities(func.count(Photo.id)).scalar() or 0
- 
+
+        # Основная и вторичная сортировка
         sort_column = getattr(Photo, sort_by, Photo.edit_date)
         order_func = desc if sort_order.upper() == "DESC" else asc
-        query = query.order_by(order_func(sort_column))
- 
+        
+        # Если primary sort - это не id, добавляем Photo.id как вторичный критерий
+        if sort_by != "id":
+            query = query.order_by(order_func(sort_column), order_func(Photo.id))
+        else:
+            query = query.order_by(order_func(sort_column))
+
         photos = query.offset(offset).limit(limit).all()
- 
+
         items = []
         for photo in photos:
             presigned_url = s3_client.s3_client.generate_presigned_url(
