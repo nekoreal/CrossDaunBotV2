@@ -741,8 +741,8 @@
 
             <!-- Блок с автором и датой -->
             <div id="votingPhotoMeta" class="photo-meta hidden">
-                <span>👤 Автор: <span id="votingPhotoAuthor" class="meta-author">—</span></span>
-                <span>📅 <span id="votingPhotoDate" class="meta-date">—</span></span>
+                <span id="votingAuthorSpan" class="hidden">👤 Автор: <span id="votingPhotoAuthor" class="meta-author">—</span></span>
+                <span id="votingDateSpan" class="hidden">📅 <span id="votingPhotoDate" class="meta-date">—</span></span>
             </div>
 
             <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">
@@ -764,8 +764,8 @@
 
             <!-- Блок с автором и датой -->
             <div id="resultPhotoMeta" class="photo-meta hidden">
-                <span>👤 Автор: <span id="resultPhotoAuthor" class="meta-author">—</span></span>
-                <span>📅 <span id="resultPhotoDate" class="meta-date">—</span></span>
+                <span id="resultAuthorSpan" class="hidden">👤 Автор: <span id="resultPhotoAuthor" class="meta-author">—</span></span>
+                <span id="resultDateSpan" class="hidden">📅 <span id="resultPhotoDate" class="meta-date">—</span></span>
             </div>
 
             <!-- Блок с принятым решением модератора -->
@@ -830,7 +830,7 @@
         let selectedVote = null;
         let availableCategories = [];
 
-        /* --- ХРАНЕНИЕ ИСТОРИИ НА СТОРОНЕ КЛИЕНТА (БЕЗ API) --- */
+        /* --- ХРАНЕНИЕ ИСТОРИИ НА СТОРОНЕ КЛИЕНТА --- */
         let roundHistory = [];
         let lastSavedRound = null;
 
@@ -862,6 +862,37 @@
             });
         }
 
+        /* --- ВЫВОД МЕТАДАННЫХ ФОТО (АВТОР И ДАТА РАЗДЕЛЬНО) --- */
+        function renderPhotoMeta(prefix, author, date) {
+            const metaBlock = document.getElementById(`${prefix}PhotoMeta`);
+            const authorSpan = document.getElementById(`${prefix}AuthorSpan`);
+            const dateSpan = document.getElementById(`${prefix}DateSpan`);
+            const authorEl = document.getElementById(`${prefix}PhotoAuthor`);
+            const dateEl = document.getElementById(`${prefix}PhotoDate`);
+
+            if (!metaBlock) return;
+
+            if (author || date) {
+                metaBlock.classList.remove('hidden');
+
+                if (author) {
+                    authorEl.innerText = author;
+                    authorSpan.classList.remove('hidden');
+                } else {
+                    authorSpan.classList.add('hidden');
+                }
+
+                if (date) {
+                    dateEl.innerText = date;
+                    dateSpan.classList.remove('hidden');
+                } else {
+                    dateSpan.classList.add('hidden');
+                }
+            } else {
+                metaBlock.classList.add('hidden');
+            }
+        }
+
         /* --- ЛОГИКА LIGHTBOX (ПРОСМОТР И ЗУМ ФОТО) --- */
         let currentScale = 1;
         const lightbox = document.getElementById('lightbox');
@@ -885,7 +916,6 @@
             }
         }
 
-        // Зум колесиком мыши
         lightbox.addEventListener('wheel', (e) => {
             e.preventDefault();
             const delta = e.deltaY < 0 ? 0.15 : -0.15;
@@ -893,14 +923,12 @@
             lightboxImg.style.transform = `scale(${currentScale})`;
         }, { passive: false });
 
-        // Закрытие по клавише ESC
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && lightbox.classList.contains('active')) {
                 closeLightbox();
             }
         });
 
-        // Двойной клик для сброса зума
         lightboxImg.addEventListener('dblclick', () => {
             currentScale = currentScale === 1 ? 2 : 1;
             lightboxImg.style.transform = `scale(${currentScale})`;
@@ -970,15 +998,8 @@
                 activeScreen = document.getElementById('screenVoting');
                 document.getElementById('votingPhoto').src = state.photo_url || '';
 
-                // Отрисовка метаданных на экране голосования
-                const metaBlock = document.getElementById('votingPhotoMeta');
-                if (state.photo_author || state.photo_date) {
-                    document.getElementById('votingPhotoAuthor').innerText = state.photo_author || 'Неизвестно';
-                    document.getElementById('votingPhotoDate').innerText = state.photo_date || '';
-                    metaBlock.classList.remove('hidden');
-                } else {
-                    metaBlock.classList.add('hidden');
-                }
+                // Метаданные автора и даты (используем edit_date)
+                renderPhotoMeta('voting', state.photo_author, state.edit_date);
 
                 renderCategories(state.categories);
                 startTimer(state.end_time);  
@@ -986,15 +1007,8 @@
                 activeScreen = document.getElementById('screenResults');
                 document.getElementById('resultPhoto').src = state.photo_url || '';
 
-                // Отрисовка метаданных на экране результатов
-                const resultMetaBlock = document.getElementById('resultPhotoMeta');
-                if (state.photo_author || state.photo_date) {
-                    document.getElementById('resultPhotoAuthor').innerText = state.photo_author || 'Неизвестно';
-                    document.getElementById('resultPhotoDate').innerText = state.photo_date || '';
-                    resultMetaBlock.classList.remove('hidden');
-                } else {
-                    resultMetaBlock.classList.add('hidden');
-                }
+                // Метаданные автора и даты (используем edit_date)
+                renderPhotoMeta('result', state.photo_author, state.edit_date);
 
                 renderResults(state.results);
                 stopTimer();
