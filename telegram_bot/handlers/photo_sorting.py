@@ -235,7 +235,7 @@ def get_photo_thread(message:Message|None):
         bot.send_photo(
             chat_id=message.chat.id,
             photo=photo["file_bytes"],
-            caption=f"Photo ID: {photo['id']}\nCategory: {photo['category']}\nFrom: @{from_user}"
+            caption=f"Photo ID: {photo['id']}\nCategory: {photo['category']}\nFrom: {from_user}"
         ) 
     else: 
         bot.reply_to(message, "No photo found.плаки плаки")    
