@@ -377,7 +377,7 @@
             overflow: hidden;
             border: 1px solid var(--border-glow);
             background: #000;
-            margin-bottom: 20px;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -397,6 +397,30 @@
             object-fit: contain;
             transition: opacity 0.4s ease;
             cursor: pointer;
+        }
+
+        /* Мета-информация о фото (автор и дата) */
+        .photo-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 18px;
+            padding: 8px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 10px;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+        }
+
+        .photo-meta .meta-author {
+            color: var(--accent-cyan);
+            font-weight: 600;
+        }
+
+        .photo-meta .meta-date {
+            color: var(--text-muted);
+            font-family: monospace;
         }
 
         /* --- ПОЛНОЭКРАННЫЙ ЛАЙТБОКС (ZOOM MODAL) --- */
@@ -715,6 +739,12 @@
                 <img id="votingPhoto" src="" alt="Фото для голосования" onclick="openLightbox(this.src)">
             </div>
 
+            <!-- Блок с автором и датой -->
+            <div id="votingPhotoMeta" class="photo-meta hidden">
+                <span>👤 Автор: <span id="votingPhotoAuthor" class="meta-author">—</span></span>
+                <span>📅 <span id="votingPhotoDate" class="meta-date">—</span></span>
+            </div>
+
             <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">
                 Выберите подходящую категорию для этого изображения:
             </p>
@@ -730,6 +760,12 @@
             
             <div class="photo-container" style="max-height: 200px;">
                 <img id="resultPhoto" src="" alt="Фото" onclick="openLightbox(this.src)">
+            </div>
+
+            <!-- Блок с автором и датой -->
+            <div id="resultPhotoMeta" class="photo-meta hidden">
+                <span>👤 Автор: <span id="resultPhotoAuthor" class="meta-author">—</span></span>
+                <span>📅 <span id="resultPhotoDate" class="meta-date">—</span></span>
             </div>
 
             <!-- Блок с принятым решением модератора -->
@@ -933,11 +969,33 @@
             } else if (state.status === 'in_progress') {
                 activeScreen = document.getElementById('screenVoting');
                 document.getElementById('votingPhoto').src = state.photo_url || '';
+
+                // Отрисовка метаданных на экране голосования
+                const metaBlock = document.getElementById('votingPhotoMeta');
+                if (state.photo_author || state.photo_date) {
+                    document.getElementById('votingPhotoAuthor').innerText = state.photo_author || 'Неизвестно';
+                    document.getElementById('votingPhotoDate').innerText = state.photo_date || '';
+                    metaBlock.classList.remove('hidden');
+                } else {
+                    metaBlock.classList.add('hidden');
+                }
+
                 renderCategories(state.categories);
                 startTimer(state.end_time);  
             } else if (state.status === 'results' || state.status === 'decision') {
                 activeScreen = document.getElementById('screenResults');
                 document.getElementById('resultPhoto').src = state.photo_url || '';
+
+                // Отрисовка метаданных на экране результатов
+                const resultMetaBlock = document.getElementById('resultPhotoMeta');
+                if (state.photo_author || state.photo_date) {
+                    document.getElementById('resultPhotoAuthor').innerText = state.photo_author || 'Неизвестно';
+                    document.getElementById('resultPhotoDate').innerText = state.photo_date || '';
+                    resultMetaBlock.classList.remove('hidden');
+                } else {
+                    resultMetaBlock.classList.add('hidden');
+                }
+
                 renderResults(state.results);
                 stopTimer();
 
@@ -949,7 +1007,6 @@
                     decisionCategoryText.innerText = finalCategory;
                     decisionBanner.classList.remove('hidden');
 
-                    // Сохранение решения в левую панель без запроса к API
                     if (lastSavedRound !== state.round) {
                         lastSavedRound = state.round;
                         addRoundToHistory({
@@ -967,7 +1024,6 @@
 
             if (activeScreen) {
                 activeScreen.classList.remove('hidden', 'screen-fade');
-                // Перезапуск анимации переключения экранов
                 void activeScreen.offsetWidth;
                 activeScreen.classList.add('screen-fade');
             }
