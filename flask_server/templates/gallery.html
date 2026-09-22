@@ -418,7 +418,7 @@
             transition: transform 0.3s ease;
         }
 
-        /* Нижний оверлей карточки с именем автора при наведении */
+        /* Нижний оверлей карточки с именем автора и категорией при наведении */
         .photo-card-overlay {
             position: absolute;
             bottom: 0;
@@ -428,6 +428,7 @@
             background: linear-gradient(to top, rgba(10, 12, 16, 0.95) 0%, rgba(10, 12, 16, 0) 100%);
             display: flex;
             align-items: center;
+            justify-content: space-between;
             gap: 6px;
             opacity: 0;
             transform: translateY(8px);
@@ -444,6 +445,19 @@
             overflow: hidden;
             text-overflow: ellipsis;
             text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            max-width: 50%;
+        }
+
+        .photo-card-category {
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            font-weight: 400;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+            max-width: 48%;
+            text-align: right;
         }
 
         @media (hover: hover) and (pointer: fine) {
@@ -921,7 +935,7 @@
                 item.innerHTML = `
                     <div style="display: flex; align-items: center;">
                         <input type="checkbox" ${isChecked ? 'checked' : ''}>
-                        <span>${cat.name}</span>
+                        <span>${escapeHtml(cat.name)}</span>
                     </div>
                     <span class="badge">${cat.photo_count}</span>
                 `;
@@ -1094,12 +1108,17 @@
                 card.className = 'photo-card';
                 card.onclick = () => openLightbox(idx);
 
-                const author = photo.photo_author ||  'Неизвестен';
+                const author = photo.photo_author || photo.author || photo.username || 'Неизвестен';
+                
+                // Находим название категории по category_id
+                const categoryObj = categoriesList.find(c => String(c.category_id) === String(photo.category_id));
+                const categoryName = categoryObj ? categoryObj.name : '';
 
                 card.innerHTML = `
                     <img src="${photo.file_url}" alt="Photo #${photo.id}" loading="lazy" decoding="async">
                     <div class="photo-card-overlay">
-                        <span class="photo-card-author">👤 ${escapeHtml(author)}</span>
+                        <span class="photo-card-author" title="${escapeHtml(author)}">👤 ${escapeHtml(author)}</span>
+                        ${categoryName ? `<span class="photo-card-category" title="${escapeHtml(categoryName)}">📁 ${escapeHtml(categoryName)}</span>` : ''}
                     </div>
                 `;
                 fragment.appendChild(card);
@@ -1178,7 +1197,7 @@
 
             document.getElementById('lightboxImg').src = photo.file_url;
             
-            const author = photo.photo_author ||  'Неизвестен';
+            const author = photo.photo_author || photo.author || photo.username || 'Неизвестен';
             const date = photo.date || photo.edit_date || photo.created_at || '';
 
             const captionElem = document.getElementById('lightboxCaption');
