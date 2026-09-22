@@ -1094,7 +1094,7 @@
                 card.className = 'photo-card';
                 card.onclick = () => openLightbox(idx);
 
-                const author = photo.author || photo.username || 'Неизвестен';
+                const author = photo.photo_author ||  'Неизвестен';
 
                 card.innerHTML = `
                     <img src="${photo.file_url}" alt="Photo #${photo.id}" loading="lazy" decoding="async">
@@ -1178,7 +1178,7 @@
 
             document.getElementById('lightboxImg').src = photo.file_url;
             
-            const author = photo.author || photo.username || 'Неизвестен';
+            const author = photo.photo_author ||  'Неизвестен';
             const date = photo.date || photo.edit_date || photo.created_at || '';
 
             const captionElem = document.getElementById('lightboxCaption');
