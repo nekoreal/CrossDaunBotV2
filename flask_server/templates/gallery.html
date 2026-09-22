@@ -371,6 +371,7 @@
 
         /* Изображение */
         .photo-container {
+            position: relative;
             width: 100%;
             max-height: 380px;
             border-radius: 14px;
@@ -397,6 +398,38 @@
             object-fit: contain;
             transition: opacity 0.4s ease;
             cursor: pointer;
+        }
+
+        /* --- ОВЕРЛЕЙ АВТОРА ПРИ НАВЕДЕНИИ НА ФОТО --- */
+        .photo-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            padding: 30px 18px 12px;
+            background: linear-gradient(to top, rgba(10, 12, 16, 0.95) 0%, rgba(10, 12, 16, 0.6) 60%, transparent 100%);
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 8px;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: opacity 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+            pointer-events: none;
+            z-index: 2;
+        }
+
+        .photo-container:hover .photo-overlay {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .photo-overlay-author {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            text-shadow: 0 2px 8px rgba(0, 0, 0, 0.9);
+            letter-spacing: 0.3px;
         }
 
         /* Метаданные фото (Автор и Дата) */
@@ -447,6 +480,26 @@
             transition: transform 0.1s ease-out;
             user-select: none;
             cursor: grab;
+        }
+
+        /* Плашка с информацией поверх модального окна */
+        .lightbox-meta {
+            position: absolute;
+            top: 25px;
+            left: 30px;
+            display: flex;
+            gap: 10px;
+            z-index: 10000;
+            flex-wrap: wrap;
+        }
+
+        .lightbox-meta .badge {
+            background: rgba(18, 22, 31, 0.85);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            padding: 8px 14px;
+            font-size: 0.9rem;
         }
 
         .lightbox-close {
@@ -726,7 +779,10 @@
         <!-- ================= 2. ЭКРАН ГОЛОСОВАНИЯ ================= -->
         <div id="screenVoting" class="hidden">
             <div class="photo-container">
-                <img id="votingPhoto" src="" alt="Фото для голосования" onclick="openLightbox(this.src)">
+                <img id="votingPhoto" src="" alt="Фото для голосования" onclick="openCurrentVotingLightbox()">
+                <div class="photo-overlay">
+                    <span class="photo-overlay-author">👤 <span id="votingPhotoOverlayAuthor">—</span></span>
+                </div>
             </div>
 
             <!-- Автор и Дата фото -->
@@ -753,7 +809,10 @@
             <h2 style="text-align: center; font-size: 1.3rem; margin-bottom: 15px;">Результаты раунда</h2>
             
             <div class="photo-container" style="max-height: 200px;">
-                <img id="resultPhoto" src="" alt="Фото" onclick="openLightbox(this.src)">
+                <img id="resultPhoto" src="" alt="Фото" onclick="openCurrentResultLightbox()">
+                <div class="photo-overlay">
+                    <span class="photo-overlay-author">👤 <span id="resultPhotoOverlayAuthor">—</span></span>
+                </div>
             </div>
 
             <!-- Автор и Дата фото -->
@@ -818,6 +877,17 @@
     <!-- МОДАЛЬНОЕ ОКНО LIGHTBOX -->
     <div id="lightbox" class="lightbox-modal" onclick="closeLightboxOnBg(event)">
         <button class="lightbox-close" onclick="closeLightbox()" title="Закрыть (Esc)">✕</button>
+        
+        <!-- Автор и дата внутри модального окна -->
+        <div class="lightbox-meta">
+            <div class="badge badge-cyan" title="Автор фото">
+                👤 <span id="lightboxAuthor">—</span>
+            </div>
+            <div class="badge badge-purple" title="Дата изменения / загрузки">
+                📅 <span id="lightboxDate">—</span>
+            </div>
+        </div>
+
         <img id="lightboxImg" class="lightbox-content" src="" alt="Увеличенное фото">
         <div class="lightbox-hint">Колесико — зум | Esc или Клик вне фото — закрыть</div>
     </div>
@@ -827,6 +897,7 @@
         let timerInterval = null;
         let selectedVote = null;
         let availableCategories = [];
+        let currentPhotoData = { url: '', author: '—', date: '—' };
 
         /* --- ХРАНЕНИЕ ИСТОРИИ НА СТОРОНЕ КЛИЕНТА (БЕЗ API) --- */
         let roundHistory = [];
@@ -849,8 +920,11 @@
             roundHistory.forEach(item => {
                 const card = document.createElement('div');
                 card.className = 'history-card';
+                const safeAuthor = (item.author || 'Неизвестно').replace(/'/g, "\\'");
+                const safeDate = (item.date || '—').replace(/'/g, "\\'");
+                
                 card.innerHTML = `
-                    <img src="${item.photo_url}" alt="Раунд ${item.round}" onclick="openLightbox('${item.photo_url}')">
+                    <img src="${item.photo_url}" alt="Раунд ${item.round}" onclick="openLightbox('${item.photo_url}', '${safeAuthor}', '${safeDate}')">
                     <div class="history-info">
                         <span class="history-round">Раунд #${item.round}</span>
                         <span class="history-category" title="${item.category}">${item.category}</span>
@@ -865,12 +939,23 @@
         const lightbox = document.getElementById('lightbox');
         const lightboxImg = document.getElementById('lightboxImg');
 
-        function openLightbox(src) {
+        function openLightbox(src, author = '—', date = '—') {
             if (!src) return;
             lightboxImg.src = src;
+            document.getElementById('lightboxAuthor').innerText = author || 'Неизвестно';
+            document.getElementById('lightboxDate').innerText = date || '—';
+
             currentScale = 1;
             lightboxImg.style.transform = `scale(${currentScale})`;
             lightbox.classList.add('active');
+        }
+
+        function openCurrentVotingLightbox() {
+            openLightbox(currentPhotoData.url, currentPhotoData.author, currentPhotoData.date);
+        }
+
+        function openCurrentResultLightbox() {
+            openLightbox(currentPhotoData.url, currentPhotoData.author, currentPhotoData.date);
         }
 
         function closeLightbox() {
@@ -947,6 +1032,15 @@
             if (state.unsorted_count !== undefined) {
                 document.getElementById('unsortedCount').innerText = state.unsorted_count;
             }
+
+            // Сохраняем текущие данные о фото
+            const author = state.photo_author || 'Неизвестно';
+            const date = state.edit_date || '—';
+            currentPhotoData = {
+                url: state.photo_url || '',
+                author: author,
+                date: date
+            };
             
             if (state.status === 'in_progress' || state.status === 'waiting') {
                 selectedVote = state.user_vote || null;
@@ -968,9 +1062,10 @@
                 activeScreen = document.getElementById('screenVoting');
                 document.getElementById('votingPhoto').src = state.photo_url || '';
                 
-                // Обновление автора и даты для экрана голосования
-                document.getElementById('votingPhotoAuthor').innerText = state.photo_author || 'Неизвестно';
-                document.getElementById('votingPhotoDate').innerText = state.edit_date || '—';
+                // Обновление автора и даты
+                document.getElementById('votingPhotoAuthor').innerText = author;
+                document.getElementById('votingPhotoDate').innerText = date;
+                document.getElementById('votingPhotoOverlayAuthor').innerText = author;
 
                 renderCategories(state.categories);
                 startTimer(state.end_time);  
@@ -978,9 +1073,10 @@
                 activeScreen = document.getElementById('screenResults');
                 document.getElementById('resultPhoto').src = state.photo_url || '';
 
-                // Обновление автора и даты для экрана результатов
-                document.getElementById('resultPhotoAuthor').innerText = state.photo_author || 'Неизвестно';
-                document.getElementById('resultPhotoDate').innerText = state.edit_date || '—';
+                // Обновление автора и даты
+                document.getElementById('resultPhotoAuthor').innerText = author;
+                document.getElementById('resultPhotoDate').innerText = date;
+                document.getElementById('resultPhotoOverlayAuthor').innerText = author;
 
                 renderResults(state.results);
                 stopTimer();
@@ -999,7 +1095,9 @@
                         addRoundToHistory({
                             round: state.round,
                             photo_url: state.photo_url,
-                            category: finalCategory
+                            category: finalCategory,
+                            author: author,
+                            date: date
                         });
                     }
                 } else {

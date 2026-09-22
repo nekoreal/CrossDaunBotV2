@@ -7,6 +7,7 @@ import uuid
 from s3 import s3_client
 import math
 from typing import List
+from telegram_bot.tg_utils.user import get_username_by_tgid
 
 def generate_s3_key() -> str:  
     return uuid.uuid4().hex  
@@ -99,7 +100,7 @@ def get_all_categories_dict() :
             for cat_id, name, photo_count in results
         ]
 
-
+    
 def photo_urls_paginate(
     categories: Optional[List[str]] = None,
     page: int = 1,
@@ -110,7 +111,7 @@ def photo_urls_paginate(
     """Возвращает список фотографий с presigned URL из S3 и метаданными пагинации. 
     - Если categories передан список — фильтрует по этим категориям.
     - Если categories is None — ищет ВСЕ фото, у которых есть какая-либо
-    категория (IS NOT NULL).
+      категория (IS NOT NULL).
     """ 
     page = max(1, page)
     limit = max(1, min(limit, 64))
@@ -124,8 +125,7 @@ def photo_urls_paginate(
             query = query.filter(Photo.category_id.isnot(None))
 
         total = query.with_entities(func.count(Photo.id)).scalar() or 0
-
-        # Основная и вторичная сортировка
+ 
         sort_column = getattr(Photo, sort_by, Photo.edit_date)
         order_func = desc if sort_order.upper() == "DESC" else asc
         
@@ -137,7 +137,9 @@ def photo_urls_paginate(
 
         photos = query.offset(offset).limit(limit).all()
 
-        items = []
+        items = [] 
+        username_cache = {}
+
         for photo in photos:
             presigned_url = s3_client.s3_client.generate_presigned_url(
                 "get_object",
@@ -147,13 +149,21 @@ def photo_urls_paginate(
                 },
                 ExpiresIn=900,
             )
+ 
+            tg_id = photo.tg_id
+            if tg_id not in username_cache:
+                username_cache[tg_id] = get_username_by_tgid(tg_id)
+            
+            photo_author = username_cache[tg_id]
+
             items.append({
                 "id": photo.id,
-                "tg_id": photo.tg_id,
+                "tg_id": tg_id,
                 "category_id": photo.category_id,
                 "file_url": presigned_url,
+                "photo_author": photo_author,
                 "edit_date": (
-                    photo.edit_date.isoformat() if photo.edit_date else None
+                    photo.edit_date.strftime("%d.%m.%Y %H:%M") if photo.edit_date else None
                 ),
             })
 
