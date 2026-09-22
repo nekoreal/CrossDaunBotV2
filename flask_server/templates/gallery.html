@@ -3,30 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CrossDaun Gallery</title>
+    <title>CrossDaun Poll</title>
     <link rel="shortcut icon" href="./static/favicon.ico" />
+    <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
     <style>
         :root {
             --bg-primary: #0a0c10;
-            --card-bg: rgba(18, 22, 31, 0.9);
-            --bg-secondary: rgba(15, 18, 26, 0.95);
+            --card-bg: rgba(18, 22, 31, 0.75);
             --accent-cyan: #00f2fe;
             --accent-purple: #9d4edd;
-            --accent-hover: #00c6ff;
             --text-main: #f0f4f8;
             --text-muted: #8a99ad;
             --border-glow: rgba(0, 242, 254, 0.15);
-            --border-purple: rgba(157, 78, 221, 0.25);
             --danger: #ff5555;
-            --success: #2ecc71;
-            --radius: 14px;
-            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            --success: #00e676;
+            --warning: #ffb703;
         }
 
         * {
-            box-sizing: border-box;
             margin: 0;
             padding: 0;
+            box-sizing: border-box;
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
         }
 
@@ -35,576 +32,185 @@
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
-            flex-direction: column;
-            position: relative;
-            overflow-x: hidden;
-            -webkit-tap-highlight-color: transparent;
-        }
-
-        /* Контейнер для всплывающих уведомлений */
-        .toast-container {
-            position: fixed;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 2000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            pointer-events: none;
-        }
-
-        .toast {
-            min-width: 280px;
-            padding: 12px 20px;
-            border-radius: var(--radius);
-            background: rgba(14, 18, 27, 0.95);
-            border: 1px solid var(--border-glow);
-            color: var(--text-main);
-            font-size: 0.9rem;
-            text-align: center;
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.6);
-            opacity: 0;
-            transform: translateY(-20px);
-            transition: var(--transition);
-            pointer-events: auto;
-        }
-
-        .toast.show {
-            opacity: 1;
-            transform: translateY(0);
-        }
-
-        .toast.success {
-            border-color: rgba(0, 242, 254, 0.4);
-        }
-
-        .toast.error {
-            border-color: rgba(255, 85, 85, 0.4);
-            color: var(--danger);
-        }
-
-        /* Фоновые неоновые пятна */
-        .glow-sphere-1, .glow-sphere-2 {
-            position: fixed;
-            pointer-events: none;
-            z-index: 0;
-            will-change: transform;
-        }
-
-        .glow-sphere-1 {
-            width: 450px;
-            height: 450px;
-            background: radial-gradient(circle, rgba(157, 78, 221, 0.15) 0%, rgba(0,0,0,0) 70%);
-            top: -50px;
-            left: -50px;
-            animation: pulse 8s infinite alternate ease-in-out;
-        }
-
-        .glow-sphere-2 {
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(0, 242, 254, 0.12) 0%, rgba(0,0,0,0) 70%);
-            bottom: 10%;
-            right: -50px;
-            animation: pulse 10s infinite alternate-reverse ease-in-out;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1) translate(0, 0); }
-            100% { transform: scale(1.1) translate(15px, -15px); }
-        }
-
-        header {
-            background-color: var(--bg-secondary);
-            border-bottom: 1px solid var(--border-glow);
-            padding: 16px 0;
-            position: sticky;
-            top: 0;
-            z-index: 50;
-        }
-
-        @supports (backdrop-filter: blur(10px)) or (-webkit-backdrop-filter: blur(10px)) {
-            @media (min-width: 769px) {
-                header {
-                    backdrop-filter: blur(12px);
-                    -webkit-backdrop-filter: blur(12px);
-                }
-            }
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-            padding: 0 16px;
-            width: 100%;
-            position: relative;
-            z-index: 1;
-        }
-
-        .header-content {
-            display: flex;
-            flex-direction: column;
-            gap: 14px;
-        }
-
-        .title-area {
-            display: flex;
-            justify-content: space-between;
             align-items: center;
-            flex-wrap: wrap;
+            justify-content: center;
+            overflow-x: hidden;
+            position: relative;
+            padding: 20px;
+        }
+
+        /* --- БОКОВАЯ ПАНЕЛЬ ИСТОРИИ (АБСОЛЮТНО СЛЕВА) --- */
+        .history-sidebar {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 280px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6),
+                        0 0 30px rgba(0, 242, 254, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 10;
+            max-height: 85vh;
+            overflow-y: auto;
+            animation: cardAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .history-title {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--accent-cyan);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 10px;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .history-list {
+            display: flex;
+            flex-direction: column;
             gap: 10px;
         }
 
-        h1 {
-            font-size: 1.4rem;
-            font-weight: 700;
-            color: var(--text-main);
-        }
-
-        .photo-counter {
-            color: var(--accent-cyan);
-            font-size: 0.85rem;
-            background: rgba(0, 242, 254, 0.08);
-            padding: 5px 12px;
-            border-radius: 20px;
-            border: 1px solid rgba(0, 242, 254, 0.2);
-        }
-
-        .controls-row {
+        .history-card {
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 12px;
+            padding: 10px;
             display: flex;
             gap: 12px;
             align-items: center;
-            flex-wrap: wrap;
+            animation: slideInResult 0.3s ease forwards;
+            transition: transform 0.2s ease, border-color 0.2s ease;
         }
 
-        /* Выпадающие меню */
-        .custom-select-wrapper {
-            position: relative;
-            min-width: 200px;
-            flex-shrink: 0;
+        .history-card:hover {
+            transform: translateX(3px);
+            border-color: rgba(0, 242, 254, 0.3);
         }
 
-        .select-trigger {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-glow);
-            border-radius: var(--radius);
-            padding: 10px 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            user-select: none;
-            font-size: 0.9rem;
-            color: var(--text-main);
-            transition: var(--transition);
-        }
-
-        .select-trigger:hover {
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 12px rgba(0, 242, 254, 0.25);
-        }
-
-        .select-trigger .arrow {
-            font-size: 0.75rem;
-            transition: transform 0.2s;
-            color: var(--accent-cyan);
-        }
-
-        .custom-select-wrapper.open .arrow {
-            transform: rotate(180deg);
-        }
-
-        .dropdown-menu {
-            position: absolute;
-            top: calc(100% + 6px);
-            left: 0;
-            right: 0;
-            background: rgba(14, 18, 27, 0.98);
-            border: 1px solid var(--border-glow);
-            border-radius: var(--radius);
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
-            display: none;
-            flex-direction: column;
-            max-height: 300px;
-            z-index: 100;
-            overflow: hidden;
-        }
-
-        .custom-select-wrapper.open .dropdown-menu {
-            display: flex;
-        }
-
-        .dropdown-search {
-            padding: 8px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            background-color: rgba(0, 0, 0, 0.2);
-        }
-
-        .dropdown-search input {
-            width: 100%;
-            background-color: rgba(255, 255, 255, 0.05);
-            border: 1px solid var(--border-glow);
-            border-radius: 8px;
-            padding: 8px 12px;
-            color: var(--text-main);
-            outline: none;
-            font-size: 0.85rem;
-            transition: var(--transition);
-        }
-
-        .dropdown-search input:focus {
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 8px rgba(0, 242, 254, 0.3);
-        }
-
-        .dropdown-list {
-            overflow-y: auto;
-            max-height: 240px;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        .dropdown-item {
-            padding: 10px 14px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            cursor: pointer;
-            font-size: 0.88rem;
-            color: var(--text-main);
-            transition: var(--transition);
-        }
-
-        .dropdown-item:hover {
-            background: rgba(0, 242, 254, 0.1);
-            color: var(--accent-cyan);
-        }
-
-        .dropdown-item.selected {
-            background: rgba(0, 242, 254, 0.15);
-            border-left: 3px solid var(--accent-cyan);
-        }
-
-        .dropdown-item .badge {
-            font-size: 0.75rem;
-            color: var(--accent-cyan);
-            background: rgba(0, 242, 254, 0.1);
-            padding: 2px 8px;
-            border-radius: 12px;
-        }
-
-        /* Стиль кастомного чекбокса для мультивыбора категорий */
-        .dropdown-item input[type="checkbox"] {
-            appearance: none;
-            width: 16px;
-            height: 16px;
-            border: 1px solid var(--border-glow);
-            border-radius: 4px;
-            background: var(--card-bg);
-            cursor: pointer;
-            position: relative;
-            margin-right: 8px;
-            transition: var(--transition);
-        }
-
-        .dropdown-item input[type="checkbox"]:checked {
-            background: var(--accent-cyan);
-            border-color: var(--accent-cyan);
-        }
-
-        .dropdown-item input[type="checkbox"]:checked::after {
-            content: '✓';
-            position: absolute;
-            color: #000;
-            font-size: 11px;
-            font-weight: bold;
-            top: -2px;
-            left: 3px;
-        }
-
-        /* Кнопка переключения порядка сортировки ASC/DESC */
-        .btn-toggle-sort {
-            background-color: var(--card-bg);
-            border: 1px solid var(--border-glow);
-            border-radius: var(--radius);
-            padding: 10px 14px;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            cursor: pointer;
-            font-size: 0.9rem;
-            color: var(--text-main);
-            transition: var(--transition);
-            user-select: none;
-        }
-
-        .btn-toggle-sort:hover {
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 12px rgba(0, 242, 254, 0.25);
-            color: var(--accent-cyan);
-        }
-
-        .quick-chips {
-            display: flex;
-            gap: 8px;
-            overflow-x: auto;
-            padding-bottom: 4px;
-            -webkit-overflow-scrolling: touch;
-            scrollbar-width: none;
-        }
-
-        .quick-chips::-webkit-scrollbar {
-            display: none;
-        }
-
-        .chip-btn {
-            background: var(--card-bg);
-            color: var(--text-muted);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            padding: 6px 14px;
-            border-radius: 20px;
-            cursor: pointer;
-            white-space: nowrap;
-            font-size: 0.82rem;
-            transition: var(--transition);
-        }
-
-        .chip-btn:hover {
-            border-color: var(--accent-cyan);
-            color: var(--text-main);
-            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2); 
-        }
-
-        .chip-btn.active {
-            background: rgba(0, 242, 254, 0.15);
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
-            font-weight: 600;
-        }
-
-        main {
-            flex: 1;
-            padding: 20px 0;
-            position: relative;
-            z-index: 1;
-        }
-
-        /* Десктопная сетка: 4 фото в ряд */
-        .gallery-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 16px;
-        }
-
-        /* Карточка фотографии */
-        .photo-card {
-            background-color: var(--card-bg);
-            border-radius: var(--radius);
-            overflow: hidden;
-            aspect-ratio: 1 / 1;
-            cursor: pointer;
-            border: 1px solid var(--border-glow);
-            position: relative;
-            content-visibility: auto;
-            contain-intrinsic-size: 250px;
-            transition: var(--transition);
-        }
-
-        .photo-card img {
-            width: 100%;
-            height: 100%;
+        .history-card img {
+            width: 50px;
+            height: 50px;
             object-fit: cover;
-            display: block;
-            transition: transform 0.3s ease;
-        }
-
-        @media (hover: hover) and (pointer: fine) {
-            .photo-card:hover {
-                transform: translateY(-4px);
-                border-color: var(--accent-cyan);
-                box-shadow: 0 8px 20px rgba(0, 242, 254, 0.25);
-            }
-
-            .photo-card:hover img {
-                transform: scale(1.05);
-            }
-        }
-
-        .pagination {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 6px;
-            margin-top: 30px;
-            flex-wrap: wrap;
-        }
-
-        .page-btn {
-            background: var(--card-bg);
-            color: var(--text-main);
-            border: 1px solid var(--border-glow);
-            width: 38px;
-            height: 38px;
             border-radius: 8px;
+            border: 1px solid rgba(0, 242, 254, 0.3);
             cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-weight: 600;
-            font-size: 0.9rem;
-            transition: var(--transition);
+            flex-shrink: 0;
+            transition: transform 0.2s ease;
         }
 
-        .page-btn:hover:not(:disabled):not(.active) {
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
-            box-shadow: 0 0 10px rgba(0, 242, 254, 0.2);
-            transform: translateY(-1px);
-        }
-
-        .page-btn.active {
-            background: var(--accent-cyan);
-            color: #000;
-            border-color: var(--accent-cyan);
-        }
-
-        .page-btn:disabled {
-            opacity: 0.2;
-            cursor: not-allowed;
-        }
-
-        /* Lightbox Modal */
-        .lightbox {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background-color: rgba(5, 7, 10, 0.95);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            z-index: 1000;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.2s ease;
-            touch-action: none;
-        }
-
-        .lightbox.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .lightbox-content {
-            position: relative;
-            max-width: 95vw;
-            max-height: 85vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin: auto;
-        }
-
-        .lightbox-content img {
-            max-width: calc(100vw - 100px);
-            max-height: 70vh;
-            object-fit: contain;
-            border-radius: 8px;
-            border: 1px solid var(--border-glow);
-            user-select: none;
-            -webkit-user-drag: none;
-        }
-
-        .lightbox-caption {
-            margin-top: 10px;
-            color: var(--text-main);
-            font-size: 0.85rem;
-            text-align: center;
-            background: rgba(18, 22, 31, 0.9);
-            padding: 6px 14px;
-            border-radius: 16px;
-            border: 1px solid var(--border-glow);
-        }
-
-        .lightbox-actions {
-            margin-top: 10px;
-            display: flex;
-            gap: 8px;
-        }
-
-        .btn-action {
-            background: var(--card-bg);
-            color: var(--accent-cyan);
-            border: 1px solid var(--border-glow);
-            padding: 8px 16px;
-            border-radius: 16px;
-            cursor: pointer;
-            font-size: 0.82rem;
-            font-weight: 600;
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            transition: var(--transition);
-        }
-
-        .btn-action:hover {
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
-            transform: translateY(-1px);
-        }
-
-        .lightbox-close {
-            position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(18, 22, 31, 0.8);
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            color: var(--accent-cyan);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            font-size: 1.4rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1006;
-            transition: var(--transition);
-        }
-
-        .lightbox-close:hover {
-            background: rgba(255, 85, 85, 0.2);
-            border-color: var(--danger);
-            color: var(--danger);
+        .history-card img:hover {
             transform: scale(1.08);
         }
 
-        .lightbox-nav {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(18, 22, 31, 0.75);
-            color: var(--accent-cyan);
-            border: 1px solid var(--border-glow);
-            width: 44px;
-            height: 44px;
-            border-radius: 50%;
-            font-size: 1.2rem;
-            cursor: pointer;
+        .history-info {
             display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 1005;
-            transition: var(--transition);
+            flex-direction: column;
+            gap: 3px;
+            overflow: hidden;
         }
 
-        .lightbox-nav:hover {
-            background: rgba(0, 242, 254, 0.15);
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.4);
-            transform: translateY(-50%) scale(1.08);
+        .history-round {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+
+        .history-category {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--accent-purple);
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        /* --- АНИМАЦИИ И НЕОН --- */
+        .glow-sphere-1 {
+            position: absolute;
+            width: 450px;
+            height: 450px;
+            background: radial-gradient(circle, rgba(157, 78, 221, 0.25) 0%, rgba(0,0,0,0) 70%);
+            top: 10%;
+            left: 15%;
+            z-index: 0;
+            filter: blur(50px);
+            animation: floatGlow1 12s infinite alternate ease-in-out;
+        }
+
+        .glow-sphere-2 {
+            position: absolute;
+            width: 500px;
+            height: 500px;
+            background: radial-gradient(circle, rgba(0, 242, 254, 0.2) 0%, rgba(0,0,0,0) 70%);
+            bottom: 10%;
+            right: 15%;
+            z-index: 0;
+            filter: blur(60px);
+            animation: floatGlow2 14s infinite alternate ease-in-out;
+        }
+
+        @keyframes floatGlow1 {
+            0% { transform: scale(1) translate(0, 0); }
+            50% { transform: scale(1.15) translate(30px, -20px); }
+            100% { transform: scale(0.9) translate(-20px, 30px); }
+        }
+
+        @keyframes floatGlow2 {
+            0% { transform: scale(1) translate(0, 0); }
+            50% { transform: scale(1.2) translate(-40px, 15px); }
+            100% { transform: scale(0.95) translate(25px, -35px); }
+        }
+
+        /* Карточка строго по центру */
+        .auth-card {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 680px;
+            padding: 35px 30px;
+            background: var(--card-bg);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid var(--border-glow);
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6),
+                        0 0 30px rgba(0, 242, 254, 0.05);
+            animation: cardAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes cardAppear {
+            from { opacity: 0; transform: translateY(20px) scale(0.98); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Верхняя плашка */
+        .top-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            gap: 10px;
+        }
+
+        .top-bar-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
         }
 
         .btn-home {
@@ -613,19 +219,21 @@
             justify-content: center;
             width: 36px;
             height: 36px;
-            background: var(--card-bg);
+            background: rgba(255, 255, 255, 0.05);
             color: var(--accent-cyan);
-            border: 1px solid var(--border-glow);
-            border-radius: var(--radius);
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: 10px;
             text-decoration: none;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             flex-shrink: 0;
-            transition: var(--transition);
         }
 
         .btn-home:hover {
-            border-color: var(--accent-cyan);
-            box-shadow: 0 0 12px rgba(0, 242, 254, 0.3);
-            transform: translateY(-1px);
+            background: rgba(0, 242, 254, 0.15);
+            border-color: rgba(0, 242, 254, 0.6);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
+            color: #fff;
+            transform: translateY(-2px) scale(1.05);
         }
 
         .btn-home svg {
@@ -634,561 +242,1024 @@
             fill: currentColor;
         }
 
-        .header-title-wrapper {
+        .badge {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 6px 12px;
+            border-radius: 10px;
+            font-size: 0.85rem;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: transform 0.2s ease, border-color 0.2s ease;
+        }
+
+        .badge:hover {
+            transform: translateY(-1px);
+        }
+
+        .badge-cyan { color: var(--accent-cyan); border-color: rgba(0, 242, 254, 0.3); font-weight: 600; }
+        .badge-purple { color: var(--accent-purple); border-color: rgba(157, 78, 221, 0.4); font-weight: 600; }
+        .badge-warning { color: var(--warning); border-color: rgba(255, 183, 3, 0.4); font-weight: 600; }
+
+        .timer-badge {
+            color: var(--accent-cyan);
+            font-family: monospace;
+            font-size: 1.1rem;
+            font-weight: 700;
+            white-space: nowrap;
+            position: relative;
+            overflow: hidden;
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .timer-badge.warning-time {
+            color: var(--danger);
+            border-color: rgba(255, 85, 85, 0.5);
+            animation: timerPulse 0.8s infinite alternate;
+        }
+
+        @keyframes timerPulse {
+            0% { box-shadow: 0 0 5px rgba(255, 85, 85, 0.2); }
+            100% { box-shadow: 0 0 15px rgba(255, 85, 85, 0.6); }
+        }
+
+        /* Кнопки с бликом */
+        .btn-def {
+            position: relative;
+            display: inline-block;
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #00f2fe;
+            border: 1px solid rgba(0, 242, 254, 0.3);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .btn-def::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-def:hover:not(:disabled)::before {
+            left: 100%;
+        }
+
+        .btn-def:hover:not(:disabled) {
+            background: rgba(0, 242, 254, 0.15);
+            border-color: rgba(0, 242, 254, 0.6);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.25);
+            transform: translateY(-2px);
+        }
+
+        .btn-def:active:not(:disabled) {
+            transform: translateY(0) scale(0.98);
+        }
+
+        .btn-def:disabled, .btn-def.voted {
+            background: rgba(0, 230, 118, 0.15);
+            border-color: var(--success);
+            color: var(--success);
+            cursor: default;
+            box-shadow: 0 0 10px rgba(0, 230, 118, 0.1);
+        }
+
+        .btn-logout {
+            display: inline-block;
+            width: 100%;
+            padding: 12px 20px;
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--danger);
+            border: 1px solid rgba(255, 85, 85, 0.3);
+            text-decoration: none;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.25s ease;
+        }
+
+        .btn-logout:hover {
+            background: rgba(255, 85, 85, 0.15);
+            border-color: rgba(255, 85, 85, 0.5);
+            box-shadow: 0 0 15px rgba(255, 85, 85, 0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Прелоадер */
+        .loader-ring {
+            width: 50px;
+            height: 50px;
+            border: 3px solid rgba(0, 242, 254, 0.1);
+            border-top: 3px solid var(--accent-cyan);
+            border-right: 3px solid var(--accent-purple);
+            border-radius: 50%;
+            margin: 0 auto 20px;
+            animation: spin 0.9s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+        }
+
+        @keyframes spin { 100% { transform: rotate(360deg); } }
+
+        /* Изображение */
+        .photo-container {
+            width: 100%;
+            max-height: 380px;
+            border-radius: 14px;
+            overflow: hidden;
+            border: 1px solid var(--border-glow);
+            background: #000;
+            margin-bottom: 12px;
             display: flex;
             align-items: center;
+            justify-content: center;
+            box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
+            transition: transform 0.3s ease, border-color 0.3s ease;
+        }
+
+        .photo-container:hover {
+            border-color: rgba(0, 242, 254, 0.4);
+            transform: scale(1.01);
+        }
+
+        .photo-container img {
+            width: 100%;
+            height: 100%;
+            max-height: 380px;
+            object-fit: contain;
+            transition: opacity 0.4s ease;
+            cursor: pointer;
+        }
+
+        /* Метаданные фото (Автор и Дата) */
+        .photo-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .photo-meta .badge {
+            font-size: 0.8rem;
+        }
+
+        /* --- ПОЛНОЭКРАННЫЙ ЛАЙТБОКС (ZOOM MODAL) --- */
+        .lightbox-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(10, 12, 16, 0.92);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            overflow: hidden;
+        }
+
+        .lightbox-modal.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .lightbox-content {
+            max-width: 90vw;
+            max-height: 90vh;
+            object-fit: contain;
+            border-radius: 8px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 242, 254, 0.2);
+            transition: transform 0.1s ease-out;
+            user-select: none;
+            cursor: grab;
+        }
+
+        .lightbox-close {
+            position: absolute;
+            top: 25px;
+            right: 30px;
+            width: 44px;
+            height: 44px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            border-radius: 50%;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.25s ease;
+            z-index: 10000;
+        }
+
+        .lightbox-close:hover {
+            background: rgba(255, 85, 85, 0.8);
+            border-color: var(--danger);
+            transform: scale(1.1);
+        }
+
+        .lightbox-hint {
+            position: absolute;
+            bottom: 25px;
+            color: var(--text-muted);
+            font-size: 0.85rem;
+            background: rgba(18, 22, 31, 0.8);
+            padding: 6px 14px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            pointer-events: none;
+        }
+
+        /* Сетка категорий */
+        .categories-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 12px;
+            margin-top: 15px;
+        }
+
+        /* Результаты */
+        .results-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .result-item {
+            background: rgba(255, 255, 255, 0.03);
+            padding: 12px 16px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            animation: slideInResult 0.4s ease forwards;
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        @keyframes slideInResult {
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .result-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .user-avatars {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .user-avatars img {
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            border: 1px solid var(--accent-cyan);
+            transition: transform 0.2s ease;
+        }
+
+        .user-avatars img:hover {
+            transform: scale(1.25);
+            z-index: 2;
+        }
+
+        /* Панель модератора */
+        .moderator-panel {
+            margin-top: 25px;
+            padding-top: 20px;
+            border-top: 1px dashed rgba(255, 255, 255, 0.15);
+            display: flex;
+            flex-direction: column;
             gap: 10px;
         }
 
-        .lightbox-prev { left: 10px; }
-        .lightbox-next { right: 10px; }
+        .tie-buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 8px;
+            margin-bottom: 5px;
+        }
 
-        @media (max-width: 768px) {
-            .glow-sphere-1, .glow-sphere-2 {
-                display: none;
-            }
+        /* Кастомный ввод */
+        .custom-cat-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
 
-            .quick-chips {
-                display: none !important;
-            }
+        .custom-cat-container {
+            display: flex;
+            align-items: center;
+            overflow: hidden;
+            border-radius: 12px;
+            position: relative;
+        }
 
-            .gallery-grid {
-                grid-template-columns: repeat(auto-fill, minmax(105px, 1fr));
-                gap: 8px;
-            }
+        .custom-cat-input {
+            width: 0;
+            opacity: 0;
+            padding: 0;
+            border: none;
+            outline: none;
+            background: rgba(255, 255, 255, 0.07);
+            color: var(--text-main);
+            font-size: 0.95rem;
+            border-radius: 12px;
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
 
-            .lightbox-content {
+        .custom-cat-input.active {
+            width: 100%;
+            opacity: 1;
+            padding: 12px 16px;
+            border: 1px solid var(--accent-cyan);
+            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+            margin-top: 8px;
+        }
+
+        .custom-cat-input.slide-out {
+            transform: translateX(120%);
+            opacity: 0;
+            transition: transform 0.5s ease-in, opacity 0.4s ease-in;
+        }
+
+        .suggestions-box {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: rgba(18, 22, 31, 0.95);
+            border: 1px solid var(--border-glow);
+            border-radius: 10px;
+            margin-top: 5px;
+            max-height: 150px;
+            overflow-y: auto;
+            z-index: 10;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            animation: fadeIn 0.2s ease;
+        }
+
+        .suggestion-item {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            color: var(--text-main);
+            transition: background 0.2s ease, color 0.2s ease;
+        }
+
+        .suggestion-item:hover {
+            background: rgba(0, 242, 254, 0.15);
+            color: var(--accent-cyan);
+        }
+
+        /* Переключение экранов */
+        .screen-fade {
+            animation: fadeInScreen 0.4s ease forwards;
+        }
+
+        @keyframes fadeInScreen {
+            from { opacity: 0; transform: translateY(12px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .hidden { display: none !important; }
+
+        /* Адаптивность для мобильных устройств и узких экранов */
+        @media (max-width: 1280px) {
+            .history-sidebar {
+                position: static;
+                transform: none;
                 width: 100%;
-                height: 100%;
-                max-width: 100vw;
-                max-height: 100vh;
+                max-width: 680px;
+                max-height: 250px;
+                margin-bottom: 20px;
             }
-
-            .lightbox-content img {
-                max-width: calc(100vw - 30px);
-                max-height: 65vh;
-            }
-
-            .lightbox-prev { left: 5px; }
-            .lightbox-next { right: 5px; }
-
-            .lightbox-nav {
-                width: 38px;
-                height: 38px;
-                font-size: 1rem;
-            }
-
-            .controls-row {
+            body {
                 flex-direction: column;
-                align-items: stretch;
-            }
-
-            .custom-select-wrapper {
-                width: 100%;
+                justify-content: flex-start;
             }
         }
     </style>
 </head>
-<body data-is-moder="{{ 'true' if user and user.is_moder else 'false' }}"> 
-
-    <div class="toast-container" id="toastContainer"></div>
+<body>
 
     <div class="glow-sphere-1"></div>
-    <div class="glow-sphere-2"></div>
+    <div class="glow-sphere-2"></div> 
 
-    <header>
-        <div class="container">
-            <div class="header-content">
-                <div class="title-area">
-                    <div class="header-title-wrapper">
-                        <a href="/" class="btn-home" title="На главную">
-                            <svg viewBox="0 0 24 24">
-                                <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
-                            </svg>
-                        </a>
-                        <h1 id="categoryTitle">📁 Загрузка категорий...</h1>
-                    </div>
-                    <span class="photo-counter" id="photoCounter"></span>
-                </div>
-                
-                <div class="controls-row">
-                    <!-- Мультиселект категорий -->
-                    <div class="custom-select-wrapper" id="categoryDropdown">
-                        <div class="select-trigger" onclick="toggleDropdown('categoryDropdown')">
-                            <span id="selectedCategoryName">Все категории</span>
-                            <span class="arrow">▼</span>
-                        </div>
-                        <div class="dropdown-menu">
-                            <!-- Блок поиска с кнопкой сброса -->
-                            <div class="dropdown-search" style="display: flex; gap: 6px; align-items: center;">
-                                <input type="text" id="catSearchInput" placeholder="Поиск категории..." oninput="filterCategories()">
-                                <button class="chip-btn" onclick="clearCategoryFilters()" style="padding: 6px 10px; font-size: 0.78rem;" title="Сбросить выбранные категории">Сброс</button>
-                            </div>
-                            <div class="dropdown-list" id="dropdownList"></div>
-                        </div>
-                    </div>
-
-                    <!-- Выбор поля сортировки (Sort By) -->
-                    <div class="custom-select-wrapper" id="sortByDropdown" style="min-width: 150px;">
-                        <div class="select-trigger" onclick="toggleDropdown('sortByDropdown')">
-                            <span id="selectedSortBy">Дата</span>
-                            <span class="arrow">▼</span>
-                        </div>
-                        <div class="dropdown-menu">
-                            <div class="dropdown-list">
-                                <div class="dropdown-item" onclick="setSortBy('edit_date', 'Дата')">Дата</div>
-                                <div class="dropdown-item" onclick="setSortBy('id', 'ID')">ID</div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Направление сортировки (Sort Order) -->
-                    <button class="btn-toggle-sort" onclick="toggleSortOrder()">
-                        <span id="sortOrderLabel">По убыванию</span>
-                        <span id="sortOrderIcon" style="color: var(--accent-cyan)">▼</span>
-                    </button>
-
-                    <div class="quick-chips" id="quickChipsContainer"></div>
-                </div>
+    <!-- БОКОВАЯ ПАНЕЛЬ ИСТОРИИ (СЛЕВА) -->
+    <aside id="historySidebar" class="history-sidebar">
+        <div class="history-title">📜 Последние решения</div>
+        <div id="historyList" class="history-list">
+            <div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 10px 0;">
+                История пока пуста
             </div>
         </div>
-    </header>
+    </aside>
 
-    <main>
-        <div class="container">
-            <div class="gallery-grid" id="galleryGrid"></div>
-            <div class="pagination" id="pagination"></div>
-        </div>
-    </main>
+    <div class="auth-card">
 
-    <!-- Lightbox Modal -->
-    <div class="lightbox" id="lightbox">
-        <button class="lightbox-close" onclick="closeLightbox()">&times;</button>
-        <button class="lightbox-nav lightbox-prev" onclick="changeLightboxImage(-1)">&#10094;</button>
-        <div class="lightbox-content" id="lightboxContent">
-            <img id="lightboxImg" src="" alt="Enlarged image">
-            <div class="lightbox-caption" id="lightboxCaption"></div>
-            <div class="lightbox-actions" id="lightboxActions"></div>
+        <!-- Верхняя плашка -->
+        <div id="topBar" class="top-bar">
+            <div class="top-bar-left">
+                <a href="/" class="btn-home" title="На главную">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/>
+                    </svg>
+                </a>
+                <div class="badge badge-purple" title="Текущий раунд">
+                    🔄 Раунд: <span id="roundNumber">0</span>
+                </div>
+                <div class="badge badge-warning" title="Осталось неотсортированных фото">
+                    🖼️ Осталось: <span id="unsortedCount">0</span>
+                </div>
+                <div class="badge badge-cyan">
+                    👥 <span id="votedCount">0</span>/<span id="totalUsers">0</span>
+                </div>
+            </div>
+            <div class="badge timer-badge" id="timerBadge">
+                ⏱ <span id="timer">00:00</span>
+            </div>
         </div>
-        <button class="lightbox-nav lightbox-next" onclick="changeLightboxImage(1)">&#10095;</button>
+
+        <!-- ================= 1. ЭКРАН ОЖИДАНИЯ ================= -->
+        <div id="screenWaiting" style="text-align: center; padding: 20px 0;" class="hidden">
+            <div class="loader-ring"></div>
+            <h1 style="font-size: 1.4rem; margin-bottom: 10px;">Ожидание решения модератора</h1>
+            <p style="color: var(--text-muted); font-size: 0.95rem;">
+                {% if user.is_moder %}
+                    Вы зашли как модератор. Нажмите кнопку ниже, чтобы запустить раунд голосования.
+                {% else %}
+                    Организатор подготавливает следующее фото. Ожидайте начала...
+                {% endif %}
+            </p>
+
+            {% if user.is_moder %}
+                <button class="btn-def" style="margin-top: 25px;" onclick="moderStartRound()">
+                    Запустить следующий раунд
+                </button>
+            {% endif %}
+        </div>
+
+        <!-- ================= 2. ЭКРАН ГОЛОСОВАНИЯ ================= -->
+        <div id="screenVoting" class="hidden">
+            <div class="photo-container">
+                <img id="votingPhoto" src="" alt="Фото для голосования" onclick="openLightbox(this.src)">
+            </div>
+
+            <!-- Автор и Дата фото -->
+            <div class="photo-meta">
+                <div class="badge badge-cyan" title="Автор фото">
+                    👤 <span id="votingPhotoAuthor">—</span>
+                </div>
+                <div class="badge badge-purple" title="Дата загрузки / изменения">
+                    📅 <span id="votingPhotoDate">—</span>
+                </div>
+            </div>
+
+            <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">
+                Выберите подходящую категорию для этого изображения:
+            </p>
+
+            <div id="categoriesContainer" class="categories-grid">
+                <!-- Категории рендерятся из JS -->
+            </div>
+        </div>
+
+        <!-- ================= 3. ЭКРАН РЕЗУЛЬТАТОВ ================= -->
+        <div id="screenResults" class="hidden">
+            <h2 style="text-align: center; font-size: 1.3rem; margin-bottom: 15px;">Результаты раунда</h2>
+            
+            <div class="photo-container" style="max-height: 200px;">
+                <img id="resultPhoto" src="" alt="Фото" onclick="openLightbox(this.src)">
+            </div>
+
+            <!-- Автор и Дата фото -->
+            <div class="photo-meta">
+                <div class="badge badge-cyan" title="Автор фото">
+                    👤 <span id="resultPhotoAuthor">—</span>
+                </div>
+                <div class="badge badge-purple" title="Дата загрузки / изменения">
+                    📅 <span id="resultPhotoDate">—</span>
+                </div>
+            </div>
+
+            <!-- Блок с принятым решением модератора -->
+            <div id="decisionBanner" class="hidden" style="margin: 15px 0; padding: 12px 16px; background: rgba(0, 242, 254, 0.1); border: 1px solid var(--accent-cyan); border-radius: 12px; text-align: center; animation: cardAppear 0.3s ease;">
+                <span style="color: var(--text-muted); font-size: 0.9rem; display: block; margin-bottom: 4px;">Решение организатора:</span>
+                <span id="decisionCategoryText" style="color: var(--accent-cyan); font-weight: 700; font-size: 1.1rem;">—</span>
+            </div>
+
+            <div class="results-list" id="resultsList">
+                <!-- Результаты рендерятся из JS -->
+            </div>
+
+            <!-- Блок модератора --> 
+            {% if user.is_moder %}
+                <div class="moderator-panel">
+                    <p style="font-size: 0.85rem; color: var(--accent-cyan); font-weight: 600;">Управление организатора:</p>
+
+                    <div id="moderDecisionBlock" class="hidden" style="display: flex; flex-direction: column; gap: 8px;">
+                        
+                        <button id="btnAgreeWinner" class="btn-def hidden" onclick="moderChooseCategory('winner')">
+                            Согласиться с победителем
+                        </button>
+
+                        <div id="tieCategoriesContainer" class="tie-buttons-grid hidden"></div>
+
+                        <div class="custom-cat-wrapper">
+                            <button id="btnToggleCustomCat" class="btn-def" style="border-color: rgba(157, 78, 221, 0.4); color: var(--accent-purple);" onclick="toggleCustomCatInput()">
+                                Добавить в категорию
+                            </button>
+                            <div class="custom-cat-container">
+                                <input type="text" id="customCatInput" class="custom-cat-input" placeholder="Введите название категории..." autocomplete="off">
+                            </div>
+                            <div id="suggestionsBox" class="suggestions-box hidden"></div>
+                        </div>
+
+                        <button class="btn-def" style="border-color: rgba(255,255,255,0.3); color: var(--text-main);" onclick="moderChooseCategory(null)">
+                            Оставить неотсортированным
+                        </button>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 5px;">
+                        <button id="moderStartRoundBtn" class="btn-def hidden" onclick="moderStartRound()">Следующий круг</button> 
+                    </div>
+
+                    <a href="{{ url_for('voting_bp.stop_poll') }}" class="btn-logout" style="margin-top: 5px;">Завершить голосование</a>
+                </div>
+            {% endif %}
+        </div>
+
     </div>
 
-    <script> 
-        const IS_MODER = document.body.dataset.isModer === 'true';
+    <!-- МОДАЛЬНОЕ ОКНО LIGHTBOX -->
+    <div id="lightbox" class="lightbox-modal" onclick="closeLightboxOnBg(event)">
+        <button class="lightbox-close" onclick="closeLightbox()" title="Закрыть (Esc)">✕</button>
+        <img id="lightboxImg" class="lightbox-content" src="" alt="Увеличенное фото">
+        <div class="lightbox-hint">Колесико — зум | Esc или Клик вне фото — закрыть</div>
+    </div>
 
-        const ITEMS_PER_PAGE = 32;
-        let categoriesList = [];       
-        let selectedCategoryIds = []; // Массив для мультивыбора категорий
-        let currentSortBy = 'edit_date'; // "edit_date" или "id"
-        let currentSortOrder = 'DESC';   // "DESC" или "ASC"
-        
-        let currentPage = 1;           
-        let currentPhotos = [];        
-        let currentLightboxIndex = 0;  
-        let totalPages = 1;            
+    <script>
+        const socket = io();
+        let timerInterval = null;
+        let selectedVote = null;
+        let availableCategories = [];
 
-        document.addEventListener('DOMContentLoaded', () => {
-            initGallery();
-            setupKeyboardNavigation();
-            setupOutsideClick();
-            setupSwipeGestures();
-        });
+        /* --- ХРАНЕНИЕ ИСТОРИИ НА СТОРОНЕ КЛИЕНТА (БЕЗ API) --- */
+        let roundHistory = [];
+        let lastSavedRound = null;
 
-        function clearCategoryFilters() {
-            if (selectedCategoryIds.length === 0) return; // Если уже ничего не выбрано, ничего не делаем
-
-            selectedCategoryIds = [];
-            currentPage = 1;
-
-            updateCategoryHeader();
-            renderDropdownList(categoriesList);
-            renderQuickChips();
-            loadPhotos();
-        }
-
-        function showToast(message, isError = false) {
-            const container = document.getElementById('toastContainer');
-            const toast = document.createElement('div');
-            toast.className = `toast ${isError ? 'error' : 'success'}`;
-            toast.innerText = message;
-            
-            container.appendChild(toast);
-            requestAnimationFrame(() => toast.classList.add('show'));
-
-            setTimeout(() => {
-                toast.classList.remove('show');
-                setTimeout(() => toast.remove(), 200);
-            }, 3000);
-        }
-
-        async function initGallery() {
-            try {
-                const response = await fetch('/gallery/get_categories');
-                if (!response.ok) throw new Error('Ошибка при загрузке категорий');
-                
-                categoriesList = await response.json();
-
-                renderCategoryControls();
-                loadPhotos();
-            } catch (error) {
-                console.error('API Error:', error);
-                document.getElementById('categoryTitle').innerText = '❌ Ошибка загрузки данных';
+        function addRoundToHistory(data) {
+            roundHistory.unshift(data);
+            if (roundHistory.length > 5) {
+                roundHistory.pop();
             }
+            renderHistoryUI();
         }
 
-        function renderCategoryControls() {
-            renderDropdownList(categoriesList);
-            renderQuickChips();
-        }
+        function renderHistoryUI() {
+            const container = document.getElementById('historyList');
+            if (roundHistory.length === 0) return;
 
-        function renderDropdownList(list) {
-            const container = document.getElementById('dropdownList');
             container.innerHTML = '';
 
-            if (list.length === 0) {
-                container.innerHTML = '<div style="padding: 12px; color: var(--text-muted); text-align: center; font-size: 0.85rem;">Ничего не найдено</div>';
-                return;
-            }
-
-            const fragment = document.createDocumentFragment();
-            list.forEach(cat => {
-                const item = document.createElement('div');
-                const isChecked = selectedCategoryIds.includes(String(cat.category_id));
-                
-                item.className = `dropdown-item ${isChecked ? 'selected' : ''}`;
-                item.innerHTML = `
-                    <div style="display: flex; align-items: center;">
-                        <input type="checkbox" ${isChecked ? 'checked' : ''}>
-                        <span>${cat.name}</span>
-                    </div>
-                    <span class="badge">${cat.photo_count}</span>
-                `;
-                
-                item.onclick = (e) => {
-                    e.stopPropagation();
-                    toggleCategorySelection(String(cat.category_id));
-                };
-                fragment.appendChild(item);
-            });
-            container.appendChild(fragment);
-        }
-
-        function toggleCategorySelection(catId) {
-            const index = selectedCategoryIds.indexOf(catId);
-            if (index > -1) {
-                selectedCategoryIds.splice(index, 1);
-            } else {
-                selectedCategoryIds.push(catId);
-            }
-
-            currentPage = 1;
-            updateCategoryHeader();
-            renderDropdownList(categoriesList);
-            renderQuickChips();
-            loadPhotos();
-        }
-
-        function updateCategoryHeader() {
-            const triggerText = document.getElementById('selectedCategoryName');
-            const titleText = document.getElementById('categoryTitle');
-
-            if (selectedCategoryIds.length === 0) {
-                triggerText.innerText = 'Все категории';
-                titleText.innerText = '📁 Все категории';
-            } else if (selectedCategoryIds.length === 1) {
-                const cat = categoriesList.find(c => String(c.category_id) === selectedCategoryIds[0]);
-                triggerText.innerText = cat ? cat.name : 'Выбрана 1';
-                titleText.innerText = `📁 Категория: ${cat ? cat.name : ''}`;
-            } else {
-                triggerText.innerText = `Выбрано: ${selectedCategoryIds.length}`;
-                titleText.innerText = `📁 Выбрано категорий: ${selectedCategoryIds.length}`;
-            }
-        }
-
-        function renderQuickChips() {
-            const container = document.getElementById('quickChipsContainer');
-            container.innerHTML = '';
-
-            const topCategories = categoriesList.slice(0, 5);
-            const fragment = document.createDocumentFragment();
-            
-            topCategories.forEach(cat => {
-                const catIdStr = String(cat.category_id);
-                const btn = document.createElement('button');
-                const isActive = selectedCategoryIds.includes(catIdStr);
-                
-                btn.className = `chip-btn ${isActive ? 'active' : ''}`;
-                btn.innerText = `${cat.name} (${cat.photo_count})`;
-                btn.onclick = () => toggleCategorySelection(catIdStr);
-                fragment.appendChild(btn);
-            });
-            container.appendChild(fragment);
-        }
-
-        function filterCategories() {
-            const query = document.getElementById('catSearchInput').value.toLowerCase().trim();
-            const filtered = categoriesList.filter(c => c.name.toLowerCase().includes(query));
-            renderDropdownList(filtered);
-        }
-
-        function toggleDropdown(dropdownId) {
-            const targetWrapper = document.getElementById(dropdownId);
-            const isOpen = targetWrapper.classList.contains('open');
-            
-            closeAllDropdowns();
-
-            if (!isOpen) {
-                targetWrapper.classList.add('open');
-                if (dropdownId === 'categoryDropdown') {
-                    document.getElementById('catSearchInput').focus();
-                }
-            }
-        }
-
-        function closeAllDropdowns() {
-            document.querySelectorAll('.custom-select-wrapper').forEach(w => w.classList.remove('open'));
-        }
-
-        function setupOutsideClick() {
-            document.addEventListener('click', (e) => {
-                if (!e.target.closest('.custom-select-wrapper')) {
-                    closeAllDropdowns();
-                }
-            });
-        }
-
-        function setSortBy(field, label) {
-            currentSortBy = field;
-            document.getElementById('selectedSortBy').innerText = label;
-            closeAllDropdowns();
-            currentPage = 1;
-            loadPhotos();
-        }
-
-        function toggleSortOrder() {
-            currentSortOrder = currentSortOrder === 'DESC' ? 'ASC' : 'DESC';
-            
-            const label = document.getElementById('sortOrderLabel');
-            const icon = document.getElementById('sortOrderIcon');
-            
-            if (currentSortOrder === 'DESC') {
-                label.innerText = 'По убыванию';
-                icon.innerText = '▼';
-            } else {
-                label.innerText = 'По возрастанию';
-                icon.innerText = '▲';
-            }
-            
-            currentPage = 1;
-            loadPhotos();
-        }
-
-        async function loadPhotos() {
-            const grid = document.getElementById('galleryGrid');
-            grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">Загрузка изображений...</div>';
-
-            try {
-                // Сбор параметров запроса
-                const params = new URLSearchParams({
-                    page: currentPage,
-                    limit: ITEMS_PER_PAGE,
-                    sort_by: currentSortBy,
-                    sort_order: currentSortOrder
-                });
-
-                // Передаем несколько параметров categories=... если категории выбраны
-                if (selectedCategoryIds.length > 0) {
-                    selectedCategoryIds.forEach(id => params.append('categories', id));
-                }
-
-                const response = await fetch(`/gallery/paginate_photos?${params.toString()}`);
-                if (!response.ok) throw new Error('Ошибка загрузки фото');
-
-                const data = await response.json();
-                
-                currentPhotos = data.items;
-                totalPages = data.pages_total;
-
-                document.getElementById('photoCounter').innerText = `🖼 Фотографий: ${data.total}`;
-
-                renderGallery();
-                renderPagination();
-            } catch (error) {
-                console.error('API Error:', error);
-                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--danger); padding: 40px;">Ошибка загрузки фотографий</div>';
-            }
-        }
-
-        function renderGallery() {
-            const grid = document.getElementById('galleryGrid');
-            grid.innerHTML = '';
-
-            if (currentPhotos.length === 0) {
-                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">По вашему запросу фото не найдены</div>';
-                return;
-            }
-
-            const fragment = document.createDocumentFragment();
-            currentPhotos.forEach((photo, idx) => {
+            roundHistory.forEach(item => {
                 const card = document.createElement('div');
-                card.className = 'photo-card';
-                card.onclick = () => openLightbox(idx);
-                card.innerHTML = `<img src="${photo.file_url}" alt="Photo #${photo.id}" loading="lazy" decoding="async">`;
-                fragment.appendChild(card);
+                card.className = 'history-card';
+                card.innerHTML = `
+                    <img src="${item.photo_url}" alt="Раунд ${item.round}" onclick="openLightbox('${item.photo_url}')">
+                    <div class="history-info">
+                        <span class="history-round">Раунд #${item.round}</span>
+                        <span class="history-category" title="${item.category}">${item.category}</span>
+                    </div>
+                `;
+                container.appendChild(card);
             });
-            grid.appendChild(fragment);
         }
 
-        function renderPagination() {
-            const container = document.getElementById('pagination');
-            container.innerHTML = '';
+        /* --- ЛОГИКА LIGHTBOX (ПРОСМОТР И ЗУМ ФОТО) --- */
+        let currentScale = 1;
+        const lightbox = document.getElementById('lightbox');
+        const lightboxImg = document.getElementById('lightboxImg');
 
-            if (totalPages <= 1) return;
-
-            const fragment = document.createDocumentFragment();
-
-            const prevBtn = document.createElement('button');
-            prevBtn.className = 'page-btn';
-            prevBtn.innerText = '‹';
-            prevBtn.disabled = currentPage === 1;
-            prevBtn.onclick = () => goToPage(currentPage - 1);
-            fragment.appendChild(prevBtn);
-
-            for (let i = 1; i <= totalPages; i++) {
-                const pageBtn = document.createElement('button');
-                pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
-                pageBtn.innerText = i;
-                pageBtn.onclick = () => goToPage(i);
-                fragment.appendChild(pageBtn);
-            }
-
-            const nextBtn = document.createElement('button');
-            nextBtn.className = 'page-btn';
-            nextBtn.innerText = '›';
-            nextBtn.disabled = currentPage === totalPages;
-            nextBtn.onclick = () => goToPage(currentPage + 1);
-            fragment.appendChild(nextBtn);
-
-            container.appendChild(fragment);
-        }
-
-        function goToPage(page) {
-            if (page < 1 || page > totalPages) return;
-            currentPage = page;
-            loadPhotos();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        }
-
-        function openLightbox(index) {
-            if (!currentPhotos[index]) return;
-            currentLightboxIndex = index;
-            updateLightboxContent();
-            document.getElementById('lightbox').classList.add('active');
-            document.body.style.overflow = 'hidden';
+        function openLightbox(src) {
+            if (!src) return;
+            lightboxImg.src = src;
+            currentScale = 1;
+            lightboxImg.style.transform = `scale(${currentScale})`;
+            lightbox.classList.add('active');
         }
 
         function closeLightbox() {
-            document.getElementById('lightbox').classList.remove('active');
-            document.body.style.overflow = 'auto';
+            lightbox.classList.remove('active');
         }
 
-        function changeLightboxImage(direction) {
-            currentLightboxIndex += direction;
-
-            if (currentLightboxIndex < 0) {
-                currentLightboxIndex = currentPhotos.length - 1;
-            } else if (currentLightboxIndex >= currentPhotos.length) {
-                currentLightboxIndex = 0;
-            }
-
-            updateLightboxContent();
-        }
-
-        function updateLightboxContent() {
-            const photo = currentPhotos[currentLightboxIndex];
-            if (!photo) return;
-
-            document.getElementById('lightboxImg').src = photo.file_url;
-            document.getElementById('lightboxCaption').innerText = 
-                `Фото ID: ${photo.id} (${currentLightboxIndex + 1} из ${currentPhotos.length} на странице)`;
-
-            const actionsContainer = document.getElementById('lightboxActions');
-            actionsContainer.innerHTML = '';
-
-            if (IS_MODER) {
-                const resortBtn = document.createElement('button');
-                resortBtn.className = 'btn-action';
-                resortBtn.innerHTML = '🔄 Пересортировка';
-                resortBtn.onclick = () => resortPhoto(photo.id);
-                actionsContainer.appendChild(resortBtn);
+        function closeLightboxOnBg(e) {
+            if (e.target === lightbox) {
+                closeLightbox();
             }
         }
 
-        async function resortPhoto(photoId) {
-            try {
-                const response = await fetch(`/gallery/resort?photo_id=${photoId}`);
-                const data = await response.json();
+        // Зум колесиком мыши
+        lightbox.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY < 0 ? 0.15 : -0.15;
+            currentScale = Math.min(Math.max(0.8, currentScale + delta), 4);
+            lightboxImg.style.transform = `scale(${currentScale})`;
+        }, { passive: false });
 
-                if (response.ok) {
-                    showToast(data.message || 'Отправлено на пересортировку', false);
-                    closeLightbox();
-                    loadPhotos();
-                } else {
-                    showToast(data.message || 'Ошибка выполнения действия', true);
+        // Закрытие по клавише ESC
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && lightbox.classList.contains('active')) {
+                closeLightbox();
+            }
+        });
+
+        // Двойной клик для сброса зума
+        lightboxImg.addEventListener('dblclick', () => {
+            currentScale = currentScale === 1 ? 2 : 1;
+            lightboxImg.style.transform = `scale(${currentScale})`;
+        });
+
+        /* --- SOCKET И ОСНОВНАЯ ЛОГИКА ГОЛОСОВАНИЯ --- */
+        socket.on('connect', () => {
+            socket.emit('join_poll');
+        });
+
+        socket.on('poll_state', (state) => {
+            if (state.categories) {
+                availableCategories = state.categories;
+            }
+            updatePollUI(state);
+        });
+
+        socket.on('update_voted_count', (data) => {
+            document.getElementById('votedCount').innerText = data.voted;
+            document.getElementById('totalUsers').innerText = data.total;
+        });
+
+        socket.on('vote_success', (data) => {
+            selectedVote = data.category;
+            const buttons = document.querySelectorAll('#categoriesContainer .btn-def');
+            buttons.forEach(btn => {
+                btn.disabled = true;
+                if (btn.innerText === data.category) {
+                    btn.classList.add('voted');
+                    btn.innerText = `✓ ${data.category}`;
                 }
-            } catch (error) {
-                console.error('Resort Error:', error);
-                showToast('Ошибка при отправке запроса на сервер', true);
+            });
+        });
+
+        socket.on('alert', (data) => {
+            alert(data.message);
+        });
+
+        function updatePollUI(state) {
+            document.getElementById('votedCount').innerText = state.voted;
+            document.getElementById('totalUsers').innerText = state.total;
+            
+            if (state.round !== undefined) {
+                document.getElementById('roundNumber').innerText = state.round;
+            }
+            if (state.unsorted_count !== undefined) {
+                document.getElementById('unsortedCount').innerText = state.unsorted_count;
+            }
+            
+            if (state.status === 'in_progress' || state.status === 'waiting') {
+                selectedVote = state.user_vote || null;
+            }
+
+            const screens = [
+                document.getElementById('screenWaiting'),
+                document.getElementById('screenVoting'),
+                document.getElementById('screenResults')
+            ];
+
+            screens.forEach(s => s.classList.add('hidden'));
+
+            let activeScreen = null;
+            if (state.status === 'waiting') {
+                activeScreen = document.getElementById('screenWaiting');
+                stopTimer();
+            } else if (state.status === 'in_progress') {
+                activeScreen = document.getElementById('screenVoting');
+                document.getElementById('votingPhoto').src = state.photo_url || '';
+                
+                // Обновление автора и даты для экрана голосования
+                document.getElementById('votingPhotoAuthor').innerText = state.photo_author || 'Неизвестно';
+                document.getElementById('votingPhotoDate').innerText = state.edit_date || '—';
+
+                renderCategories(state.categories);
+                startTimer(state.end_time);  
+            } else if (state.status === 'results' || state.status === 'decision') {
+                activeScreen = document.getElementById('screenResults');
+                document.getElementById('resultPhoto').src = state.photo_url || '';
+
+                // Обновление автора и даты для экрана результатов
+                document.getElementById('resultPhotoAuthor').innerText = state.photo_author || 'Неизвестно';
+                document.getElementById('resultPhotoDate').innerText = state.edit_date || '—';
+
+                renderResults(state.results);
+                stopTimer();
+
+                const decisionBanner = document.getElementById('decisionBanner');
+                const decisionCategoryText = document.getElementById('decisionCategoryText');
+
+                if (state.status === 'decision') {
+                    const finalCategory = state.decision || 'Неотсортировано';
+                    decisionCategoryText.innerText = finalCategory;
+                    decisionBanner.classList.remove('hidden');
+
+                    // Сохранение решения в левую панель без запроса к API
+                    if (lastSavedRound !== state.round) {
+                        lastSavedRound = state.round;
+                        addRoundToHistory({
+                            round: state.round,
+                            photo_url: state.photo_url,
+                            category: finalCategory
+                        });
+                    }
+                } else {
+                    decisionBanner.classList.add('hidden');
+                }
+
+                setupModeratorDecisionUI(state);
+            }
+
+            if (activeScreen) {
+                activeScreen.classList.remove('hidden', 'screen-fade');
+                // Перезапуск анимации переключения экранов
+                void activeScreen.offsetWidth;
+                activeScreen.classList.add('screen-fade');
             }
         }
 
-        function setupKeyboardNavigation() {
-            document.addEventListener('keydown', (e) => {
-                const lightbox = document.getElementById('lightbox');
-                if (!lightbox.classList.contains('active')) return;
-
-                if (e.key === 'Escape') closeLightbox();
-                if (e.key === 'ArrowLeft') changeLightboxImage(-1);
-                if (e.key === 'ArrowRight') changeLightboxImage(1);
+        function renderCategories(categories) {
+            const container = document.getElementById('categoriesContainer');
+            container.innerHTML = '';
+            
+            categories.forEach((cat, index) => {
+                const button = document.createElement('button');
+                button.className = 'btn-def';
+                button.innerText = cat;
+                button.style.animation = `slideInResult 0.3s ease forwards ${index * 0.05}s`;
+                button.style.opacity = '0';
+                
+                if (selectedVote === cat) {
+                    button.classList.add('voted');
+                    button.innerText = `✓ ${cat}`;
+                    button.disabled = true;
+                } else if (selectedVote) {
+                    button.disabled = true;
+                } else {
+                    button.onclick = () => submitVote(cat);
+                }
+                
+                container.appendChild(button);
             });
         }
 
-        function setupSwipeGestures() {
-            const lightbox = document.getElementById('lightbox');
-            let touchStartX = 0;
-            let touchStartY = 0;
-            let touchEndX = 0;
-            let touchEndY = 0;
+        function renderResults(results) {
+            const container = document.getElementById('resultsList');
+            container.innerHTML = '';
 
-            lightbox.addEventListener('touchstart', (e) => {
-                touchStartX = e.changedTouches[0].screenX;
-                touchStartY = e.changedTouches[0].screenY;
-            }, { passive: true });
+            let delay = 0;
+            for (const [catName, data] of Object.entries(results)) {
+                const item = document.createElement('div');
+                item.className = 'result-item';
+                item.style.animationDelay = `${delay}s`;
+                delay += 0.06;
 
-            lightbox.addEventListener('touchend', (e) => {
-                touchEndX = e.changedTouches[0].screenX;
-                touchEndY = e.changedTouches[0].screenY;
-                handleSwipe();
-            }, { passive: true });
-
-            function handleSwipe() {
-                const deltaX = touchEndX - touchStartX;
-                const deltaY = touchEndY - touchStartY;
-                const threshold = 50;
-
-                if (Math.abs(deltaX) > Math.abs(deltaY)) {
-                    if (deltaX < -threshold) {
-                        changeLightboxImage(1);
-                    } else if (deltaX > threshold) {
-                        changeLightboxImage(-1);
-                    }
-                } else {
-                    if (Math.abs(deltaY) > threshold) {
-                        closeLightbox();
-                    }
+                let avatarsHtml = '';
+                if (data.photo_urls && data.photo_urls.length > 0) {
+                    avatarsHtml = `<div class="user-avatars">` + 
+                        data.photo_urls.map(url => url ? `<img src="${url}" alt="user">` : '').join('') +
+                        `</div>`;
                 }
+
+                item.innerHTML = `
+                    <div class="result-header">
+                        <span style="font-weight: 600;">${catName}</span>
+                        <span style="color: var(--accent-cyan); font-weight: bold;">${data.count}</span>
+                    </div>
+                    ${avatarsHtml}
+                `;
+                container.appendChild(item);
             }
         }
+
+        function submitVote(category) {
+            socket.emit('submit_vote', { category: category });
+        }
+
+        function moderStartRound() {
+            selectedVote = null;
+            socket.emit('moder_start_round');
+        } 
+
+        function startTimer(endTimeSeconds) {
+            stopTimer();
+            const timerBadge = document.getElementById('timerBadge');
+
+            function update() {
+                const nowSeconds = Date.now() / 1000;
+                const remaining = Math.max(0, Math.ceil(endTimeSeconds - nowSeconds));
+
+                const minutes = Math.floor(remaining / 60);
+                const seconds = remaining % 60;
+
+                document.getElementById('timer').innerText = 
+                    `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+
+                if (remaining <= 10) {
+                    timerBadge.classList.add('warning-time');
+                } else {
+                    timerBadge.classList.remove('warning-time');
+                }
+
+                if (remaining <= 0) {
+                    stopTimer();
+                }
+            }
+
+            update();
+            timerInterval = setInterval(update, 1000);
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+            document.getElementById('timer').innerText = "00:00";
+            document.getElementById('timerBadge').classList.remove('warning-time');
+        }
+
+        function setupModeratorDecisionUI(state) {
+            const decisionBlock = document.getElementById('moderDecisionBlock');
+            const startRoundBtn = document.getElementById('moderStartRoundBtn');
+            const agreeWinnerBtn = document.getElementById('btnAgreeWinner');
+            const tieContainer = document.getElementById('tieCategoriesContainer');
+
+            if (!decisionBlock || !startRoundBtn) return;
+
+            if (state.status === 'results') {
+                decisionBlock.classList.remove('hidden');
+                startRoundBtn.classList.add('hidden');
+
+                const results = state.results || {};
+                let maxVotes = -1;
+                let topCategories = [];
+
+                for (const [catName, data] of Object.entries(results)) {
+                    if (data.count > maxVotes) {
+                        maxVotes = data.count;
+                        topCategories = [catName];
+                    } else if (data.count === maxVotes && maxVotes > 0) {
+                        topCategories.push(catName);
+                    }
+                }
+
+                agreeWinnerBtn.classList.add('hidden');
+                tieContainer.classList.add('hidden');
+                tieContainer.innerHTML = '';
+
+                if (topCategories.length === 1 && maxVotes > 0) {
+                    agreeWinnerBtn.innerText = `Согласиться с победителем (${topCategories[0]})`;
+                    agreeWinnerBtn.dataset.category = topCategories[0];
+                    agreeWinnerBtn.classList.remove('hidden');
+                } 
+                else if (topCategories.length > 1 && maxVotes > 0) {
+                    topCategories.forEach(cat => {
+                        const btn = document.createElement('button');
+                        btn.className = 'btn-def';
+                        btn.innerText = `Победитель: ${cat}`;
+                        btn.onclick = () => moderChooseCategory(cat);
+                        tieContainer.appendChild(btn);
+                    });
+                    tieContainer.classList.remove('hidden');
+                }
+
+            } else if (state.status === 'decision') {
+                decisionBlock.classList.add('hidden');
+                startRoundBtn.classList.remove('hidden');
+            }
+        }
+
+        function moderChooseCategory(choice) {
+            let selectedCategory = choice;
+            
+            if (choice === 'winner') {
+                const agreeBtn = document.getElementById('btnAgreeWinner');
+                selectedCategory = agreeBtn.dataset.category;
+            }
+
+            socket.emit('moder_decision', { category: selectedCategory });
+        }
+
+        function toggleCustomCatInput() {
+            const input = document.getElementById('customCatInput');
+            input.classList.toggle('active');
+            if (input.classList.contains('active')) {
+                input.focus();
+            } else {
+                hideSuggestions();
+            }
+        }
+
+        function hideSuggestions() {
+            const box = document.getElementById('suggestionsBox');
+            if (box) box.classList.add('hidden');
+        }
+
+        const customInput = document.getElementById('customCatInput');
+        const suggestionsBox = document.getElementById('suggestionsBox');
+
+        if (customInput) {
+            customInput.addEventListener('input', (e) => {
+                const query = e.target.value.trim().toLowerCase();
+                suggestionsBox.innerHTML = '';
+
+                if (!query) {
+                    hideSuggestions();
+                    return;
+                }
+
+                const matches = availableCategories.filter(cat => 
+                    cat.toLowerCase().includes(query)
+                );
+
+                if (matches.length > 0) {
+                    matches.forEach(cat => {
+                        const div = document.createElement('div');
+                        div.className = 'suggestion-item';
+                        div.innerText = cat;
+                        div.onclick = () => {
+                            customInput.value = cat;
+                            hideSuggestions();
+                            submitCustomCategory();
+                        };
+                        suggestionsBox.appendChild(div);
+                    });
+                    suggestionsBox.classList.remove('hidden');
+                } else {
+                    hideSuggestions();
+                }
+            });
+
+            customInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    submitCustomCategory();
+                }
+            });
+        }
+
+        function submitCustomCategory() {
+            const input = document.getElementById('customCatInput');
+            const value = input.value.trim();
+
+            if (!value) return;
+
+            hideSuggestions();
+            input.classList.add('slide-out');
+
+            setTimeout(() => {
+                moderChooseCategory(value);
+                input.classList.remove('active', 'slide-out');
+                input.value = '';
+            }, 450);
+        }
+
+        document.addEventListener('click', (e) => {
+            const wrapper = document.querySelector('.custom-cat-wrapper');
+            if (wrapper && !wrapper.contains(e.target)) {
+                hideSuggestions();
+            }
+        });
     </script>
 </body>
 </html>
