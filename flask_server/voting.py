@@ -5,6 +5,7 @@ from flask import Blueprint, request, session, redirect, url_for, render_templat
 from flask_socketio import emit, disconnect
 from telegram_bot.senders import send_telegram_clear_message
 from config import FLASK_DOMAIN
+from telegram_bot.tg_utils.user import get_username_by_tgid
 
 from telegram_bot.tg_db.db_controllers.photo_controller import (
     get_all_categories_names,
@@ -33,6 +34,8 @@ class CategoryPoll:
 
 class Poll:
     def __init__(self):
+        self.photo_author:str|None=None
+        self.edit_date:str|None=None
         self.creator:int|None=None
         self.decision:str|None=None
         self.winning_category: str |None= None
@@ -101,11 +104,17 @@ class Poll:
             self.results = {}
             self.change_status("waiting")
 
-    def start_round(self, photo_id: int, photo_url: str = None):
+    def start_round(self,
+                     photo_id: int,
+                     photo_url: str = None, 
+                     photo_author:str="deleted", 
+                     edit_date:str="Неизвестно"):
         with self._lock: 
             self.decision=None
             self.winning_category = None
             self.photo_id = photo_id
+            self.photo_author=photo_author
+            self.edit_date=edit_date
             self.photo_url = photo_url
             self.results = {}
             self.change_status("in_progress")
@@ -338,8 +347,13 @@ def handle_start_round(data=None):
 
         photo_id = photo["id"]
         photo_url = photo["file_url"]
+        edit_date = photo["edit_date"]
+        photo_author = get_username_by_tgid(photo_id)
         
-        poll.start_round(photo_id, photo_url=photo_url)
+        poll.start_round(photo_id=photo_id, 
+                         photo_url=photo_url,
+                         edit_date=edit_date,
+                         photo_author=photo_author)
         socketio.start_background_task(
             handle_end_round, 
             round_num=poll.round, 
