@@ -350,7 +350,7 @@ def handle_start_round(data=None):
         photo_id = photo["id"]
         photo_url = photo["file_url"]
         edit_date = photo["edit_date"]
-        photo_author = get_username_by_tgid(photo_id)
+        photo_author = get_username_by_tgid(photo["tg_id"])
         
         poll.start_round(photo_id=photo_id, 
                          photo_url=photo_url,
