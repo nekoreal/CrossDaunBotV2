@@ -316,7 +316,7 @@ def get_random_photo_url(
                         "tg_id": photo.tg_id,
                         "category": photo.category.name if photo.category else None,
                         "file_url": presigned_url,
-                        "edit_date": photo.edit_date.isoformat() or None
+                        "edit_date": photo.edit_date.strftime("%d.%m.%Y %H:%M") if photo.edit_date else None
                     } 
         else:
             return None
