@@ -211,6 +211,8 @@ class Poll:
             "status": self.status,
             "round": self.round,
             "photo_url": self.photo_url,
+            "photo_author": self.photo_author,
+            "edit_date": self.edit_date,
             "categories": [c.name for c in self.categories],
             "voted": self.voted_counts,
             "total": len(self.users),
