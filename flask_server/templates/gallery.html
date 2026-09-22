@@ -12,6 +12,7 @@
             --bg-secondary: rgba(15, 18, 26, 0.95);
             --accent-cyan: #00f2fe;
             --accent-purple: #9d4edd;
+            --accent-category: #c77dff; /* Неоновый лавандово-фиолетовый для категории */
             --accent-hover: #00c6ff;
             --text-main: #f0f4f8;
             --text-muted: #8a99ad;
@@ -449,9 +450,9 @@
         }
 
         .photo-card-category {
-            color: var(--text-muted);
-            font-size: 0.75rem;
-            font-weight: 400;
+            color: var(--accent-category);
+            font-size: 0.78rem;
+            font-weight: 500;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
@@ -1117,8 +1118,8 @@
                 card.innerHTML = `
                     <img src="${photo.file_url}" alt="Photo #${photo.id}" loading="lazy" decoding="async">
                     <div class="photo-card-overlay">
-                        <span class="photo-card-author" title="${escapeHtml(author)}">👤 ${escapeHtml(author)}</span>
-                        ${categoryName ? `<span class="photo-card-category" title="${escapeHtml(categoryName)}">📁 ${escapeHtml(categoryName)}</span>` : ''}
+                        <span class="photo-card-author" title="${escapeHtml(author)}">${escapeHtml(author)}</span>
+                        ${categoryName ? `<span class="photo-card-category" title="${escapeHtml(categoryName)}">${escapeHtml(categoryName)}</span>` : ''}
                     </div>
                 `;
                 fragment.appendChild(card);
