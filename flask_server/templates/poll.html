@@ -61,6 +61,7 @@
             max-height: 85vh;
             overflow-y: auto;
             animation: cardAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            transition: all 0.3s ease;
         }
 
         .history-title {
@@ -72,14 +73,33 @@
             text-align: center;
             display: flex;
             align-items: center;
-            justify-content: center;
+            justify-content: space-between;
             gap: 8px;
+        }
+
+        .history-title-text {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .history-toggle-btn {
+            background: none;
+            border: none;
+            color: var(--accent-cyan);
+            cursor: pointer;
+            font-size: 1.1rem;
+            display: none; /* Видна только на мобилках */
+            padding: 2px 6px;
+            transition: transform 0.3s ease;
         }
 
         .history-list {
             display: flex;
             flex-direction: column;
             gap: 10px;
+            transition: max-height 0.3s ease, opacity 0.3s ease;
+            overflow: hidden;
         }
 
         .history-card {
@@ -91,11 +111,10 @@
             gap: 12px;
             align-items: center;
             animation: slideInResult 0.3s ease forwards;
-            transition: transform 0.2s ease, border-color 0.2s ease;
+            transition: border-color 0.2s ease;
         }
 
         .history-card:hover {
-            transform: translateX(3px);
             border-color: rgba(0, 242, 254, 0.3);
         }
 
@@ -233,7 +252,6 @@
             border-color: rgba(0, 242, 254, 0.6);
             box-shadow: 0 0 15px rgba(0, 242, 254, 0.3);
             color: #fff;
-            transform: translateY(-2px) scale(1.05);
         }
 
         .btn-home svg {
@@ -248,11 +266,6 @@
             border-radius: 10px;
             font-size: 0.85rem;
             border: 1px solid rgba(255, 255, 255, 0.1);
-            transition: transform 0.2s ease, border-color 0.2s ease;
-        }
-
-        .badge:hover {
-            transform: translateY(-1px);
         }
 
         .badge-cyan { color: var(--accent-cyan); border-color: rgba(0, 242, 254, 0.3); font-weight: 600; }
@@ -317,11 +330,10 @@
             background: rgba(0, 242, 254, 0.15);
             border-color: rgba(0, 242, 254, 0.6);
             box-shadow: 0 0 20px rgba(0, 242, 254, 0.25);
-            transform: translateY(-2px);
         }
 
         .btn-def:active:not(:disabled) {
-            transform: translateY(0) scale(0.98);
+            transform: scale(0.98);
         }
 
         .btn-def:disabled, .btn-def.voted {
@@ -352,7 +364,6 @@
             background: rgba(255, 85, 85, 0.15);
             border-color: rgba(255, 85, 85, 0.5);
             box-shadow: 0 0 15px rgba(255, 85, 85, 0.2);
-            transform: translateY(-2px);
         }
 
         /* Прелоадер */
@@ -382,12 +393,11 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 8px 25px rgba(0, 0, 0, 0.5);
-            transition: transform 0.3s ease, border-color 0.3s ease;
+            transition: border-color 0.3s ease;
         }
 
         .photo-container:hover {
             border-color: rgba(0, 242, 254, 0.4);
-            transform: scale(1.01);
         }
 
         .photo-container img {
@@ -423,14 +433,14 @@
             font-family: monospace;
         }
 
-        /* --- ПОЛНОЭКРАННЫЙ ЛАЙТБОКС (ZOOM MODAL) --- */
+        /* --- ПОЛНОЭКРАННЫЙ ЛАЙТБОКС (ZOOM & PAN MODAL) --- */
         .lightbox-modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(10, 12, 16, 0.92);
+            background: rgba(10, 12, 16, 0.95);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             z-index: 9999;
@@ -441,6 +451,7 @@
             pointer-events: none;
             transition: opacity 0.3s ease;
             overflow: hidden;
+            touch-action: none;
         }
 
         .lightbox-modal.active {
@@ -454,9 +465,14 @@
             object-fit: contain;
             border-radius: 8px;
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 242, 254, 0.2);
-            transition: transform 0.1s ease-out;
             user-select: none;
             cursor: grab;
+            transform-origin: center center;
+            will-change: transform;
+        }
+
+        .lightbox-content:active {
+            cursor: grabbing;
         }
 
         .lightbox-close {
@@ -494,6 +510,7 @@
             border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             pointer-events: none;
+            text-align: center;
         }
 
         /* Сетка категорий */
@@ -657,19 +674,108 @@
 
         .hidden { display: none !important; }
 
-        /* Адаптивность для мобильных устройств и узких экранов */
-        @media (max-width: 1280px) {
+        /* --- МОБИЛЬНЫЙ ДИЗАЙН С ИСТОРИЕЙ СВЕРХУ И СВОРАЧИВАНИЕМ --- */
+        @media (max-width: 1024px) {
+            body {
+                padding: 10px;
+                align-items: flex-start;
+                justify-content: flex-start;
+                flex-direction: column;
+            }
+
+            .glow-sphere-1, .glow-sphere-2 {
+                display: none;
+            }
+
+            /* Панель истории становится сверху карточки */
             .history-sidebar {
-                position: static;
+                position: relative;
+                left: auto;
+                top: auto;
                 transform: none;
                 width: 100%;
-                max-width: 680px;
-                max-height: 250px;
-                margin-bottom: 20px;
+                max-width: 100%;
+                margin-bottom: 12px;
+                padding: 12px;
+                border-radius: 14px;
+                max-height: none;
             }
-            body {
+
+            .history-toggle-btn {
+                display: inline-block; /* Показываем кнопку сворачивания на мобилках */
+            }
+
+            .history-list.collapsed {
+                max-height: 0;
+                opacity: 0;
+                margin-top: 0;
+                overflow: hidden;
+            }
+
+            .auth-card {
+                width: 100%;
+                max-width: 100%;
+                padding: 16px 12px;
+                border-radius: 16px;
+                box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+            }
+
+            .top-bar {
                 flex-direction: column;
-                justify-content: flex-start;
+                align-items: stretch;
+                gap: 10px;
+                margin-bottom: 15px;
+                padding-bottom: 10px;
+            }
+
+            .top-bar-left {
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .timer-badge {
+                text-align: center;
+                width: 100%;
+                padding: 6px;
+                border-radius: 10px;
+                background: rgba(255, 255, 255, 0.03);
+                border: 1px solid rgba(255, 255, 255, 0.08);
+            }
+
+            .badge {
+                font-size: 0.8rem;
+                padding: 5px 8px;
+            }
+
+            .photo-container {
+                max-height: 260px;
+                border-radius: 10px;
+            }
+
+            .photo-container img {
+                max-height: 260px;
+            }
+
+            .categories-grid {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+
+            .btn-def {
+                padding: 14px 16px;
+                font-size: 1rem;
+            }
+
+            .tie-buttons-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .lightbox-hint {
+                bottom: 15px;
+                font-size: 0.75rem;
+                padding: 4px 10px;
+                width: 90%;
+                text-align: center;
             }
         }
     </style>
@@ -679,9 +785,12 @@
     <div class="glow-sphere-1"></div>
     <div class="glow-sphere-2"></div> 
 
-    <!-- БОКОВАЯ ПАНЕЛЬ ИСТОРИИ (СЛЕВА) -->
+    <!-- БОКОВАЯ ПАНЕЛЬ ИСТОРИИ (СЛЕВА НА ПК, СВЕРХУ НА МОБИЛЬНЫХ) -->
     <aside id="historySidebar" class="history-sidebar">
-        <div class="history-title">📜 Последние решения</div>
+        <div class="history-title">
+            <div class="history-title-text">📜 Последние решения</div>
+            <button id="historyToggleBtn" class="history-toggle-btn" onclick="toggleHistory()" title="Свернуть/Развернуть">▼</button>
+        </div>
         <div id="historyList" class="history-list">
             <div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 10px 0;">
                 История пока пуста
@@ -817,11 +926,11 @@
 
     </div>
 
-    <!-- МОДАЛЬНОЕ ОКНО LIGHTBOX -->
+    <!-- МОДАЛЬНОЕ ОКНО LIGHTBOX С ПОДДЕРЖКОЙ ПЕРЕМЕЩЕНИЯ (DRAG) И ЗУМА -->
     <div id="lightbox" class="lightbox-modal" onclick="closeLightboxOnBg(event)">
         <button class="lightbox-close" onclick="closeLightbox()" title="Закрыть (Esc)">✕</button>
         <img id="lightboxImg" class="lightbox-content" src="" alt="Увеличенное фото">
-        <div class="lightbox-hint">Колесико — зум | Esc или Клик вне фото — закрыть</div>
+        <div class="lightbox-hint">Колесико мыши / сведение пальцев — зум | Перетаскивайте картинку мышкой</div>
     </div>
 
     <script>
@@ -862,7 +971,14 @@
             });
         }
 
-        /* --- ВЫВОД МЕТАДАННЫХ ФОТО (АВТОР И ДАТА РАЗДЕЛЬНО) --- */
+        function toggleHistory() {
+            const list = document.getElementById('historyList');
+            const btn = document.getElementById('historyToggleBtn');
+            list.classList.toggle('collapsed');
+            btn.style.transform = list.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
+        }
+
+        /* --- ВЫВОД МЕТАДАННЫХ ФОТО --- */
         function renderPhotoMeta(prefix, author, date) {
             const metaBlock = document.getElementById(`${prefix}PhotoMeta`);
             const authorSpan = document.getElementById(`${prefix}AuthorSpan`);
@@ -893,16 +1009,28 @@
             }
         }
 
-        /* --- ЛОГИКА LIGHTBOX (ПРОСМОТР И ЗУМ ФОТО) --- */
+        /* --- ЛОГИКА LIGHTBOX (ЗУМ И ПЕРЕМЕЩЕНИЕ ИЗОБРАЖЕНИЯ МЫШЬЮ/ТАСКОМ) --- */
         let currentScale = 1;
+        let posX = 0;
+        let posY = 0;
+        let isDragging = false;
+        let startX = 0;
+        let startY = 0;
+
         const lightbox = document.getElementById('lightbox');
         const lightboxImg = document.getElementById('lightboxImg');
+
+        function updateTransform() {
+            lightboxImg.style.transform = `translate(${posX}px, ${posY}px) scale(${currentScale})`;
+        }
 
         function openLightbox(src) {
             if (!src) return;
             lightboxImg.src = src;
             currentScale = 1;
-            lightboxImg.style.transform = `scale(${currentScale})`;
+            posX = 0;
+            posY = 0;
+            updateTransform();
             lightbox.classList.add('active');
         }
 
@@ -916,22 +1044,96 @@
             }
         }
 
+        /* Масштабирование колесиком */
         lightbox.addEventListener('wheel', (e) => {
             e.preventDefault();
-            const delta = e.deltaY < 0 ? 0.15 : -0.15;
-            currentScale = Math.min(Math.max(0.8, currentScale + delta), 4);
-            lightboxImg.style.transform = `scale(${currentScale})`;
+            const delta = e.deltaY < 0 ? 0.2 : -0.2;
+            let newScale = Math.min(Math.max(1, currentScale + delta), 5);
+            
+            if (newScale === 1) {
+                posX = 0;
+                posY = 0;
+            }
+            currentScale = newScale;
+            updateTransform();
         }, { passive: false });
+
+        /* Перемещение (Drag & Drop) увеличенного фото */
+        lightboxImg.addEventListener('mousedown', (e) => {
+            if (currentScale > 1) {
+                isDragging = true;
+                startX = e.clientX - posX;
+                startY = e.clientY - posY;
+                lightboxImg.style.cursor = 'grabbing';
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            e.preventDefault();
+            posX = e.clientX - startX;
+            posY = e.clientY - startY;
+            updateTransform();
+        });
+
+        window.addEventListener('mouseup', () => {
+            isDragging = false;
+            lightboxImg.style.cursor = currentScale > 1 ? 'grab' : 'default';
+        });
+
+        /* Поддержка тач-событий для мобильных устройств (перемещение пальцем) */
+        let touchStartDist = 0;
+
+        lightboxImg.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1 && currentScale > 1) {
+                isDragging = true;
+                startX = e.touches[0].clientX - posX;
+                startY = e.touches[0].clientY - posY;
+            } else if (e.touches.length === 2) {
+                isDragging = false;
+                touchStartDist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+            }
+        }, { passive: true });
+
+        lightboxImg.addEventListener('touchmove', (e) => {
+            if (isDragging && e.touches.length === 1) {
+                posX = e.touches[0].clientX - startX;
+                posY = e.touches[0].clientY - startY;
+                updateTransform();
+            } else if (e.touches.length === 2) {
+                const dist = Math.hypot(
+                    e.touches[0].clientX - e.touches[1].clientX,
+                    e.touches[0].clientY - e.touches[1].clientY
+                );
+                const factor = dist / touchStartDist;
+                currentScale = Math.min(Math.max(1, currentScale * factor), 5);
+                touchStartDist = dist;
+                updateTransform();
+            }
+        }, { passive: true });
+
+        lightboxImg.addEventListener('touchend', () => {
+            isDragging = false;
+        });
+
+        lightboxImg.addEventListener('dblclick', () => {
+            if (currentScale === 1) {
+                currentScale = 2.5;
+            } else {
+                currentScale = 1;
+                posX = 0;
+                posY = 0;
+            }
+            updateTransform();
+        });
 
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape' && lightbox.classList.contains('active')) {
                 closeLightbox();
             }
-        });
-
-        lightboxImg.addEventListener('dblclick', () => {
-            currentScale = currentScale === 1 ? 2 : 1;
-            lightboxImg.style.transform = `scale(${currentScale})`;
         });
 
         /* --- SOCKET И ОСНОВНАЯ ЛОГИКА ГОЛОСОВАНИЯ --- */
@@ -998,18 +1200,14 @@
                 activeScreen = document.getElementById('screenVoting');
                 document.getElementById('votingPhoto').src = state.photo_url || '';
 
-                // Метаданные автора и даты (используем edit_date)
                 renderPhotoMeta('voting', state.photo_author, state.edit_date);
-
                 renderCategories(state.categories);
                 startTimer(state.end_time);  
             } else if (state.status === 'results' || state.status === 'decision') {
                 activeScreen = document.getElementById('screenResults');
                 document.getElementById('resultPhoto').src = state.photo_url || '';
 
-                // Метаданные автора и даты (используем edit_date)
                 renderPhotoMeta('result', state.photo_author, state.edit_date);
-
                 renderResults(state.results);
                 stopTimer();
 
