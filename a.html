@@ -3,24 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Галерея Категорий | Telegram Portal</title>
+    <title>CrossDaun Gallery</title>
+    <link rel="shortcut icon" href="./static/favicon.ico" />
     <style>
         :root {
             --bg-primary: #0a0c10;
-            --card-bg: rgba(18, 22, 31, 0.75);
+            --card-bg: rgba(18, 22, 31, 0.9);
+            --bg-secondary: rgba(15, 18, 26, 0.95);
             --accent-cyan: #00f2fe;
             --accent-purple: #9d4edd;
             --text-main: #f0f4f8;
             --text-muted: #8a99ad;
             --border-glow: rgba(0, 242, 254, 0.15);
             --danger: #ff5555;
-            --success: #00e676;
+            --radius: 14px;
+            --transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         * {
+            box-sizing: border-box;
             margin: 0;
             padding: 0;
-            box-sizing: border-box;
             font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
         }
 
@@ -29,148 +32,172 @@
             color: var(--text-main);
             min-height: 100vh;
             display: flex;
-            align-items: center;
-            justify-content: center;
+            flex-direction: column;
+            position: relative;
             overflow-x: hidden;
-            position: relative;
-            padding: 20px;
         }
 
-        /* Фоновые неоновые пятна */
-        .glow-sphere-1 {
-            position: fixed;
-            width: 450px;
-            height: 450px;
-            background: radial-gradient(circle, rgba(157, 78, 221, 0.25) 0%, rgba(0,0,0,0) 70%);
-            top: 10%;
-            left: 15%;
-            z-index: 0;
-            filter: blur(50px);
-            animation: pulse 8s infinite alternate ease-in-out;
-            pointer-events: none;
-        }
-
-        .glow-sphere-2 {
-            position: fixed;
-            width: 500px;
-            height: 500px;
-            background: radial-gradient(circle, rgba(0, 242, 254, 0.2) 0%, rgba(0,0,0,0) 70%);
-            bottom: 10%;
-            right: 15%;
-            z-index: 0;
-            filter: blur(60px);
-            animation: pulse 10s infinite alternate-reverse ease-in-out;
-            pointer-events: none;
-        }
-
-        @keyframes pulse {
-            0% { transform: scale(1) translate(0, 0); }
-            100% { transform: scale(1.15) translate(20px, -20px); }
-        }
-
-        /* Главная карточка-контейнер */
-        .main-card {
-            position: relative;
-            z-index: 1;
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 16px;
             width: 100%;
-            max-width: 1100px;
-            padding: 35px 30px;
-            background: var(--card-bg);
-            backdrop-filter: blur(16px);
-            -webkit-backdrop-filter: blur(16px);
-            border: 1px solid var(--border-glow);
-            border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6),
-                        0 0 30px rgba(0, 242, 254, 0.05);
         }
 
-        /* Верхняя информационная плашка */
-        .top-bar {
+        header {
+            background-color: var(--bg-secondary);
+            border-bottom: 1px solid var(--border-glow);
+            padding: 16px 0;
+            position: sticky;
+            top: 0;
+            z-index: 50;
+        }
+
+        .header-content {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .title-area {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 25px;
-            padding-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-            flex-wrap: wrap;
-            gap: 10px;
         }
 
-        .badge {
-            background: rgba(255, 255, 255, 0.05);
-            padding: 8px 14px;
-            border-radius: 10px;
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+        }
+
+        .photo-counter {
+            color: var(--accent-cyan);
             font-size: 0.85rem;
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            background: rgba(0, 242, 254, 0.08);
+            padding: 5px 12px;
+            border-radius: 20px;
+            border: 1px solid rgba(0, 242, 254, 0.2);
         }
 
-        .badge-cyan {
+        /* Панель управления: Фильтры и Сортировки */
+        .controls-row {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        .control-group {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius);
+            padding: 4px 10px;
+        }
+
+        .control-label {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        select.sort-select {
+            background: transparent;
+            border: none;
             color: var(--accent-cyan);
-            border-color: rgba(0, 242, 254, 0.3);
-            font-weight: 600;
-        }
-
-        /* Сетка категорий */
-        .categories-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
-            gap: 10px;
-            margin-bottom: 25px;
-        }
-
-        /* Кнопки категорий */
-        .btn-def {
-            display: inline-block;
-            width: 100%;
-            padding: 10px 16px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            color: var(--accent-cyan);
-            border: 1px solid rgba(0, 242, 254, 0.3);
-            text-decoration: none;
-            font-size: 0.9rem;
-            font-weight: 600;
+            font-size: 0.85rem;
+            outline: none;
             cursor: pointer;
-            text-align: center;
-            transition: all 0.2s ease;
+            padding: 4px;
         }
 
-        .btn-def:hover {
-            background: rgba(0, 242, 254, 0.15);
-            border-color: rgba(0, 242, 254, 0.6);
-            box-shadow: 0 0 15px rgba(0, 242, 254, 0.2);
+        select.sort-select option {
+            background: #0e121b;
+            color: var(--text-main);
         }
 
-        .btn-def.active {
-            background: linear-gradient(135deg, rgba(0, 242, 254, 0.25), rgba(157, 78, 221, 0.25));
-            border-color: var(--accent-cyan);
-            color: #fff;
-            box-shadow: 0 0 20px rgba(0, 242, 254, 0.3);
+        .custom-select-wrapper {
+            position: relative;
+            min-width: 240px;
         }
 
-        /* Сетка фотографий */
+        .select-trigger {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius);
+            padding: 10px 14px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+            font-size: 0.9rem;
+        }
+
+        .dropdown-menu {
+            position: absolute;
+            top: calc(100% + 6px);
+            left: 0;
+            right: 0;
+            background: rgba(14, 18, 27, 0.98);
+            border: 1px solid var(--border-glow);
+            border-radius: var(--radius);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            display: none;
+            flex-direction: column;
+            max-height: 300px;
+            z-index: 100;
+            overflow: hidden;
+        }
+
+        .custom-select-wrapper.open .dropdown-menu {
+            display: flex;
+        }
+
+        .dropdown-list {
+            overflow-y: auto;
+            max-height: 240px;
+        }
+
+        .dropdown-item {
+            padding: 10px 14px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            cursor: pointer;
+            font-size: 0.88rem;
+            transition: var(--transition);
+        }
+
+        .dropdown-item:hover {
+            background: rgba(0, 242, 254, 0.1);
+            color: var(--accent-cyan);
+        }
+
+        .dropdown-item input[type="checkbox"] {
+            accent-color: var(--accent-cyan);
+            cursor: pointer;
+        }
+
+        main {
+            flex: 1;
+            padding: 20px 0;
+        }
+
         .gallery-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
-            gap: 15px;
-            min-height: 300px;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
         }
 
         .photo-card {
-            position: relative;
-            aspect-ratio: 1 / 1;
-            border-radius: 12px;
+            background-color: var(--card-bg);
+            border-radius: var(--radius);
             overflow: hidden;
+            aspect-ratio: 1 / 1;
             border: 1px solid var(--border-glow);
-            background: rgba(0, 0, 0, 0.4);
-            cursor: pointer;
-            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
-        }
-
-        .photo-card:hover {
-            transform: translateY(-4px) scale(1.02);
-            border-color: var(--accent-cyan);
-            box-shadow: 0 8px 20px rgba(0, 242, 254, 0.25);
+            position: relative;
+            transition: var(--transition);
         }
 
         .photo-card img {
@@ -180,391 +207,287 @@
             display: block;
         }
 
-        /* Пагинация */
-        .pagination-container {
+        .photo-info {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(10, 12, 16, 0.85);
+            padding: 6px 10px;
+            font-size: 0.75rem;
+            display: flex;
+            justify-content: space-between;
+            backdrop-filter: blur(4px);
+        }
+
+        .pagination {
             display: flex;
             justify-content: center;
-            align-items: center;
-            gap: 8px;
-            margin-top: 25px;
-            padding-top: 15px;
-            border-top: 1px solid rgba(255, 255, 255, 0.08);
-            flex-wrap: wrap;
+            gap: 6px;
+            margin-top: 30px;
         }
 
         .page-btn {
-            min-width: 38px;
-            height: 38px;
-            padding: 0 10px;
-            border-radius: 10px;
-            background: rgba(255, 255, 255, 0.05);
+            background: var(--card-bg);
             color: var(--text-main);
-            border: 1px solid rgba(255, 255, 255, 0.1);
+            border: 1px solid var(--border-glow);
+            width: 38px;
+            height: 38px;
+            border-radius: 8px;
             cursor: pointer;
             font-weight: 600;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
-
-        .page-btn:hover:not(:disabled) {
-            background: rgba(0, 242, 254, 0.15);
-            border-color: var(--accent-cyan);
-            color: var(--accent-cyan);
         }
 
         .page-btn.active {
             background: var(--accent-cyan);
-            color: #0a0c10;
-            border-color: var(--accent-cyan);
-            font-weight: 700;
-        }
-
-        .page-btn:disabled {
-            opacity: 0.3;
-            cursor: not-allowed;
-        }
-
-        /* Полноэкранный просмотрщик (Lightbox) */
-        .lightbox {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(5, 7, 10, 0.92);
-            backdrop-filter: blur(20px);
-            -webkit-backdrop-filter: blur(20px);
-            z-index: 1000;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            opacity: 0;
-            pointer-events: none;
-            transition: opacity 0.3s ease;
-        }
-
-        .lightbox.active {
-            opacity: 1;
-            pointer-events: auto;
-        }
-
-        .lightbox-content {
-            position: relative;
-            max-width: 90vw;
-            max-height: 85vh;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-        }
-
-        .lightbox-img {
-            max-width: 90vw;
-            max-height: 80vh;
-            object-fit: contain;
-            border-radius: 12px;
-            border: 1px solid var(--border-glow);
-            box-shadow: 0 0 50px rgba(0, 242, 254, 0.2);
-        }
-
-        .lightbox-caption {
-            margin-top: 15px;
-            color: var(--text-muted);
-            font-size: 0.95rem;
-            text-align: center;
-        }
-
-        .lightbox-btn {
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            background: rgba(18, 22, 31, 0.8);
-            border: 1px solid var(--border-glow);
-            color: var(--accent-cyan);
-            width: 50px;
-            height: 50px;
-            border-radius: 50%;
-            font-size: 1.5rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-            backdrop-filter: blur(8px);
-            user-select: none;
-        }
-
-        .lightbox-btn:hover {
-            background: var(--accent-cyan);
-            color: var(--bg-primary);
-            box-shadow: 0 0 20px rgba(0, 242, 254, 0.5);
-        }
-
-        .lightbox-prev { left: -70px; }
-        .lightbox-next { right: -70px; }
-
-        .lightbox-close {
-            position: absolute;
-            top: -50px;
-            right: 0;
-            background: rgba(255, 85, 85, 0.15);
-            border: 1px solid rgba(255, 85, 85, 0.4);
-            color: var(--danger);
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
-            font-size: 1.2rem;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            transition: all 0.2s ease;
-        }
-
-        .lightbox-close:hover {
-            background: var(--danger);
-            color: #fff;
+            color: #000;
         }
 
         @media (max-width: 768px) {
-            .lightbox-prev { left: 10px; top: auto; bottom: -65px; transform: none; }
-            .lightbox-next { right: 10px; top: auto; bottom: -65px; transform: none; }
-            .lightbox-close { top: -45px; right: 0; }
+            .gallery-grid {
+                grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+                gap: 8px;
+            }
+            .controls-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
         }
     </style>
 </head>
 <body>
 
-    <div class="glow-sphere-1"></div>
-    <div class="glow-sphere-2"></div> 
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="title-area">
+                    <h1>🖼 Галерея изображений</h1>
+                    <span class="photo-counter" id="photoCounter">Найдено: 0</span>
+                </div>
+                
+                <div class="controls-row">
+                    <!-- Выбор категорий -->
+                    <div class="custom-select-wrapper" id="categoryDropdown">
+                        <div class="select-trigger" onclick="toggleDropdown()">
+                            <span id="selectedCategoryName">Все категории</span>
+                            <span class="arrow">▼</span>
+                        </div>
+                        <div class="dropdown-menu">
+                            <div class="dropdown-list" id="dropdownList"></div>
+                        </div>
+                    </div>
 
-    <div class="main-card">
-        <!-- Верхняя инфо-панель -->
-        <div class="top-bar">
-            <div class="badge badge-cyan" id="categoryTitle">
-                📁 Категория: Загрузка...
+                    <!-- Поле сортировки -->
+                    <div class="control-group">
+                        <span class="control-label">Сортировать по:</span>
+                        <select id="sortBySelect" class="sort-select" onchange="applyFiltersAndSort()">
+                            <option value="edit_date">Дате изменения</option>
+                            <option value="id">ID фото</option>
+                        </select>
+                    </div>
+
+                    <!-- Порядок сортировки -->
+                    <div class="control-group">
+                        <span class="control-label">Порядок:</span>
+                        <select id="sortOrderSelect" class="sort-select" onchange="applyFiltersAndSort()">
+                            <option value="DESC">Сначала новые (DESC)</option>
+                            <option value="ASC">Сначала старые (ASC)</option>
+                        </select>
+                    </div>
+                </div>
             </div>
-            <div class="badge" id="photoCounter">
-                🖼 Фотографий: 0
-            </div>
         </div>
+    </header>
 
-        <!-- Сетка категорий -->
-        <div id="categoriesContainer" class="categories-grid">
-            <!-- Категории рендерятся из JS -->
+    <main>
+        <div class="container">
+            <div class="gallery-grid" id="galleryGrid"></div>
+            <div class="pagination" id="pagination"></div>
         </div>
-
-        <!-- Сетка изображений -->
-        <div id="galleryGrid" class="gallery-grid">
-            <!-- Фотографии рендерятся из JS -->
-        </div>
-
-        <!-- Пагинация -->
-        <div id="pagination" class="pagination-container">
-            <!-- Кнопки пагинации рендерятся из JS -->
-        </div>
-    </div>
-
-    <!-- Модальное окно (Lightbox) -->
-    <div id="lightbox" class="lightbox">
-        <div class="lightbox-content">
-            <button class="lightbox-close" onclick="closeLightbox()">✕</button>
-            <button class="lightbox-btn lightbox-prev" onclick="changeLightboxImage(-1)">❮</button>
-            <img id="lightboxImg" class="lightbox-img" src="" alt="Увеличенное фото">
-            <div id="lightboxCaption" class="lightbox-caption"></div>
-            <button class="lightbox-btn lightbox-next" onclick="changeLightboxImage(1)">❯</button>
-        </div>
-    </div>
+    </main>
 
     <script>
-        // ==========================================
-        // ГЕНЕРАЦИЯ МOКОВЫХ ДАННЫХ ДЛЯ ТЕСТИРОВАНИЯ
-        // ==========================================
-        const categoriesData = {
-            "Природа": Array.from({ length: 63 }, (_, i) => ({
-                id: `nature_${i + 1}`,
-                title: `Природа #${i + 1}`,
-                url: `https://picsum.photos/seed/nature_${i + 1}/800/600`
-            })),
-            "Города": Array.from({ length: 42 }, (_, i) => ({
-                id: `city_${i + 1}`,
-                title: `Город #${i + 1}`,
-                url: `https://picsum.photos/seed/city_${i + 1}/800/600`
-            })),
-            "Космос": Array.from({ length: 28 }, (_, i) => ({
-                id: `space_${i + 1}`,
-                title: `Космос #${i + 1}`,
-                url: `https://picsum.photos/seed/space_${i + 1}/800/600`
-            })),
-            "Киберпанк": Array.from({ length: 55 }, (_, i) => ({
-                id: `cyber_${i + 1}`,
-                title: `Киберпанк #${i + 1}`,
-                url: `https://picsum.photos/seed/cyber_${i + 1}/800/600`
-            })),
-            "Абстракция": Array.from({ length: 18 }, (_, i) => ({
-                id: `abstract_${i + 1}`,
-                title: `Абстракция #${i + 1}`,
-                url: `https://picsum.photos/seed/abstract_${i + 1}/800/600`
-            }))
-        };
+        // ДЕМО-ДАННЫЕ ДЛЯ ПРОВЕРКИ (Имитация ответа сервера)
+        const MOCK_CATEGORIES = [
+            { id: 1, name: 'Природа' },
+            { id: 2, name: 'Город' },
+            { id: 3, name: 'Арт' }
+        ];
 
-        // Состояние приложения
-        const ITEMS_PER_PAGE = 25;
-        let currentCategory = Object.keys(categoriesData)[0];
+        const MOCK_PHOTOS = [
+            { id: 101, file_url: 'https://picsum.photos/id/10/300/300', category_id: 1, edit_date: '2026-09-15T10:00:00' },
+            { id: 102, file_url: 'https://picsum.photos/id/20/300/300', category_id: 2, edit_date: '2026-09-17T08:30:00' },
+            { id: 103, file_url: 'https://picsum.photos/id/30/300/300', category_id: 3, edit_date: '2026-09-10T14:20:00' },
+            { id: 104, file_url: 'https://picsum.photos/id/40/300/300', category_id: 1, edit_date: '2026-09-16T19:45:00' },
+            { id: 105, file_url: 'https://picsum.photos/id/50/300/300', category_id: 2, edit_date: '2026-09-11T12:00:00' },
+            { id: 106, file_url: 'https://picsum.photos/id/60/300/300', category_id: 3, edit_date: '2026-09-17T09:10:00' }
+        ];
+
+        const ITEMS_PER_PAGE = 4;
+        let selectedCategoryIds = []; // Хранит ID выбранных категорий (пустой = все)
+        let filteredPhotos = [];
         let currentPage = 1;
-        let currentLightboxIndex = 0;
 
-        // Инициализация
         document.addEventListener('DOMContentLoaded', () => {
-            renderCategories();
-            selectCategory(currentCategory);
-            setupKeyboardNavigation();
+            renderDropdownList();
+            applyFiltersAndSort();
+            setupOutsideClick();
         });
 
-        // Отображение списка категорий
-        function renderCategories() {
-            const container = document.getElementById('categoriesContainer');
+        // 1. Отрисовка списка категорий с чекбоксами
+        function renderDropdownList() {
+            const container = document.getElementById('dropdownList');
             container.innerHTML = '';
 
-            Object.keys(categoriesData).forEach(category => {
-                const btn = document.createElement('button');
-                btn.className = `btn-def ${category === currentCategory ? 'active' : ''}`;
-                btn.innerText = category;
-                btn.onclick = () => selectCategory(category);
-                container.appendChild(btn);
+            // Опция "Все"
+            const allItem = document.createElement('div');
+            allItem.className = 'dropdown-item';
+            allItem.innerHTML = `
+                <input type="checkbox" id="cat_all" ${selectedCategoryIds.length === 0 ? 'checked' : ''} onchange="selectAllCategories(this.checked)">
+                <label for="cat_all"> Все категории</label>
+            `;
+            container.appendChild(allItem);
+
+            // Опции отдельных категорий
+            MOCK_CATEGORIES.forEach(cat => {
+                const item = document.createElement('div');
+                item.className = 'dropdown-item';
+                const isChecked = selectedCategoryIds.includes(cat.id);
+                item.innerHTML = `
+                    <input type="checkbox" id="cat_${cat.id}" value="${cat.id}" ${isChecked ? 'checked' : ''} onchange="toggleCategoryFilter(${cat.id}, this.checked)">
+                    <label for="cat_${cat.id}">${cat.name}</label>
+                `;
+                container.appendChild(item);
             });
         }
 
-        // Выбор категории
-        function selectCategory(category) {
-            currentCategory = category;
+        function selectAllCategories(isChecked) {
+            if (isChecked) {
+                selectedCategoryIds = [];
+            }
+            renderDropdownList();
+            updateDropdownTitle();
+            applyFiltersAndSort();
+        }
+
+        function toggleCategoryFilter(catId, isChecked) {
+            if (isChecked) {
+                selectedCategoryIds.push(catId);
+            } else {
+                selectedCategoryIds = selectedCategoryIds.filter(id => id !== catId);
+            }
+            renderDropdownList();
+            updateDropdownTitle();
+            applyFiltersAndSort();
+        }
+
+        function updateDropdownTitle() {
+            const label = document.getElementById('selectedCategoryName');
+            if (selectedCategoryIds.length === 0) {
+                label.innerText = 'Все категории';
+            } else {
+                label.innerText = `Выбрано категорий: ${selectedCategoryIds.length}`;
+            }
+        }
+
+        // 2. Логика фильтрации и сортировки
+        function applyFiltersAndSort() {
+            const sortBy = document.getElementById('sortBySelect').value;
+            const sortOrder = document.getElementById('sortOrderSelect').value;
+
+            // Фильтрация
+            filteredPhotos = MOCK_PHOTOS.filter(photo => {
+                if (selectedCategoryIds.length === 0) return true;
+                return selectedCategoryIds.includes(photo.category_id);
+            });
+
+            // Сортировка
+            filteredPhotos.sort((a, b) => {
+                let valA = a[sortBy];
+                let valB = b[sortBy];
+
+                if (sortBy === 'edit_date') {
+                    valA = new Date(valA);
+                    valB = new Date(valB);
+                }
+
+                if (sortOrder === 'ASC') {
+                    return valA > valB ? 1 : -1;
+                } else {
+                    return valA < valB ? 1 : -1;
+                }
+            });
+
             currentPage = 1;
-
-            // Обновляем активную кнопку
-            const buttons = document.querySelectorAll('#categoriesContainer .btn-def');
-            buttons.forEach(btn => {
-                btn.classList.toggle('active', btn.innerText === category);
-            });
-
-            // Обновляем шапку
-            const totalItems = categoriesData[category].length;
-            document.getElementById('categoryTitle').innerText = `📁 Категория: ${category}`;
-            document.getElementById('photoCounter').innerText = `🖼 Фотографий: ${totalItems}`;
-
+            document.getElementById('photoCounter').innerText = `Найдено: ${filteredPhotos.length}`;
             renderGallery();
+            renderPagination();
         }
 
-        // Отображение фото текущей страницы
+        // 3. Отрисовка фото
         function renderGallery() {
             const grid = document.getElementById('galleryGrid');
             grid.innerHTML = '';
 
-            const allPhotos = categoriesData[currentCategory];
-            const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-            const pagePhotos = allPhotos.slice(startIndex, startIndex + ITEMS_PER_PAGE);
+            const start = (currentPage - 1) * ITEMS_PER_PAGE;
+            const end = start + ITEMS_PER_PAGE;
+            const pagePhotos = filteredPhotos.slice(start, end);
 
-            pagePhotos.forEach((photo, idx) => {
+            if (pagePhotos.length === 0) {
+                grid.innerHTML = '<div style="grid-column: 1/-1; text-align: center; color: var(--text-muted); padding: 40px;">Нет фото по заданным условиям</div>';
+                return;
+            }
+
+            pagePhotos.forEach(photo => {
                 const card = document.createElement('div');
                 card.className = 'photo-card';
-                
-                const globalIndex = startIndex + idx;
-                card.onclick = () => openLightbox(globalIndex);
+                const formattedDate = new Date(photo.edit_date).toLocaleDateString('ru-RU', {
+                    day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit'
+                });
 
-                card.innerHTML = `<img src="${photo.url}" alt="${photo.title}" loading="lazy">`;
+                card.innerHTML = `
+                    <img src="${photo.file_url}" alt="Photo #${photo.id}">
+                    <div class="photo-info">
+                        <span>ID: ${photo.id}</span>
+                        <span>${formattedDate}</span>
+                    </div>
+                `;
                 grid.appendChild(card);
             });
-
-            renderPagination();
         }
 
-        // Отрисовка кнопок пагинации
+        // 4. Пагинация
         function renderPagination() {
             const container = document.getElementById('pagination');
             container.innerHTML = '';
 
-            const totalItems = categoriesData[currentCategory].length;
-            const totalPages = Math.ceil(totalItems / ITEMS_PER_PAGE);
-
+            const totalPages = Math.ceil(filteredPhotos.length / ITEMS_PER_PAGE);
             if (totalPages <= 1) return;
 
-            // Кнопка «Назад»
-            const prevBtn = document.createElement('button');
-            prevBtn.className = 'page-btn';
-            prevBtn.innerText = '‹';
-            prevBtn.disabled = currentPage === 1;
-            prevBtn.onclick = () => goToPage(currentPage - 1);
-            container.appendChild(prevBtn);
-
-            // Кнопки страниц
             for (let i = 1; i <= totalPages; i++) {
-                const pageBtn = document.createElement('button');
-                pageBtn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
-                pageBtn.innerText = i;
-                pageBtn.onclick = () => goToPage(i);
-                container.appendChild(pageBtn);
+                const btn = document.createElement('button');
+                btn.className = `page-btn ${i === currentPage ? 'active' : ''}`;
+                btn.innerText = i;
+                btn.onclick = () => {
+                    currentPage = i;
+                    renderGallery();
+                    renderPagination();
+                };
+                container.appendChild(btn);
             }
-
-            // Кнопка «Вперед»
-            const nextBtn = document.createElement('button');
-            nextBtn.className = 'page-btn';
-            nextBtn.innerText = '›';
-            nextBtn.disabled = currentPage === totalPages;
-            nextBtn.onclick = () => goToPage(currentPage + 1);
-            container.appendChild(nextBtn);
         }
 
-        function goToPage(page) {
-            currentPage = page;
-            renderGallery();
-            window.scrollTo({ top: 0, behavior: 'smooth' });
+        // Вспомогательные функции для выпадающего списка
+        function toggleDropdown() {
+            document.getElementById('categoryDropdown').classList.toggle('open');
         }
 
-        // ==========================================
-        // ЛОГИКА ПРОСМОТРЩИКА (LIGHTBOX)
-        // ==========================================
-        function openLightbox(index) {
-            currentLightboxIndex = index;
-            updateLightboxContent();
-            document.getElementById('lightbox').classList.add('active');
-            document.body.style.overflow = 'hidden';
-        }
-
-        function closeLightbox() {
-            document.getElementById('lightbox').classList.remove('active');
-            document.body.style.overflow = 'auto';
-        }
-
-        function changeLightboxImage(direction) {
-            const photos = categoriesData[currentCategory];
-            currentLightboxIndex += direction;
-
-            if (currentLightboxIndex < 0) {
-                currentLightboxIndex = photos.length - 1;
-            } else if (currentLightboxIndex >= photos.length) {
-                currentLightboxIndex = 0;
-            }
-
-            updateLightboxContent();
-        }
-
-        function updateLightboxContent() {
-            const photo = categoriesData[currentCategory][currentLightboxIndex];
-            const total = categoriesData[currentCategory].length;
-
-            document.getElementById('lightboxImg').src = photo.url;
-            document.getElementById('lightboxCaption').innerText = 
-                `${photo.title} (${currentLightboxIndex + 1} из ${total})`;
-        }
-
-        function setupKeyboardNavigation() {
-            document.addEventListener('keydown', (e) => {
-                const lightbox = document.getElementById('lightbox');
-                if (!lightbox.classList.contains('active')) return;
-
-                if (e.key === 'Escape') closeLightbox();
-                if (e.key === 'ArrowLeft') changeLightboxImage(-1);
-                if (e.key === 'ArrowRight') changeLightboxImage(1);
+        function setupOutsideClick() {
+            document.addEventListener('click', (e) => {
+                const wrapper = document.getElementById('categoryDropdown');
+                if (!wrapper.contains(e.target)) {
+                    wrapper.classList.remove('open');
+                }
             });
         }
     </script>
