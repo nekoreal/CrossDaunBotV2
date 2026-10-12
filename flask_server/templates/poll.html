@@ -1169,6 +1169,10 @@
             alert(data.message);
         });
 
+        socket.on('do_redirect', (data) => { 
+            window.location.href = data.url;
+        });
+
         function updatePollUI(state) {
             document.getElementById('votedCount').innerText = state.voted;
             document.getElementById('totalUsers').innerText = state.total;

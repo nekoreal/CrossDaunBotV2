@@ -258,6 +258,8 @@ def stop_poll():
         if poll.is_started:
             send_telegram_clear_message(f"Сортировка закончилась\n\nРаунд: {poll.round}")
         poll.stop_poll()
+        target_url = url_for("entry_telegram_bp.home")
+        emit('do_redirect', {'url': target_url})
         return redirect(url_for("entry_telegram_bp.home"))
     return "Ошибка авторизации", 400
 
