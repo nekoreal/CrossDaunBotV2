@@ -336,11 +336,10 @@
             transform: scale(0.98);
         }
 
-        .btn-def:disabled, .btn-def.voted {
+        .btn-def.voted {
             background: rgba(0, 230, 118, 0.15);
             border-color: var(--success);
             color: var(--success);
-            cursor: default;
             box-shadow: 0 0 10px rgba(0, 230, 118, 0.1);
         }
 
@@ -1155,14 +1154,7 @@
 
         socket.on('vote_success', (data) => {
             selectedVote = data.category;
-            const buttons = document.querySelectorAll('#categoriesContainer .btn-def');
-            buttons.forEach(btn => {
-                btn.disabled = true;
-                if (btn.innerText === data.category) {
-                    btn.classList.add('voted');
-                    btn.innerText = `✓ ${data.category}`;
-                }
-            });
+            renderCategories(availableCategories);
         });
 
         socket.on('alert', (data) => {
@@ -1259,12 +1251,11 @@
                 if (selectedVote === cat) {
                     button.classList.add('voted');
                     button.innerText = `✓ ${cat}`;
-                    button.disabled = true;
-                } else if (selectedVote) {
-                    button.disabled = true;
                 } else {
-                    button.onclick = () => submitVote(cat);
+                    button.classList.remove('voted');
                 }
+                
+                button.onclick = () => submitVote(cat);
                 
                 container.appendChild(button);
             });

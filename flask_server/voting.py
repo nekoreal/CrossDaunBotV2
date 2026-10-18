@@ -135,17 +135,22 @@ class Poll:
                 return False
 
             for user in self.users:
-                if user.tg_id == tg_id:
+                if user.tg_id == tg_id: 
+                    if category_name not in [cat.name for cat in self.categories]:
+                        return False
                     if user.vote is None:
-                        if category_name not in [cat.name for cat in self.categories]:
-                            return False
-                        user.vote = category_name
                         self.voted_counts += 1
+                    else:
                         for category in self.categories:
                             if category.name == category_name:
-                                category.votes += 1
+                                category.votes -= 1
                                 break
-                        return True
+                    user.vote = category_name
+                    for category in self.categories:
+                        if category.name == category_name:
+                            category.votes += 1
+                            break
+                    return True
                     return False
             return False
 
@@ -325,7 +330,7 @@ def handle_vote(data):
         return
 
     tg_id = user_data.get("id")
-    category_name = data.get("category")
+    category_name = data.get("category", None) if data else None
 
     if poll.vote(tg_id, category_name):
         emit("vote_success", {"category": category_name})
