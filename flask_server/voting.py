@@ -142,7 +142,7 @@ class Poll:
                         self.voted_counts += 1
                     else:
                         for category in self.categories:
-                            if category.name == category_name:
+                            if category.name == user.vote:
                                 category.votes -= 1
                                 break
                     user.vote = category_name
@@ -150,8 +150,7 @@ class Poll:
                         if category.name == category_name:
                             category.votes += 1
                             break
-                    return True
-                    return False
+                    return True 
             return False
 
     def end_round(self):
