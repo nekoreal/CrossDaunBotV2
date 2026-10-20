@@ -18,6 +18,8 @@
             --danger: #ff5555;
             --success: #00e676;
             --warning: #ffb703;
+            --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+            --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
         }
 
         * {
@@ -39,29 +41,29 @@
             padding: 20px;
         }
 
-        /* --- БОКОВАЯ ПАНЕЛЬ ИСТОРИИ (АБСОЛЮТНО СЛЕВА) --- */
+        /* --- ОБЁРТКА: КАРТОЧКА + ИСТОРИЯ, ПРИКЛЕЕННАЯ К НЕЙ --- */
+        .layout {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            max-width: 680px;
+        }
+
+        /* --- ПАНЕЛЬ ИСТОРИИ --- */
         .history-sidebar {
-            position: fixed;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 280px;
             background: var(--card-bg);
             backdrop-filter: blur(16px);
             -webkit-backdrop-filter: blur(16px);
             border: 1px solid var(--border-glow);
             border-radius: 20px;
-            padding: 20px;
+            padding: 16px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6),
                         0 0 30px rgba(0, 242, 254, 0.05);
             display: flex;
             flex-direction: column;
-            gap: 15px;
-            z-index: 10;
-            max-height: 85vh;
-            overflow-y: auto;
-            animation: cardAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1);
-            transition: all 0.3s ease;
+            gap: 12px;
+            z-index: 2;
+            animation: cardAppear 0.6s var(--ease-out) backwards;
         }
 
         .history-title {
@@ -70,36 +72,103 @@
             color: var(--accent-cyan);
             border-bottom: 1px solid rgba(255, 255, 255, 0.1);
             padding-bottom: 10px;
-            text-align: center;
             display: flex;
             align-items: center;
             justify-content: space-between;
             gap: 8px;
+            transition: border-color 0.3s ease, padding 0.3s ease;
         }
 
         .history-title-text {
             display: flex;
             align-items: center;
             gap: 8px;
+            max-width: 220px;
+            overflow: hidden;
+            white-space: nowrap;
+            transition: max-width 0.4s var(--ease-out), opacity 0.2s ease;
         }
 
         .history-toggle-btn {
-            background: none;
-            border: none;
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 34px;
+            height: 34px;
+            flex-shrink: 0;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(0, 242, 254, 0.25);
+            border-radius: 10px;
             color: var(--accent-cyan);
             cursor: pointer;
-            font-size: 1.1rem;
-            display: none; /* Видна только на мобилках */
-            padding: 2px 6px;
-            transition: transform 0.3s ease;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.25s ease, border-color 0.25s ease, transform 0.2s var(--ease-out);
+        }
+
+        .history-toggle-btn:hover {
+            background: rgba(0, 242, 254, 0.14);
+            border-color: rgba(0, 242, 254, 0.5);
+        }
+
+        .history-toggle-btn:active { transform: scale(0.92); }
+
+        .history-toggle-btn:focus-visible {
+            outline: 2px solid var(--accent-cyan);
+            outline-offset: 2px;
+        }
+
+        .history-toggle-btn svg {
+            width: 18px;
+            height: 18px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2.2;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            transition: transform 0.4s var(--ease-out);
+        }
+
+        .history-toggle-btn .ht-icon { display: none; font-size: 1rem; line-height: 1; }
+
+        .history-count {
+            position: absolute;
+            top: -7px;
+            right: -7px;
+            min-width: 18px;
+            height: 18px;
+            padding: 0 5px;
+            border-radius: 9px;
+            background: var(--accent-purple);
+            color: #fff;
+            font-size: 0.7rem;
+            font-weight: 700;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(157, 78, 221, 0.5);
+        }
+
+        .history-sidebar.collapsed .history-count.has-items {
+            display: flex;
+            animation: checkPop 0.4s var(--ease-spring);
+        }
+
+        .history-sidebar.collapsed .history-title {
+            border-bottom-color: transparent;
+            padding-bottom: 0;
         }
 
         .history-list {
             display: flex;
             flex-direction: column;
             gap: 10px;
-            transition: max-height 0.3s ease, opacity 0.3s ease;
-            overflow: hidden;
+            max-height: 460px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            transition: max-height 0.4s var(--ease-out), opacity 0.25s ease, margin 0.4s var(--ease-out);
+            scrollbar-width: thin;
+            scrollbar-color: rgba(0, 242, 254, 0.3) transparent;
         }
 
         .history-card {
@@ -110,12 +179,13 @@
             display: flex;
             gap: 12px;
             align-items: center;
-            animation: slideInResult 0.3s ease forwards;
-            transition: border-color 0.2s ease;
+            animation: slideInResult 0.35s var(--ease-out) forwards;
+            transition: border-color 0.25s ease, background 0.25s ease;
         }
 
         .history-card:hover {
             border-color: rgba(0, 242, 254, 0.3);
+            background: rgba(0, 242, 254, 0.04);
         }
 
         .history-card img {
@@ -124,14 +194,12 @@
             object-fit: cover;
             border-radius: 8px;
             border: 1px solid rgba(0, 242, 254, 0.3);
-            cursor: pointer;
+            cursor: zoom-in;
             flex-shrink: 0;
-            transition: transform 0.2s ease;
+            transition: transform 0.25s var(--ease-out);
         }
 
-        .history-card img:hover {
-            transform: scale(1.08);
-        }
+        .history-card img:hover { transform: scale(1.08); }
 
         .history-info {
             display: flex;
@@ -153,6 +221,40 @@
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+        }
+
+        /* ПК: панель приклеена к левой стороне центральной карточки, сворачивается в маленький «ярлык» */
+        @media (min-width: 1241px) {
+            .history-sidebar {
+                position: absolute;
+                top: 0;
+                right: calc(100% + 16px);
+                width: 260px;
+                max-height: min(85vh, 640px);
+                overflow: hidden;
+                transition: width 0.45s var(--ease-out), padding 0.45s var(--ease-out), gap 0.3s ease;
+            }
+
+            .history-list { min-width: 226px; }
+
+            .history-toggle-btn svg { transform: rotate(90deg); }
+
+            .history-sidebar.collapsed {
+                width: 58px;
+                padding: 10px;
+                gap: 0;
+            }
+
+            .history-sidebar.collapsed .history-list {
+                opacity: 0;
+                max-height: 0;
+                pointer-events: none;
+            }
+
+            .history-sidebar.collapsed .history-title { justify-content: center; gap: 0; }
+            .history-sidebar.collapsed .history-title-text { max-width: 0; opacity: 0; }
+            .history-sidebar.collapsed .history-toggle-btn .ht-chevron { display: none; }
+            .history-sidebar.collapsed .history-toggle-btn .ht-icon { display: inline; }
         }
 
         /* --- АНИМАЦИИ И НЕОН --- */
@@ -206,7 +308,7 @@
             border-radius: 20px;
             box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6),
                         0 0 30px rgba(0, 242, 254, 0.05);
-            animation: cardAppear 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            animation: cardAppear 0.6s var(--ease-out) backwards;
         }
 
         @keyframes cardAppear {
@@ -294,53 +396,132 @@
             100% { box-shadow: 0 0 15px rgba(255, 85, 85, 0.6); }
         }
 
-        /* Кнопки с бликом */
+        /* --- КНОПКИ --- */
         .btn-def {
             position: relative;
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
             width: 100%;
+            min-height: 48px;
             padding: 12px 20px;
-            border-radius: 12px;
-            background: rgba(255, 255, 255, 0.05);
-            color: #00f2fe;
-            border: 1px solid rgba(0, 242, 254, 0.3);
+            border-radius: 14px;
+            background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025));
+            color: var(--accent-cyan);
+            border: 1px solid rgba(0, 242, 254, 0.28);
             text-decoration: none;
             font-size: 0.95rem;
             font-weight: 600;
+            line-height: 1.25;
+            letter-spacing: 0.01em;
             cursor: pointer;
             text-align: center;
-            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
-        }
-
-        .btn-def::before {
-            content: '';
-            position: absolute;
-            top: 0; left: -100%;
-            width: 100%; height: 100%;
-            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
-            transition: left 0.5s ease;
-        }
-
-        .btn-def:hover:not(:disabled)::before {
-            left: 100%;
+            isolation: isolate;
+            -webkit-tap-highlight-color: transparent;
+            transition: transform 0.3s var(--ease-out),
+                        background 0.3s ease,
+                        border-color 0.3s ease,
+                        box-shadow 0.3s ease,
+                        color 0.3s ease;
         }
 
         .btn-def:hover:not(:disabled) {
-            background: rgba(0, 242, 254, 0.15);
-            border-color: rgba(0, 242, 254, 0.6);
-            box-shadow: 0 0 20px rgba(0, 242, 254, 0.25);
+            transform: translateY(-2px);
+            background: linear-gradient(180deg, rgba(0, 242, 254, 0.18), rgba(0, 242, 254, 0.06));
+            border-color: rgba(0, 242, 254, 0.55);
+            box-shadow: 0 10px 24px -8px rgba(0, 242, 254, 0.4);
         }
 
         .btn-def:active:not(:disabled) {
-            transform: scale(0.98);
+            transform: translateY(0) scale(0.97);
+            box-shadow: none;
+            transition-duration: 0.1s;
+        }
+
+        .btn-def:focus-visible {
+            outline: 2px solid var(--accent-cyan);
+            outline-offset: 2px;
         }
 
         .btn-def.voted {
-            background: rgba(0, 230, 118, 0.15);
+            background: linear-gradient(180deg, rgba(0, 230, 118, 0.22), rgba(0, 230, 118, 0.08));
             border-color: var(--success);
             color: var(--success);
-            box-shadow: 0 0 10px rgba(0, 230, 118, 0.1);
+            box-shadow: 0 6px 20px -8px rgba(0, 230, 118, 0.5);
+        }
+
+        .btn-def .check {
+            width: 18px;
+            height: 18px;
+            flex-shrink: 0;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 3;
+            stroke-linecap: round;
+            stroke-linejoin: round;
+            animation: checkPop 0.45s var(--ease-spring);
+        }
+
+        @keyframes checkPop {
+            from { transform: scale(0) rotate(-30deg); opacity: 0; }
+            to { transform: scale(1) rotate(0); opacity: 1; }
+        }
+
+        /* Появление кнопок: fill-mode backwards, чтобы потом работали hover/active */
+        .btn-enter {
+            animation: btnIn 0.5s var(--ease-out) backwards;
+            animation-delay: var(--d, 0s);
+        }
+
+        @keyframes btnIn {
+            from { opacity: 0; transform: translateY(10px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        /* Волна при нажатии */
+        .ripple {
+            position: absolute;
+            border-radius: 50%;
+            background: currentColor;
+            opacity: 0.22;
+            pointer-events: none;
+            z-index: -1;
+            transform: scale(0);
+            animation: rippleAnim 0.65s var(--ease-out) forwards;
+        }
+
+        @keyframes rippleAnim {
+            to { transform: scale(1); opacity: 0; }
+        }
+
+        /* Кнопка «Воздержаться» — спокойная, чтобы не конкурировать с категориями */
+        .btn-abstain {
+            min-height: 46px;
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px dashed rgba(255, 255, 255, 0.2);
+            font-weight: 500;
+        }
+
+        .btn-abstain:hover:not(:disabled) {
+            transform: translateY(-1px);
+            color: var(--warning);
+            background: rgba(255, 183, 3, 0.08);
+            border-color: rgba(255, 183, 3, 0.55);
+            box-shadow: 0 10px 24px -10px rgba(255, 183, 3, 0.35);
+        }
+
+        .btn-abstain:focus-visible {
+            outline-color: var(--warning);
+        }
+
+        .vote-actions {
+            display: flex;
+            margin-top: 14px;
+            padding-top: 14px;
+            border-top: 1px solid rgba(255, 255, 255, 0.07);
         }
 
         .btn-logout {
@@ -356,8 +537,10 @@
             font-weight: 600;
             cursor: pointer;
             text-align: center;
-            transition: all 0.25s ease;
+            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s var(--ease-out);
         }
+
+        .btn-logout:active { transform: scale(0.98); }
 
         .btn-logout:hover {
             background: rgba(255, 85, 85, 0.15);
@@ -374,13 +557,14 @@
             border-right: 3px solid var(--accent-purple);
             border-radius: 50%;
             margin: 0 auto 20px;
-            animation: spin 0.9s cubic-bezier(0.68, -0.55, 0.265, 1.55) infinite;
+            animation: spin 1s linear infinite;
         }
 
         @keyframes spin { 100% { transform: rotate(360deg); } }
 
         /* Изображение */
         .photo-container {
+            position: relative;
             width: 100%;
             max-height: 380px;
             border-radius: 14px;
@@ -404,8 +588,33 @@
             height: 100%;
             max-height: 380px;
             object-fit: contain;
-            transition: opacity 0.4s ease;
-            cursor: pointer;
+            transition: opacity 0.4s ease, transform 0.5s var(--ease-out);
+            cursor: zoom-in;
+        }
+
+        .photo-container::after {
+            content: '🔍 Увеличить';
+            position: absolute;
+            right: 10px;
+            bottom: 10px;
+            padding: 5px 11px;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            color: #fff;
+            background: rgba(10, 12, 16, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            pointer-events: none;
+            opacity: 0;
+            transform: translateY(4px);
+            transition: opacity 0.3s ease, transform 0.3s var(--ease-out);
+        }
+
+        .photo-container:hover::after { opacity: 1; transform: translateY(0); }
+
+        @media (hover: none) {
+            .photo-container::after { opacity: 0.85; transform: none; }
         }
 
         /* Мета-информация о фото (автор и дата) */
@@ -432,14 +641,15 @@
             font-family: monospace;
         }
 
-        /* --- ПОЛНОЭКРАННЫЙ ЛАЙТБОКС (ZOOM & PAN MODAL) --- */
+        /* --- ПОЛНОЭКРАННЫЙ ЛАЙТБОКС (ЗУМ К КУРСОРУ, ПЕРЕТАСКИВАНИЕ, PINCH) --- */
         .lightbox-modal {
             position: fixed;
             top: 0;
             left: 0;
             width: 100vw;
             height: 100vh;
-            background: rgba(10, 12, 16, 0.95);
+            height: 100dvh;
+            background: rgba(8, 10, 14, 0.94);
             backdrop-filter: blur(12px);
             -webkit-backdrop-filter: blur(12px);
             z-index: 9999;
@@ -448,9 +658,11 @@
             justify-content: center;
             opacity: 0;
             pointer-events: none;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s var(--ease-out);
             overflow: hidden;
             touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
         }
 
         .lightbox-modal.active {
@@ -459,66 +671,118 @@
         }
 
         .lightbox-content {
-            max-width: 90vw;
-            max-height: 90vh;
+            max-width: 92vw;
+            max-height: 88vh;
             object-fit: contain;
             border-radius: 8px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 242, 254, 0.2);
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 20px rgba(0, 242, 254, 0.15);
             user-select: none;
-            cursor: grab;
+            -webkit-user-drag: none;
+            cursor: zoom-in;
             transform-origin: center center;
             will-change: transform;
         }
 
-        .lightbox-content:active {
-            cursor: grabbing;
-        }
+        .lightbox-modal.zoomed .lightbox-content { cursor: grab; }
+        .lightbox-modal.dragging .lightbox-content { cursor: grabbing; }
 
         .lightbox-close {
             position: absolute;
-            top: 25px;
-            right: 30px;
+            top: 20px;
+            right: 24px;
             width: 44px;
             height: 44px;
             background: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
             color: #fff;
             border-radius: 50%;
-            font-size: 24px;
+            font-size: 20px;
             display: flex;
             align-items: center;
             justify-content: center;
             cursor: pointer;
-            transition: all 0.25s ease;
+            transition: background 0.25s ease, border-color 0.25s ease, transform 0.25s var(--ease-out);
             z-index: 10000;
         }
 
         .lightbox-close:hover {
             background: rgba(255, 85, 85, 0.8);
             border-color: var(--danger);
-            transform: scale(1.1);
+            transform: scale(1.08) rotate(90deg);
         }
+
+        .lightbox-toolbar {
+            position: absolute;
+            bottom: 22px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 2px;
+            padding: 5px;
+            background: rgba(18, 22, 31, 0.85);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 999px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.5);
+            z-index: 10000;
+        }
+
+        .lb-btn, .lb-level {
+            height: 38px;
+            border: none;
+            background: transparent;
+            color: #fff;
+            cursor: pointer;
+            border-radius: 999px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            -webkit-tap-highlight-color: transparent;
+            transition: background 0.2s ease, transform 0.15s var(--ease-out);
+        }
+
+        .lb-btn { width: 38px; font-size: 22px; line-height: 1; }
+        .lb-level { min-width: 62px; padding: 0 10px; font-size: 0.85rem; font-variant-numeric: tabular-nums; }
+
+        .lb-btn:hover, .lb-level:hover { background: rgba(255, 255, 255, 0.14); }
+        .lb-btn:active, .lb-level:active { transform: scale(0.92); }
 
         .lightbox-hint {
             position: absolute;
-            bottom: 25px;
+            bottom: 80px;
+            left: 50%;
+            transform: translateX(-50%);
+            max-width: 92vw;
             color: var(--text-muted);
-            font-size: 0.85rem;
+            font-size: 0.82rem;
             background: rgba(18, 22, 31, 0.8);
             padding: 6px 14px;
             border-radius: 20px;
             border: 1px solid rgba(255, 255, 255, 0.1);
             pointer-events: none;
             text-align: center;
+            transition: opacity 0.6s ease;
+        }
+
+        .lightbox-hint.faded { opacity: 0; }
+        .hint-touch { display: none; }
+
+        @media (hover: none) {
+            .hint-mouse { display: none; }
+            .hint-touch { display: inline; }
         }
 
         /* Сетка категорий */
         .categories-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-            gap: 12px;
-            margin-top: 15px;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 12px;
         }
+
+        .categories-grid .btn-def { min-height: 56px; }
 
         /* Результаты */
         .results-list {
@@ -663,57 +927,53 @@
 
         /* Переключение экранов */
         .screen-fade {
-            animation: fadeInScreen 0.4s ease forwards;
+            animation: fadeInScreen 0.5s var(--ease-out) both;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
         }
 
         @keyframes fadeInScreen {
-            from { opacity: 0; transform: translateY(12px); }
+            from { opacity: 0; transform: translateY(8px); }
             to { opacity: 1; transform: translateY(0); }
         }
 
         .hidden { display: none !important; }
 
-        /* --- МОБИЛЬНЫЙ ДИЗАЙН С ИСТОРИЕЙ СВЕРХУ И СВОРАЧИВАНИЕМ --- */
-        @media (max-width: 1024px) {
+        /* --- ПЛАНШЕТ / МОБИЛЬНЫЙ: ИСТОРИЯ СВЕРХУ, СВОРАЧИВАЕТСЯ --- */
+        @media (max-width: 1240px) {
             body {
-                padding: 10px;
-                align-items: flex-start;
-                justify-content: flex-start;
                 flex-direction: column;
+                align-items: center;
+                justify-content: flex-start;
             }
 
-            .glow-sphere-1, .glow-sphere-2 {
-                display: none;
-            }
-
-            /* Панель истории становится сверху карточки */
             .history-sidebar {
                 position: relative;
-                left: auto;
-                top: auto;
-                transform: none;
                 width: 100%;
-                max-width: 100%;
                 margin-bottom: 12px;
-                padding: 12px;
-                border-radius: 14px;
-                max-height: none;
+                padding: 12px 14px;
+                border-radius: 16px;
             }
 
-            .history-toggle-btn {
-                display: inline-block; /* Показываем кнопку сворачивания на мобилках */
-            }
-
-            .history-list.collapsed {
+            .history-sidebar.collapsed .history-list {
                 max-height: 0;
                 opacity: 0;
-                margin-top: 0;
-                overflow: hidden;
+                margin-top: -12px;
+                pointer-events: none;
             }
 
+            .history-sidebar.collapsed .history-toggle-btn svg { transform: rotate(-90deg); }
+        }
+
+        @media (max-width: 1024px) {
+            body { padding: 10px; }
+
+            .glow-sphere-1, .glow-sphere-2 { display: none; }
+
             .auth-card {
-                width: 100%;
-                max-width: 100%;
                 padding: 16px 12px;
                 border-radius: 16px;
                 box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
@@ -751,30 +1011,27 @@
                 border-radius: 10px;
             }
 
-            .photo-container img {
-                max-height: 260px;
-            }
+            .photo-container img { max-height: 260px; }
 
-            .categories-grid {
-                grid-template-columns: 1fr;
-                gap: 8px;
-            }
+            .categories-grid { gap: 8px; }
 
             .btn-def {
-                padding: 14px 16px;
+                padding: 12px 14px;
                 font-size: 1rem;
             }
 
-            .tie-buttons-grid {
-                grid-template-columns: 1fr;
-            }
+            .tie-buttons-grid { grid-template-columns: 1fr; }
 
-            .lightbox-hint {
-                bottom: 15px;
-                font-size: 0.75rem;
-                padding: 4px 10px;
-                width: 90%;
-                text-align: center;
+            .lightbox-close { top: 12px; right: 12px; }
+            .lightbox-toolbar { bottom: 16px; }
+            .lightbox-hint { bottom: 70px; font-size: 0.75rem; padding: 4px 10px; }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
             }
         }
     </style>
@@ -784,11 +1041,17 @@
     <div class="glow-sphere-1"></div>
     <div class="glow-sphere-2"></div> 
 
-    <!-- БОКОВАЯ ПАНЕЛЬ ИСТОРИИ (СЛЕВА НА ПК, СВЕРХУ НА МОБИЛЬНЫХ) -->
+    <div class="layout">
+
+    <!-- ПАНЕЛЬ ИСТОРИИ: ПРИКЛЕЕНА К КАРТОЧКЕ СЛЕВА НА ПК, СВЕРХУ НА МОБИЛЬНЫХ -->
     <aside id="historySidebar" class="history-sidebar">
         <div class="history-title">
             <div class="history-title-text">📜 Последние решения</div>
-            <button id="historyToggleBtn" class="history-toggle-btn" onclick="toggleHistory()" title="Свернуть/Развернуть">▼</button>
+            <button id="historyToggleBtn" class="history-toggle-btn" type="button" onclick="toggleHistory()" title="Скрыть историю" aria-expanded="true" aria-controls="historyList">
+                <svg class="ht-chevron" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>
+                <span class="ht-icon" aria-hidden="true">📜</span>
+                <span id="historyCount" class="history-count">0</span>
+            </button>
         </div>
         <div id="historyList" class="history-list">
             <div style="color: var(--text-muted); font-size: 0.85rem; text-align: center; padding: 10px 0;">
@@ -860,6 +1123,10 @@
             <div id="categoriesContainer" class="categories-grid">
                 <!-- Категории рендерятся из JS -->
             </div>
+
+            <div class="vote-actions">
+                <button id="btnAbstain" type="button" class="btn-def btn-abstain" onclick="submitAbstain()">Воздержаться</button>
+            </div>
         </div>
 
         <!-- ================= 3. ЭКРАН РЕЗУЛЬТАТОВ ================= -->
@@ -924,12 +1191,21 @@
         </div>
 
     </div>
+    </div><!-- /layout -->
 
-    <!-- МОДАЛЬНОЕ ОКНО LIGHTBOX С ПОДДЕРЖКОЙ ПЕРЕМЕЩЕНИЯ (DRAG) И ЗУМА -->
-    <div id="lightbox" class="lightbox-modal" onclick="closeLightboxOnBg(event)">
-        <button class="lightbox-close" onclick="closeLightbox()" title="Закрыть (Esc)">✕</button>
-        <img id="lightboxImg" class="lightbox-content" src="" alt="Увеличенное фото">
-        <div class="lightbox-hint">Колесико мыши / сведение пальцев — зум | Перетаскивайте картинку мышкой</div>
+    <!-- ЛАЙТБОКС: ЗУМ К КУРСОРУ, ПЕРЕТАСКИВАНИЕ, PINCH -->
+    <div id="lightbox" class="lightbox-modal" role="dialog" aria-modal="true" aria-label="Просмотр фото">
+        <button class="lightbox-close" type="button" onclick="closeLightbox()" title="Закрыть (Esc)" aria-label="Закрыть">✕</button>
+        <img id="lightboxImg" class="lightbox-content" src="" alt="Увеличенное фото" draggable="false">
+        <div id="lightboxHint" class="lightbox-hint">
+            <span class="hint-mouse">Колесо мыши — зум к курсору · двойной клик — приблизить · тяните, чтобы двигать</span>
+            <span class="hint-touch">Сведите пальцы — зум · двойной тап — приблизить · тяните, чтобы двигать</span>
+        </div>
+        <div class="lightbox-toolbar">
+            <button class="lb-btn" type="button" onclick="lbZoomBtn(-1)" title="Уменьшить (−)" aria-label="Уменьшить">−</button>
+            <button id="lbLevel" class="lb-level" type="button" onclick="lbReset(true)" title="Сбросить (0)">100%</button>
+            <button class="lb-btn" type="button" onclick="lbZoomBtn(1)" title="Увеличить (+)" aria-label="Увеличить">+</button>
+        </div>
     </div>
 
     <script>
@@ -952,6 +1228,11 @@
 
         function renderHistoryUI() {
             const container = document.getElementById('historyList');
+            const countEl = document.getElementById('historyCount');
+            if (countEl) {
+                countEl.innerText = roundHistory.length;
+                countEl.classList.toggle('has-items', roundHistory.length > 0);
+            }
             if (roundHistory.length === 0) return;
 
             container.innerHTML = '';
@@ -970,12 +1251,23 @@
             });
         }
 
-        function toggleHistory() {
-            const list = document.getElementById('historyList');
+        function toggleHistory(force) {
+            const sidebar = document.getElementById('historySidebar');
             const btn = document.getElementById('historyToggleBtn');
-            list.classList.toggle('collapsed');
-            btn.style.transform = list.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
+            const collapsed = typeof force === 'boolean' ? force : !sidebar.classList.contains('collapsed');
+
+            sidebar.classList.toggle('collapsed', collapsed);
+            btn.setAttribute('aria-expanded', String(!collapsed));
+            btn.title = collapsed ? 'Показать историю' : 'Скрыть историю';
+
+            try { localStorage.setItem('pollHistoryCollapsed', collapsed ? '1' : '0'); } catch (e) {}
         }
+
+        (function restoreHistoryState() {
+            try {
+                if (localStorage.getItem('pollHistoryCollapsed') === '1') toggleHistory(true);
+            } catch (e) {}
+        })();
 
         /* --- ВЫВОД МЕТАДАННЫХ ФОТО --- */
         function renderPhotoMeta(prefix, author, date) {
@@ -1008,130 +1300,218 @@
             }
         }
 
-        /* --- ЛОГИКА LIGHTBOX (ЗУМ И ПЕРЕМЕЩЕНИЕ ИЗОБРАЖЕНИЯ МЫШЬЮ/ТАСКОМ) --- */
-        let currentScale = 1;
-        let posX = 0;
-        let posY = 0;
-        let isDragging = false;
-        let startX = 0;
-        let startY = 0;
+        /* --- ЛАЙТБОКС: ЗУМ К КУРСОРУ, ПЕРЕТАСКИВАНИЕ, PINCH, ДВОЙНОЙ КЛИК/ТАП --- */
+        const LB_MIN = 1;
+        const LB_MAX = 8;
+        const LB_DOUBLE_ZOOM = 2.5;
+
+        let lbScale = 1;
+        let lbX = 0;
+        let lbY = 0;
+        let lbDragMoved = false;
+        let lbLastTap = { t: 0, x: 0, y: 0 };
+        let lbHintTimer = null;
+        let lbDrag = null;
+        let lbPinch = null;
+        const lbPointers = new Map();
 
         const lightbox = document.getElementById('lightbox');
         const lightboxImg = document.getElementById('lightboxImg');
+        const lbLevel = document.getElementById('lbLevel');
+        const lbHint = document.getElementById('lightboxHint');
+        lightboxImg.draggable = false;
 
-        function updateTransform() {
-            lightboxImg.style.transform = `translate(${posX}px, ${posY}px) scale(${currentScale})`;
+        function lbClampScale(s) {
+            return Math.min(LB_MAX, Math.max(LB_MIN, s));
+        }
+
+        /* Не даём утащить картинку за пределы экрана; если она меньше экрана по оси — держим по центру */
+        function lbClampPan() {
+            const maxX = Math.max(0, (lightboxImg.offsetWidth * lbScale - window.innerWidth) / 2);
+            const maxY = Math.max(0, (lightboxImg.offsetHeight * lbScale - window.innerHeight) / 2);
+            lbX = Math.min(maxX, Math.max(-maxX, lbX));
+            lbY = Math.min(maxY, Math.max(-maxY, lbY));
+        }
+
+        function lbApply(animate) {
+            lightboxImg.style.transition = animate ? 'transform 0.22s cubic-bezier(0.22, 1, 0.36, 1)' : 'none';
+            lightboxImg.style.transform = `translate(${lbX}px, ${lbY}px) scale(${lbScale})`;
+            lightbox.classList.toggle('zoomed', lbScale > 1.001);
+            lbLevel.textContent = Math.round(lbScale * 100) + '%';
+        }
+
+        /* Зум так, чтобы точка под курсором/пальцами оставалась на месте */
+        function lbZoomAt(clientX, clientY, newScale, animate) {
+            newScale = lbClampScale(newScale);
+            const px = clientX - window.innerWidth / 2;
+            const py = clientY - window.innerHeight / 2;
+            const k = newScale / lbScale;
+            lbX = px - (px - lbX) * k;
+            lbY = py - (py - lbY) * k;
+            lbScale = newScale;
+            if (lbScale <= 1.001) { lbScale = 1; lbX = 0; lbY = 0; }
+            lbClampPan();
+            lbApply(animate);
+        }
+
+        function lbReset(animate) {
+            lbScale = 1; lbX = 0; lbY = 0;
+            lbApply(animate);
+        }
+
+        function lbZoomBtn(dir) {
+            lbZoomAt(window.innerWidth / 2, window.innerHeight / 2, lbScale * (dir > 0 ? 1.5 : 1 / 1.5), true);
         }
 
         function openLightbox(src) {
             if (!src) return;
             lightboxImg.src = src;
-            currentScale = 1;
-            posX = 0;
-            posY = 0;
-            updateTransform();
+            lbReset(false);
             lightbox.classList.add('active');
+
+            lbHint.classList.remove('faded');
+            clearTimeout(lbHintTimer);
+            lbHintTimer = setTimeout(() => lbHint.classList.add('faded'), 3500);
         }
 
         function closeLightbox() {
-            lightbox.classList.remove('active');
+            lightbox.classList.remove('active', 'dragging');
+            lbPointers.clear();
+            lbDrag = null;
+            lbPinch = null;
         }
 
-        function closeLightboxOnBg(e) {
-            if (e.target === lightbox) {
-                closeLightbox();
-            }
-        }
-
-        /* Масштабирование колесиком */
+        /* Колесо мыши / тачпад (pinch на тачпаде приходит как wheel + ctrlKey) */
         lightbox.addEventListener('wheel', (e) => {
             e.preventDefault();
-            const delta = e.deltaY < 0 ? 0.2 : -0.2;
-            let newScale = Math.min(Math.max(1, currentScale + delta), 5);
-            
-            if (newScale === 1) {
-                posX = 0;
-                posY = 0;
-            }
-            currentScale = newScale;
-            updateTransform();
+            let dy = e.deltaY;
+            if (e.deltaMode === 1) dy *= 16;
+            else if (e.deltaMode === 2) dy *= window.innerHeight;
+            const factor = Math.exp(-dy * (e.ctrlKey ? 0.012 : 0.0022));
+            lbZoomAt(e.clientX, e.clientY, lbScale * factor, Math.abs(dy) >= 40 && !e.ctrlKey);
         }, { passive: false });
 
-        /* Перемещение (Drag & Drop) увеличенного фото */
-        lightboxImg.addEventListener('mousedown', (e) => {
-            if (currentScale > 1) {
-                isDragging = true;
-                startX = e.clientX - posX;
-                startY = e.clientY - posY;
-                lightboxImg.style.cursor = 'grabbing';
+        /* Pointer Events: одна система для мыши, пальцев и стилуса */
+        lightbox.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.lightbox-close, .lightbox-toolbar')) return;
+            if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+            lbPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+            if (lbPointers.size === 1) {
+                lbDragMoved = false;
+                lbDrag = { x: e.clientX, y: e.clientY, px: lbX, py: lbY };
+            } else if (lbPointers.size === 2) {
+                const [a, b] = [...lbPointers.values()];
+                lbPinch = {
+                    dist: Math.hypot(a.x - b.x, a.y - b.y) || 1,
+                    scale: lbScale, x: lbX, y: lbY,
+                    mx: (a.x + b.x) / 2, my: (a.y + b.y) / 2
+                };
+                lbDrag = null;
+                lbDragMoved = true;
             }
         });
 
-        window.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            e.preventDefault();
-            posX = e.clientX - startX;
-            posY = e.clientY - startY;
-            updateTransform();
+        window.addEventListener('pointermove', (e) => {
+            if (!lbPointers.has(e.pointerId)) return;
+            lbPointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
+
+            if (lbPinch && lbPointers.size >= 2) {
+                const [a, b] = [...lbPointers.values()];
+                const dist = Math.hypot(a.x - b.x, a.y - b.y);
+                const mx = (a.x + b.x) / 2;
+                const my = (a.y + b.y) / 2;
+                const ns = lbClampScale(lbPinch.scale * dist / lbPinch.dist);
+                const cx = window.innerWidth / 2;
+                const cy = window.innerHeight / 2;
+                const ptX = (lbPinch.mx - cx - lbPinch.x) / lbPinch.scale;
+                const ptY = (lbPinch.my - cy - lbPinch.y) / lbPinch.scale;
+
+                lbScale = ns;
+                lbX = (mx - cx) - ptX * ns;
+                lbY = (my - cy) - ptY * ns;
+                if (lbScale <= 1.001) { lbScale = 1; lbX = 0; lbY = 0; }
+                lbClampPan();
+                lbApply(false);
+                return;
+            }
+
+            if (lbDrag) {
+                const dx = e.clientX - lbDrag.x;
+                const dy = e.clientY - lbDrag.y;
+                if (!lbDragMoved && Math.hypot(dx, dy) < 4) return;
+                lbDragMoved = true;
+
+                if (lbScale > 1.001) {
+                    lbX = lbDrag.px + dx;
+                    lbY = lbDrag.py + dy;
+                    lbClampPan();
+                    lbApply(false);
+                    lightbox.classList.add('dragging');
+                }
+            }
         });
 
-        window.addEventListener('mouseup', () => {
-            isDragging = false;
-            lightboxImg.style.cursor = currentScale > 1 ? 'grab' : 'default';
-        });
+        function lbPointerEnd(e) {
+            if (!lbPointers.has(e.pointerId)) return;
+            lbPointers.delete(e.pointerId);
+            lightbox.classList.remove('dragging');
 
-        /* Поддержка тач-событий для мобильных устройств (перемещение пальцем) */
-        let touchStartDist = 0;
-
-        lightboxImg.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1 && currentScale > 1) {
-                isDragging = true;
-                startX = e.touches[0].clientX - posX;
-                startY = e.touches[0].clientY - posY;
-            } else if (e.touches.length === 2) {
-                isDragging = false;
-                touchStartDist = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
+            if (lbPointers.size === 1) {
+                /* из pinch обратно в перетаскивание оставшимся пальцем */
+                const [p] = [...lbPointers.values()];
+                lbPinch = null;
+                lbDrag = { x: p.x, y: p.y, px: lbX, py: lbY };
+                lbDragMoved = true;
+            } else if (lbPointers.size === 0) {
+                lbDrag = null;
+                lbPinch = null;
+                if (e.type === 'pointerup' && !lbDragMoved) lbHandleTap(e);
             }
-        }, { passive: true });
+        }
 
-        lightboxImg.addEventListener('touchmove', (e) => {
-            if (isDragging && e.touches.length === 1) {
-                posX = e.touches[0].clientX - startX;
-                posY = e.touches[0].clientY - startY;
-                updateTransform();
-            } else if (e.touches.length === 2) {
-                const dist = Math.hypot(
-                    e.touches[0].clientX - e.touches[1].clientX,
-                    e.touches[0].clientY - e.touches[1].clientY
-                );
-                const factor = dist / touchStartDist;
-                currentScale = Math.min(Math.max(1, currentScale * factor), 5);
-                touchStartDist = dist;
-                updateTransform();
+        window.addEventListener('pointerup', lbPointerEnd);
+        window.addEventListener('pointercancel', lbPointerEnd);
+
+        /* Тап/клик без движения: двойной по картинке — зум, одиночный по фону — закрыть */
+        function lbHandleTap(e) {
+            const now = Date.now();
+            const near = Math.hypot(e.clientX - lbLastTap.x, e.clientY - lbLastTap.y) < 30;
+
+            if (e.target === lightboxImg && now - lbLastTap.t < 320 && near) {
+                lbLastTap.t = 0;
+                if (lbScale > 1.001) lbReset(true);
+                else lbZoomAt(e.clientX, e.clientY, LB_DOUBLE_ZOOM, true);
+                return;
             }
-        }, { passive: true });
 
-        lightboxImg.addEventListener('touchend', () => {
-            isDragging = false;
-        });
+            lbLastTap = { t: now, x: e.clientX, y: e.clientY };
+            if (e.target === lightbox) closeLightbox();
+        }
 
-        lightboxImg.addEventListener('dblclick', () => {
-            if (currentScale === 1) {
-                currentScale = 2.5;
-            } else {
-                currentScale = 1;
-                posX = 0;
-                posY = 0;
-            }
-            updateTransform();
+        window.addEventListener('resize', () => {
+            if (!lightbox.classList.contains('active')) return;
+            lbClampPan();
+            lbApply(false);
         });
 
         document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape' && lightbox.classList.contains('active')) {
-                closeLightbox();
+            if (!lightbox.classList.contains('active')) return;
+            const step = 60;
+
+            if (e.key === 'Escape') closeLightbox();
+            else if (e.key === '+' || e.key === '=') lbZoomBtn(1);
+            else if (e.key === '-' || e.key === '_') lbZoomBtn(-1);
+            else if (e.key === '0') lbReset(true);
+            else if (lbScale > 1.001 && e.key.startsWith('Arrow')) {
+                e.preventDefault();
+                if (e.key === 'ArrowLeft') lbX += step;
+                if (e.key === 'ArrowRight') lbX -= step;
+                if (e.key === 'ArrowUp') lbY += step;
+                if (e.key === 'ArrowDown') lbY -= step;
+                lbClampPan();
+                lbApply(true);
             }
         });
 
@@ -1154,7 +1534,7 @@
 
         socket.on('vote_success', (data) => {
             selectedVote = data.category;
-            renderCategories(availableCategories);
+            renderCategories(availableCategories, false);
         });
 
         socket.on('alert', (data) => {
@@ -1237,26 +1617,32 @@
             }
         }
 
-        function renderCategories(categories) {
+        const CHECK_SVG = '<svg class="check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
+
+        function renderCategories(categories, animate = true) {
             const container = document.getElementById('categoriesContainer');
             container.innerHTML = '';
-            
-            categories.forEach((cat, index) => {
+
+            (categories || []).forEach((cat, index) => {
                 const button = document.createElement('button');
+                button.type = 'button';
                 button.className = 'btn-def';
-                button.innerText = cat;
-                button.style.animation = `slideInResult 0.3s ease forwards ${index * 0.05}s`;
-                button.style.opacity = '0';
-                
+
+                if (animate) {
+                    button.classList.add('btn-enter');
+                    button.style.setProperty('--d', `${index * 0.045}s`);
+                }
+
                 if (selectedVote === cat) {
                     button.classList.add('voted');
-                    button.innerText = `✓ ${cat}`;
-                } else {
-                    button.classList.remove('voted');
+                    button.insertAdjacentHTML('afterbegin', CHECK_SVG);
                 }
-                
+
+                const label = document.createElement('span');
+                label.textContent = cat;
+                button.appendChild(label);
+
                 button.onclick = () => submitVote(cat);
-                
                 container.appendChild(button);
             });
         }
@@ -1293,6 +1679,28 @@
         function submitVote(category) {
             socket.emit('submit_vote', { category: category });
         }
+
+        function submitAbstain() {
+            // TODO: подключить API воздержания, например:
+            // socket.emit('submit_abstain');
+            console.info('[poll] «Воздержаться»: API пока не подключён');
+        }
+
+        /* Волна при нажатии на кнопки */
+        document.addEventListener('pointerdown', (e) => {
+            const btn = e.target.closest('.btn-def');
+            if (!btn || btn.disabled) return;
+
+            const rect = btn.getBoundingClientRect();
+            const size = Math.max(rect.width, rect.height) * 2.2;
+            const wave = document.createElement('span');
+            wave.className = 'ripple';
+            wave.style.width = wave.style.height = size + 'px';
+            wave.style.left = (e.clientX - rect.left - size / 2) + 'px';
+            wave.style.top = (e.clientY - rect.top - size / 2) + 'px';
+            btn.appendChild(wave);
+            wave.addEventListener('animationend', () => wave.remove());
+        });
 
         function moderStartRound() {
             selectedVote = null;
