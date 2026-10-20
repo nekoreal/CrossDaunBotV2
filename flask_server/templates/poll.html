@@ -396,72 +396,64 @@
             100% { box-shadow: 0 0 15px rgba(255, 85, 85, 0.6); }
         }
 
-        /* --- КНОПКИ --- */
+        /* Кнопки с бликом */
         .btn-def {
             position: relative;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
+            display: inline-block;
             width: 100%;
-            min-height: 48px;
             padding: 12px 20px;
-            border-radius: 14px;
-            background: linear-gradient(180deg, rgba(255, 255, 255, 0.07), rgba(255, 255, 255, 0.025));
-            color: var(--accent-cyan);
-            border: 1px solid rgba(0, 242, 254, 0.28);
+            border-radius: 12px;
+            background: rgba(255, 255, 255, 0.05);
+            color: #00f2fe;
+            border: 1px solid rgba(0, 242, 254, 0.3);
             text-decoration: none;
             font-size: 0.95rem;
             font-weight: 600;
-            line-height: 1.25;
-            letter-spacing: 0.01em;
             cursor: pointer;
             text-align: center;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
             overflow: hidden;
-            isolation: isolate;
-            -webkit-tap-highlight-color: transparent;
-            transition: transform 0.3s var(--ease-out),
-                        background 0.3s ease,
-                        border-color 0.3s ease,
-                        box-shadow 0.3s ease,
-                        color 0.3s ease;
+        }
+
+        .btn-def::before {
+            content: '';
+            position: absolute;
+            top: 0; left: -100%;
+            width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+            transition: left 0.5s ease;
+        }
+
+        .btn-def:hover:not(:disabled)::before {
+            left: 100%;
         }
 
         .btn-def:hover:not(:disabled) {
-            transform: translateY(-2px);
-            background: linear-gradient(180deg, rgba(0, 242, 254, 0.18), rgba(0, 242, 254, 0.06));
-            border-color: rgba(0, 242, 254, 0.55);
-            box-shadow: 0 10px 24px -8px rgba(0, 242, 254, 0.4);
+            background: rgba(0, 242, 254, 0.15);
+            border-color: rgba(0, 242, 254, 0.6);
+            box-shadow: 0 0 20px rgba(0, 242, 254, 0.25);
         }
 
         .btn-def:active:not(:disabled) {
-            transform: translateY(0) scale(0.97);
-            box-shadow: none;
-            transition-duration: 0.1s;
-        }
-
-        .btn-def:focus-visible {
-            outline: 2px solid var(--accent-cyan);
-            outline-offset: 2px;
+            transform: scale(0.98);
         }
 
         .btn-def.voted {
-            background: linear-gradient(180deg, rgba(0, 230, 118, 0.22), rgba(0, 230, 118, 0.08));
+            background: rgba(0, 230, 118, 0.15);
             border-color: var(--success);
             color: var(--success);
-            box-shadow: 0 6px 20px -8px rgba(0, 230, 118, 0.5);
+            box-shadow: 0 0 10px rgba(0, 230, 118, 0.1);
         }
 
-        .btn-def .check {
-            width: 18px;
-            height: 18px;
-            flex-shrink: 0;
-            fill: none;
-            stroke: currentColor;
-            stroke-width: 3;
-            stroke-linecap: round;
-            stroke-linejoin: round;
-            animation: checkPop 0.45s var(--ease-spring);
+        /* Появление кнопок: fill-mode backwards, чтобы потом работали hover/active */
+        .btn-enter {
+            animation: btnIn 0.3s ease backwards;
+            animation-delay: var(--d, 0s);
+        }
+
+        @keyframes btnIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
         }
 
         @keyframes checkPop {
@@ -469,52 +461,17 @@
             to { transform: scale(1) rotate(0); opacity: 1; }
         }
 
-        /* Появление кнопок: fill-mode backwards, чтобы потом работали hover/active */
-        .btn-enter {
-            animation: btnIn 0.5s var(--ease-out) backwards;
-            animation-delay: var(--d, 0s);
-        }
-
-        @keyframes btnIn {
-            from { opacity: 0; transform: translateY(10px) scale(0.96); }
-            to { opacity: 1; transform: translateY(0) scale(1); }
-        }
-
-        /* Волна при нажатии */
-        .ripple {
-            position: absolute;
-            border-radius: 50%;
-            background: currentColor;
-            opacity: 0.22;
-            pointer-events: none;
-            z-index: -1;
-            transform: scale(0);
-            animation: rippleAnim 0.65s var(--ease-out) forwards;
-        }
-
-        @keyframes rippleAnim {
-            to { transform: scale(1); opacity: 0; }
-        }
-
-        /* Кнопка «Воздержаться» — спокойная, чтобы не конкурировать с категориями */
+        /* Кнопка «Воздержаться» — в том же стиле, но спокойнее */
         .btn-abstain {
-            min-height: 46px;
-            background: transparent;
             color: var(--text-muted);
-            border: 1px dashed rgba(255, 255, 255, 0.2);
-            font-weight: 500;
+            border-color: rgba(255, 255, 255, 0.2);
         }
 
         .btn-abstain:hover:not(:disabled) {
-            transform: translateY(-1px);
             color: var(--warning);
-            background: rgba(255, 183, 3, 0.08);
+            background: rgba(255, 183, 3, 0.1);
             border-color: rgba(255, 183, 3, 0.55);
-            box-shadow: 0 10px 24px -10px rgba(255, 183, 3, 0.35);
-        }
-
-        .btn-abstain:focus-visible {
-            outline-color: var(--warning);
+            box-shadow: 0 0 20px rgba(255, 183, 3, 0.2);
         }
 
         .vote-actions {
@@ -537,10 +494,8 @@
             font-weight: 600;
             cursor: pointer;
             text-align: center;
-            transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, transform 0.2s var(--ease-out);
+            transition: all 0.25s ease;
         }
-
-        .btn-logout:active { transform: scale(0.98); }
 
         .btn-logout:hover {
             background: rgba(255, 85, 85, 0.15);
@@ -588,8 +543,15 @@
             height: 100%;
             max-height: 380px;
             object-fit: contain;
-            transition: opacity 0.4s ease, transform 0.5s var(--ease-out);
+            transition: opacity 0.6s var(--ease-out), filter 0.6s var(--ease-out), transform 0.7s var(--ease-out);
             cursor: zoom-in;
+        }
+
+        /* Состояние «фото сменяется»: размыто и прозрачно, затем плавно проявляется */
+        .photo-container img.photo-loading {
+            opacity: 0;
+            filter: blur(14px);
+            transform: scale(1.04);
         }
 
         .photo-container::after {
@@ -781,8 +743,6 @@
             gap: 10px;
             margin-top: 12px;
         }
-
-        .categories-grid .btn-def { min-height: 56px; }
 
         /* Результаты */
         .results-list {
@@ -1016,7 +976,7 @@
             .categories-grid { gap: 8px; }
 
             .btn-def {
-                padding: 12px 14px;
+                padding: 14px 16px;
                 font-size: 1rem;
             }
 
@@ -1545,6 +1505,33 @@
             window.location.href = data.url;
         });
 
+        /* Смена фото: старое растворяется, новое загружается в фоне и проявляется из размытия */
+        function setPhoto(img, url) {
+            url = url || '';
+            if (img.dataset.url === url) return;
+            img.dataset.url = url;
+
+            if (!url) {
+                img.src = '';
+                return;
+            }
+
+            img.classList.add('photo-loading');
+
+            const reveal = () => {
+                if (img.dataset.url !== url) return; // пришло более новое фото
+                img.src = url;
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    if (img.dataset.url === url) img.classList.remove('photo-loading');
+                }));
+            };
+
+            const loader = new Image();
+            loader.onload = reveal;
+            loader.onerror = reveal;
+            loader.src = url;
+        }
+
         function updatePollUI(state) {
             document.getElementById('votedCount').innerText = state.voted;
             document.getElementById('totalUsers').innerText = state.total;
@@ -1574,14 +1561,14 @@
                 stopTimer();
             } else if (state.status === 'in_progress') {
                 activeScreen = document.getElementById('screenVoting');
-                document.getElementById('votingPhoto').src = state.photo_url || '';
+                setPhoto(document.getElementById('votingPhoto'), state.photo_url);
 
                 renderPhotoMeta('voting', state.photo_author, state.edit_date);
                 renderCategories(state.categories);
                 startTimer(state.end_time);  
             } else if (state.status === 'results' || state.status === 'decision') {
                 activeScreen = document.getElementById('screenResults');
-                document.getElementById('resultPhoto').src = state.photo_url || '';
+                setPhoto(document.getElementById('resultPhoto'), state.photo_url);
 
                 renderPhotoMeta('result', state.photo_author, state.edit_date);
                 renderResults(state.results);
@@ -1617,8 +1604,6 @@
             }
         }
 
-        const CHECK_SVG = '<svg class="check" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>';
-
         function renderCategories(categories, animate = true) {
             const container = document.getElementById('categoriesContainer');
             container.innerHTML = '';
@@ -1635,12 +1620,10 @@
 
                 if (selectedVote === cat) {
                     button.classList.add('voted');
-                    button.insertAdjacentHTML('afterbegin', CHECK_SVG);
+                    button.innerText = `✓ ${cat}`;
+                } else {
+                    button.innerText = cat;
                 }
-
-                const label = document.createElement('span');
-                label.textContent = cat;
-                button.appendChild(label);
 
                 button.onclick = () => submitVote(cat);
                 container.appendChild(button);
@@ -1685,22 +1668,6 @@
             // socket.emit('submit_abstain');
             console.info('[poll] «Воздержаться»: API пока не подключён');
         }
-
-        /* Волна при нажатии на кнопки */
-        document.addEventListener('pointerdown', (e) => {
-            const btn = e.target.closest('.btn-def');
-            if (!btn || btn.disabled) return;
-
-            const rect = btn.getBoundingClientRect();
-            const size = Math.max(rect.width, rect.height) * 2.2;
-            const wave = document.createElement('span');
-            wave.className = 'ripple';
-            wave.style.width = wave.style.height = size + 'px';
-            wave.style.left = (e.clientX - rect.left - size / 2) + 'px';
-            wave.style.top = (e.clientY - rect.top - size / 2) + 'px';
-            btn.appendChild(wave);
-            wave.addEventListener('animationend', () => wave.remove());
-        });
 
         function moderStartRound() {
             selectedVote = null;
