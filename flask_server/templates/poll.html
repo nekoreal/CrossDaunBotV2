@@ -754,42 +754,32 @@
 
         /* --- КТО УЖЕ ПРОГОЛОСОВАЛ --- */
         .voters-panel {
+            position: relative;
             margin: 4px 0 16px;
-            padding: 12px 14px 14px;
+            padding: 14px;
             background: rgba(255, 255, 255, 0.03);
             border: 1px solid rgba(255, 255, 255, 0.08);
             border-radius: 14px;
         }
 
-        .voters-head {
-            display: flex;
-            justify-content: space-between;
-            align-items: baseline;
-            font-size: 0.85rem;
-            color: var(--text-muted);
-            margin-bottom: 8px;
-        }
-
-        .voters-head b {
-            color: var(--accent-cyan);
-            font-variant-numeric: tabular-nums;
-        }
-
-        .voters-progress {
-            height: 3px;
-            border-radius: 2px;
-            background: rgba(255, 255, 255, 0.08);
-            overflow: hidden;
-            margin-bottom: 12px;
-        }
-
-        .voters-progress span {
-            display: block;
+        /* Бордер-прогресс: поверх обычной рамки рисуется дуга, которая заполняется по периметру */
+        .voters-ring {
+            position: absolute;
+            inset: 0;
+            width: 100%;
             height: 100%;
-            width: 0;
-            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
-            border-radius: 2px;
-            transition: width 0.6s var(--ease-out);
+            overflow: visible;
+            pointer-events: none;
+            filter: drop-shadow(0 0 4px rgba(0, 242, 254, 0.45));
+        }
+
+        .voters-ring rect {
+            fill: none;
+            stroke: url(#votersGrad);
+            stroke-width: 2;
+            stroke-dasharray: 100 100;
+            stroke-dashoffset: 100;
+            transition: stroke-dashoffset 0.7s var(--ease-out);
         }
 
         .voters-list {
@@ -1124,7 +1114,7 @@
 
             .categories-grid { gap: 8px; }
 
-            .voters-panel { padding: 10px 12px 12px; margin-bottom: 12px; }
+            .voters-panel { padding: 12px; margin-bottom: 12px; }
             .voters-list { gap: 8px; }
             .voter, .voter-more { width: 34px; height: 34px; }
 
@@ -1231,11 +1221,15 @@
 
             <!-- Кто уже выбрал: аватарки (выбор остальных не раскрывается) -->
             <div id="votersPanel" class="voters-panel hidden">
-                <div class="voters-head">
-                    <span>Уже выбрали</span>
-                    <span id="votersCount"><b>0</b> из 0</span>
-                </div>
-                <div class="voters-progress"><span id="votersProgressBar"></span></div>
+                <svg class="voters-ring" aria-hidden="true">
+                    <defs>
+                        <linearGradient id="votersGrad" x1="0" y1="0" x2="1" y2="0">
+                            <stop offset="0" stop-color="#00f2fe"/>
+                            <stop offset="1" stop-color="#9d4edd"/>
+                        </linearGradient>
+                    </defs>
+                    <rect id="votersBorder" x="0" y="0" width="100%" height="100%" rx="13" ry="13" pathLength="100"/>
+                </svg>
                 <div id="votersList" class="voters-list"></div>
             </div>
 
@@ -1440,10 +1434,10 @@
 
             panel.classList.toggle('hidden', list.length === 0);
 
+            /* Бордер заполняется по периметру пропорционально числу проголосовавших */
             const doneCount = list.filter(p => p.voted).length;
-            document.getElementById('votersCount').innerHTML = `<b>${doneCount}</b> из ${list.length}`;
-            document.getElementById('votersProgressBar').style.width =
-                list.length ? `${Math.round(doneCount / list.length * 100)}%` : '0%';
+            const percent = list.length ? Math.round(doneCount / list.length * 100) : 0;
+            document.getElementById('votersBorder').style.strokeDashoffset = 100 - percent;
 
             /* Ключ = имя + фото + порядковый номер повтора, чтобы обновлять аватарки на месте, а не пересоздавать */
             const seen = new Map();
