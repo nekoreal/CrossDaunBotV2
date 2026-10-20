@@ -474,6 +474,22 @@
             box-shadow: 0 0 20px rgba(255, 183, 3, 0.2);
         }
 
+        .btn-abstain.is-active {
+            color: var(--warning);
+            background: rgba(255, 183, 3, 0.15);
+            border-color: var(--warning);
+            box-shadow: 0 0 10px rgba(255, 183, 3, 0.12);
+        }
+
+        .abstained-info {
+            text-align: center;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin: -4px 0 8px;
+        }
+
+        .abstained-info b { color: var(--warning); }
+
         .vote-actions {
             display: flex;
             margin-top: 14px;
@@ -736,6 +752,139 @@
             .hint-touch { display: inline; }
         }
 
+        /* --- КТО УЖЕ ПРОГОЛОСОВАЛ --- */
+        .voters-panel {
+            margin: 4px 0 16px;
+            padding: 12px 14px 14px;
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 14px;
+        }
+
+        .voters-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            font-size: 0.85rem;
+            color: var(--text-muted);
+            margin-bottom: 8px;
+        }
+
+        .voters-head b {
+            color: var(--accent-cyan);
+            font-variant-numeric: tabular-nums;
+        }
+
+        .voters-progress {
+            height: 3px;
+            border-radius: 2px;
+            background: rgba(255, 255, 255, 0.08);
+            overflow: hidden;
+            margin-bottom: 12px;
+        }
+
+        .voters-progress span {
+            display: block;
+            height: 100%;
+            width: 0;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            border-radius: 2px;
+            transition: width 0.6s var(--ease-out);
+        }
+
+        .voters-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .voter {
+            position: relative;
+            width: 38px;
+            height: 38px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            transition: transform 0.25s var(--ease-out);
+        }
+
+        .voter:hover { transform: translateY(-2px); }
+
+        .voter .av {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            object-fit: cover;
+            background: #1b2130;
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            font-weight: 700;
+            border: 2px dashed rgba(255, 255, 255, 0.22);
+            filter: grayscale(1);
+            opacity: 0.5;
+            transition: filter 0.5s ease, opacity 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+        }
+
+        .voter.done .av {
+            filter: none;
+            opacity: 1;
+            border: 2px solid var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(0, 242, 254, 0.35);
+        }
+
+        .voter-ok {
+            position: absolute;
+            right: -4px;
+            bottom: -4px;
+            width: 17px;
+            height: 17px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--success);
+            color: #04120a;
+            font-size: 10px;
+            font-weight: 900;
+            line-height: 1;
+            border: 2px solid #12161f;
+            transform: scale(0);
+            transition: transform 0.4s var(--ease-spring);
+        }
+
+        .voter.done .voter-ok { transform: scale(1); }
+
+        .voter.voter-enter { animation: voterIn 0.4s var(--ease-out) backwards; }
+        .voter.just-voted { animation: voterPop 0.55s var(--ease-spring); }
+
+        @keyframes voterIn {
+            from { opacity: 0; transform: scale(0.6); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes voterPop {
+            0% { transform: scale(0.85); }
+            55% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .voter-more {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 38px;
+            height: 38px;
+            flex-shrink: 0;
+            border-radius: 50%;
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.06);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+        }
+
         /* Сетка категорий */
         .categories-grid {
             display: grid;
@@ -975,6 +1124,10 @@
 
             .categories-grid { gap: 8px; }
 
+            .voters-panel { padding: 10px 12px 12px; margin-bottom: 12px; }
+            .voters-list { gap: 8px; }
+            .voter, .voter-more { width: 34px; height: 34px; }
+
             .btn-def {
                 padding: 14px 16px;
                 font-size: 1rem;
@@ -1076,6 +1229,16 @@
                 <span id="votingDateSpan" class="hidden">📅 <span id="votingPhotoDate" class="meta-date">—</span></span>
             </div>
 
+            <!-- Кто уже выбрал: аватарки (выбор остальных не раскрывается) -->
+            <div id="votersPanel" class="voters-panel hidden">
+                <div class="voters-head">
+                    <span>Уже выбрали</span>
+                    <span id="votersCount"><b>0</b> из 0</span>
+                </div>
+                <div class="voters-progress"><span id="votersProgressBar"></span></div>
+                <div id="votersList" class="voters-list"></div>
+            </div>
+
             <p style="text-align: center; color: var(--text-muted); font-size: 0.9rem; margin-bottom: 10px;">
                 Выберите подходящую категорию для этого изображения:
             </p>
@@ -1111,6 +1274,10 @@
 
             <div class="results-list" id="resultsList">
                 <!-- Результаты рендерятся из JS -->
+            </div>
+
+            <div id="abstainedInfo" class="abstained-info hidden">
+                Воздержались: <b id="abstainedCount">0</b>
             </div>
 
             <!-- Блок модератора --> 
@@ -1228,6 +1395,115 @@
                 if (localStorage.getItem('pollHistoryCollapsed') === '1') toggleHistory(true);
             } catch (e) {}
         })();
+
+        /* --- КТО УЖЕ ПРОГОЛОСОВАЛ: АВАТАРКИ --- */
+        const MAX_VOTERS_SHOWN = 24;
+        const voterEls = new Map();
+        let voterMoreEl = null;
+
+        function makeInitialAvatar(name) {
+            const d = document.createElement('div');
+            d.className = 'av';
+            d.textContent = ([...String(name || '?').trim()][0] || '?').toUpperCase();
+            return d;
+        }
+
+        function createVoterEl(p) {
+            const el = document.createElement('div');
+            el.className = 'voter voter-enter pending';
+            el.addEventListener('animationend', () => el.classList.remove('voter-enter', 'just-voted'));
+
+            let avatar;
+            if (p.photo_url) {
+                avatar = document.createElement('img');
+                avatar.className = 'av';
+                avatar.alt = '';
+                avatar.src = p.photo_url;
+                avatar.onerror = () => avatar.replaceWith(makeInitialAvatar(p.name));
+            } else {
+                avatar = makeInitialAvatar(p.name);
+            }
+
+            const ok = document.createElement('span');
+            ok.className = 'voter-ok';
+            ok.textContent = '✓';
+
+            el.appendChild(avatar);
+            el.appendChild(ok);
+            return el;
+        }
+
+        function renderParticipants(list) {
+            const panel = document.getElementById('votersPanel');
+            const listEl = document.getElementById('votersList');
+            if (!panel || !listEl || !Array.isArray(list)) return;
+
+            panel.classList.toggle('hidden', list.length === 0);
+
+            const doneCount = list.filter(p => p.voted).length;
+            document.getElementById('votersCount').innerHTML = `<b>${doneCount}</b> из ${list.length}`;
+            document.getElementById('votersProgressBar').style.width =
+                list.length ? `${Math.round(doneCount / list.length * 100)}%` : '0%';
+
+            /* Ключ = имя + фото + порядковый номер повтора, чтобы обновлять аватарки на месте, а не пересоздавать */
+            const seen = new Map();
+            const items = list.map(p => {
+                const base = `${p.name}|${p.photo_url || ''}`;
+                const n = (seen.get(base) || 0) + 1;
+                seen.set(base, n);
+                return { key: `${base}#${n}`, p };
+            });
+
+            const visible = items.slice(0, MAX_VOTERS_SHOWN);
+            const visibleKeys = new Set(visible.map(i => i.key));
+
+            for (const [key, el] of [...voterEls]) {
+                if (!visibleKeys.has(key)) {
+                    el.remove();
+                    voterEls.delete(key);
+                }
+            }
+
+            visible.forEach(({ key, p }, idx) => {
+                let el = voterEls.get(key);
+                const isNew = !el;
+                if (isNew) {
+                    el = createVoterEl(p);
+                    voterEls.set(key, el);
+                }
+
+                const wasDone = el.classList.contains('done');
+                el.classList.toggle('done', !!p.voted);
+                el.classList.toggle('pending', !p.voted);
+                el.title = `${p.name} — ${p.voted ? 'уже выбрал(а)' : 'ещё выбирает…'}`;
+
+                if (p.voted && !wasDone && !isNew) {
+                    el.classList.remove('voter-enter', 'just-voted');
+                    void el.offsetWidth;
+                    el.classList.add('just-voted');
+                }
+
+                /* двигаем узел только если он стоит не на своём месте (иначе перезапустятся анимации) */
+                if (listEl.children[idx] !== el) {
+                    listEl.insertBefore(el, listEl.children[idx] || null);
+                }
+            });
+
+            const extra = items.length - visible.length;
+            if (extra > 0) {
+                if (!voterMoreEl) {
+                    voterMoreEl = document.createElement('div');
+                    voterMoreEl.className = 'voter-more';
+                }
+                voterMoreEl.textContent = `+${extra}`;
+                voterMoreEl.title = `Ещё участников: ${extra}`;
+                if (voterMoreEl.parentNode !== listEl || listEl.lastChild !== voterMoreEl) {
+                    listEl.appendChild(voterMoreEl);
+                }
+            } else if (voterMoreEl && voterMoreEl.parentNode) {
+                voterMoreEl.remove();
+            }
+        }
 
         /* --- ВЫВОД МЕТАДАННЫХ ФОТО --- */
         function renderPhotoMeta(prefix, author, date) {
@@ -1490,10 +1766,18 @@
         socket.on('update_voted_count', (data) => {
             document.getElementById('votedCount').innerText = data.voted;
             document.getElementById('totalUsers').innerText = data.total;
+            if (data.participants) renderParticipants(data.participants);
         });
 
         socket.on('vote_success', (data) => {
             selectedVote = data.category;
+            setAbstained(false);
+            renderCategories(availableCategories, false);
+        });
+
+        socket.on('abstain_success', () => {
+            selectedVote = null;
+            setAbstained(true);
             renderCategories(availableCategories, false);
         });
 
@@ -1535,6 +1819,7 @@
         function updatePollUI(state) {
             document.getElementById('votedCount').innerText = state.voted;
             document.getElementById('totalUsers').innerText = state.total;
+            if (state.participants) renderParticipants(state.participants);
             
             if (state.round !== undefined) {
                 document.getElementById('roundNumber').innerText = state.round;
@@ -1545,6 +1830,7 @@
             
             if (state.status === 'in_progress' || state.status === 'waiting') {
                 selectedVote = state.user_vote || null;
+                setAbstained(!!state.user_abstained);
             }
 
             const screens = [
@@ -1573,6 +1859,11 @@
                 renderPhotoMeta('result', state.photo_author, state.edit_date);
                 renderResults(state.results);
                 stopTimer();
+
+                const abstainedInfo = document.getElementById('abstainedInfo');
+                const abstainedN = state.abstained || 0;
+                document.getElementById('abstainedCount').innerText = abstainedN;
+                abstainedInfo.classList.toggle('hidden', abstainedN === 0);
 
                 const decisionBanner = document.getElementById('decisionBanner');
                 const decisionCategoryText = document.getElementById('decisionCategoryText');
@@ -1664,9 +1955,14 @@
         }
 
         function submitAbstain() {
-            // TODO: подключить API воздержания, например:
-            // socket.emit('submit_abstain');
-            console.info('[poll] «Воздержаться»: API пока не подключён');
+            socket.emit('submit_abstain');
+        }
+
+        function setAbstained(active) {
+            const btn = document.getElementById('btnAbstain');
+            if (!btn) return;
+            btn.classList.toggle('is-active', active);
+            btn.innerText = active ? '✓ Воздержаться' : 'Воздержаться';
         }
 
         function moderStartRound() {

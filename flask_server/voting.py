@@ -24,6 +24,12 @@ class User:
     photo_url: str
     is_moder: bool
     vote: str = None
+    abstained: bool = False  # воздержался (голос не отдан ни одной категории)
+
+    @property
+    def has_voted(self) -> bool:
+        """Пользователь сделал выбор: проголосовал за категорию или воздержался."""
+        return self.vote is not None or self.abstained
 
 
 @dataclass
@@ -57,8 +63,9 @@ class Poll:
         with self._lock:
             for ind, user in enumerate(self.users):
                 if user.sid == sid:
-                    if user.vote:
+                    if user.has_voted:
                         self.voted_counts = max(0, self.voted_counts - 1)
+                    if user.vote:
                         for cat in self.categories:
                             if cat.name == user.vote:
                                 cat.votes = max(0, cat.votes - 1)
@@ -122,6 +129,7 @@ class Poll:
             
             for user in self.users:
                 user.vote = None
+                user.abstained = False
                 
             self.update_categories()
             self.round += 1
@@ -138,19 +146,42 @@ class Poll:
                 if user.tg_id == tg_id: 
                     if category_name not in [cat.name for cat in self.categories]:
                         return False
-                    if user.vote is None:
+                    if not user.has_voted:
                         self.voted_counts += 1
-                    else:
+                    elif user.vote is not None:
+                        # менял категорию: снимаем голос со старой
                         for category in self.categories:
                             if category.name == user.vote:
                                 category.votes -= 1
                                 break
                     user.vote = category_name
+                    user.abstained = False  # выбрал категорию: воздержание снимается
                     for category in self.categories:
                         if category.name == category_name:
                             category.votes += 1
                             break
                     return True 
+            return False
+
+    def abstain(self, tg_id: int) -> bool:
+        """Воздержаться: засчитывается в voted/total, но не попадает в results."""
+        with self._lock:
+            if self.status != "in_progress":
+                return False
+
+            for user in self.users:
+                if user.tg_id == tg_id:
+                    if not user.has_voted:
+                        self.voted_counts += 1
+                    elif user.vote is not None:
+                        # передумал: снимаем голос с категории
+                        for category in self.categories:
+                            if category.name == user.vote:
+                                category.votes = max(0, category.votes - 1)
+                                break
+                    user.vote = None
+                    user.abstained = True
+                    return True
             return False
 
     def end_round(self):
@@ -162,7 +193,7 @@ class Poll:
             results = {cat.name: {"count": cat.votes, "photo_urls": []} for cat in self.categories if cat.votes > 0}
             
             self.winning_category = None
-            max_votes = -1
+            max_votes = 0
 
             for cat in self.categories:
                 if cat.votes > max_votes:
@@ -208,6 +239,20 @@ class Poll:
     def is_voter(self, tg_id: int) -> bool:
         return any(user.tg_id == tg_id for user in self.users)
 
+    def participants_state(self) -> list[dict]:
+        """Публичный список участников: кто уже сделал выбор. Сам выбор не раскрывается."""
+        return [
+            {"name": u.username, "photo_url": u.photo_url, "voted": u.has_voted}
+            for u in list(self.users)
+        ]
+
+    def user_state(self, tg_id: int) -> dict:
+        """Личное состояние пользователя (подсветка выбора после перезагрузки страницы)."""
+        for user in self.users:
+            if user.tg_id == tg_id:
+                return {"user_vote": user.vote, "user_abstained": user.abstained}
+        return {"user_vote": None, "user_abstained": False}
+
     def data_poll_state(self) -> dict:
         return { 
             "unsorted_count":get_count_unsorted(),
@@ -219,6 +264,8 @@ class Poll:
             "edit_date": self.edit_date,
             "categories": [c.name for c in self.categories],
             "voted": self.voted_counts,
+            "abstained": sum(1 for u in self.users if u.abstained),
+            "participants": self.participants_state(),
             "total": len(self.users),
             "results": self.results,
             "end_time": self.end_time  # Передаем точное время окончания
@@ -235,6 +282,23 @@ def handle_end_round(round_num: int, timeout: int = 60):
     socketio.sleep(timeout)
     if poll.round == round_num and poll.status == "in_progress":
         poll.end_round()
+
+
+def _emit_voted_count():
+    """Рассылает всем счётчик и актуальный список участников (аватарки: выбрал / ещё нет)."""
+    socketio.emit("update_voted_count", {
+        "voted": poll.voted_counts,
+        "total": len(poll.users),
+        "participants": poll.participants_state()
+    })
+
+
+def _finish_if_all_voted():
+    """Завершает раунд, если все сделали выбор (голос или воздержание), иначе обновляет счётчик."""
+    if len(poll.users) > 0 and poll.voted_counts >= len(poll.users):
+        poll.end_round()
+    else:
+        _emit_voted_count()
 
 
 @voting_bp.route("/poll")
@@ -294,11 +358,10 @@ def handle_join():
         except Exception:
             pass
 
-    emit("poll_state", poll.data_poll_state())
-    socketio.emit("update_voted_count", {
-        "voted": poll.voted_counts,
-        "total": len(poll.users)
-    })
+    state = poll.data_poll_state()
+    state.update(poll.user_state(tg_id))
+    emit("poll_state", state)
+    _emit_voted_count()
 
 
 @socketio.on("disconnect")
@@ -315,10 +378,7 @@ def handle_disconnect():
         if should_end:
             poll.end_round()
         else: 
-            socketio.emit("update_voted_count", {
-                "voted": poll.voted_counts,
-                "total": len(poll.users)
-            })
+            _emit_voted_count()
 
 
 @socketio.on("submit_vote")
@@ -333,15 +393,23 @@ def handle_vote(data):
 
     if poll.vote(tg_id, category_name):
         emit("vote_success", {"category": category_name})
-        if poll.voted_counts >= len(poll.users) and len(poll.users) > 0:
-            poll.end_round()
-        else:
-            socketio.emit("update_voted_count", {
-                "voted": poll.voted_counts,
-                "total": len(poll.users)
-            })
+        _finish_if_all_voted()
     else:
         emit("alert", {"message": "Не удалось засчитать голос"})
+
+
+@socketio.on("submit_abstain")
+def handle_abstain(data=None):
+    user_data = session.get("user")
+    if not user_data or poll.status != "in_progress":
+        emit("alert", {"message": "Голосование недоступно"})
+        return
+
+    if poll.abstain(user_data.get("id")):
+        emit("abstain_success")
+        _finish_if_all_voted()
+    else:
+        emit("alert", {"message": "Не удалось засчитать воздержание"})
 
 
 @socketio.on("moder_start_round")
