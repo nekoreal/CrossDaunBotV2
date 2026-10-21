@@ -19,6 +19,8 @@ from telegram_bot.tg_db.db_controllers.poker_controller import (
     buy_skin,
     get_settings,
     save_settings,
+    create_skin,
+    random_gallery_photo_ids,
 )
 from flask_server.dashboard import socketio
 
@@ -28,6 +30,8 @@ RUNOUT_DELAY = 1.3      # пауза между улицами, когда вс�
 DISCONNECT_GRACE = 25   # сек на переподключение, потом игрока убирают из-за стола
 MAX_TIMEOUTS = 2        # столько автоходов подряд — и игрок убирается из-за стола
 STD_SKINS = {"classic": "Классика", "four": "4 цвета", "neon": "Неон", "gold": "Золото"}
+GALLERY_BACK_NAME = "🎲 Случайное фото из галереи"
+GALLERY_BACK_PRICE = 5000
 ADMIN_IDS = {ADMIN_ID, POKER_MODER_ID}  # модер голосования к покеру доступа не имеет
 
 # настройки из админ-панели: ключ -> (по умолчанию, мин, макс, подпись)
@@ -117,6 +121,7 @@ class Player:
     photo_url: str
     stack: int
     back_skin: str = "classic"
+    gallery_photo: int | None = None   # задник «случайное фото»: фото на текущую раздачу
     ready: bool = False
     cards: list = field(default_factory=list)
     bet: int = 0
@@ -189,11 +194,23 @@ class Table:
     def skins(self) -> dict[int, dict]:
         if self._skins is None:
             try:
-                self._skins = {sk["id"]: sk for sk in get_all_skins()}
+                skins = {sk["id"]: sk for sk in get_all_skins()}
+                if not any(sk["data"].get("special") == "gallery" for sk in skins.values()):
+                    # системный задник: каждую раздачу — случайное фото из галереи
+                    sk = create_skin("back", GALLERY_BACK_NAME, GALLERY_BACK_PRICE, {"special": "gallery"})
+                    skins[sk["id"]] = sk
+                self._skins = skins
             except Exception as e:
                 print(f"Покер: не удалось загрузить скины: {e}")
                 return {}
         return self._skins
+
+    def is_gallery_back(self, key) -> bool:
+        try:
+            sk = self.skins.get(int(key))
+        except (TypeError, ValueError):
+            return False
+        return bool(sk) and sk["data"].get("special") == "gallery"
 
     def reload_skins(self):
         self._skins = None
@@ -211,10 +228,18 @@ class Table:
             return {"key": "classic"}
         url = lambda part: f"/poker/skin_img/{sk['id']}/{part}"
         if kind == "back":
+            if sk["data"].get("special") == "gallery":
+                return {"key": key, "special": "gallery"}
             return {"key": key, "image": url("back")}
         data = sk["data"]
         return {"key": key, "bg": data.get("bg"), "colors": data.get("colors", {}),
                 "images": {r: url(r) for r in data.get("images", {})}}
+
+    def back_desc(self, p: Player) -> dict:
+        desc = self.skin_desc(p.back_skin, "back")
+        if desc.get("special") == "gallery" and p.gallery_photo:
+            desc = {**desc, "image": f"/poker/gallery_photo/{p.gallery_photo}?card=1"}
+        return desc
 
     def can_use_skin(self, tg_id, kind: str, key: str) -> bool:
         if key in STD_SKINS:
@@ -447,6 +472,18 @@ class Table:
             p.ready = True
             p.last = ""
         self.hand = players
+        # задник «случайное фото»: каждому такому игроку — своё фото на эту раздачу
+        lucky = [p for p in players if self.is_gallery_back(p.back_skin)]
+        for p in players:
+            p.gallery_photo = None
+        if lucky:
+            try:
+                ids = random_gallery_photo_ids(len(lucky))
+            except Exception as e:
+                print(f"Покер: не удалось выбрать фото галереи: {e}")
+                ids = []
+            for i, p in enumerate(lucky):
+                p.gallery_photo = ids[i % len(ids)] if ids else None
 
         n = len(players)
         self.dealer_idx = (self.dealer_idx + 1) % n
@@ -672,7 +709,7 @@ class Table:
             "offline_until": (self.offline_since[p.tg_id] + DISCONNECT_GRACE) if p.tg_id in self.offline_since else None,
                 "last_action": p.last if in_hand else "", "is_dealer": p is dealer,
                 "cards": p.cards if show else None,
-                "back_skin": self.skin_desc(p.back_skin, "back"),
+                "back_skin": self.back_desc(p),
             })
         to_act = str(self.hand[self.cur].tg_id) if self.status == "betting" and self.deadline else None
         return {

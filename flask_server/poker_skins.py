@@ -14,6 +14,8 @@ from telegram_bot.bot import bot
 from telegram_bot.tg_db.db_controllers.poker_controller import (
     create_skin, update_skin, delete_skin, get_owned_skin_ids, list_users_chips,
 )
+from telegram_bot.tg_db.db_controllers.photo_controller import get_photo_by_id
+from telegram_bot.tg_db.db_controllers.user_controller import find_user_by_tg_id
 from flask_server.dashboard import socketio
 from flask_server.poker import poker_bp, table, is_admin, STD_SKINS, SETTINGS_SPEC
 
@@ -91,7 +93,9 @@ def _remove_files(keys):
 
 def _skin_keys(skin: dict) -> list[str]:
     data = skin["data"]
-    return [data["image"]] if skin["kind"] == "back" else list(data.get("images", {}).values())
+    if skin["kind"] == "back":
+        return [data["image"]] if "image" in data else []
+    return list(data.get("images", {}).values())
 
 
 def _skin_row(sk: dict, owned: set, selected: dict) -> dict:
@@ -128,6 +132,41 @@ def skin_image(skin_id: int, part: str):
             while len(_img_cache) > 400:
                 _img_cache.popitem(last=False)
     return Response(data, mimetype="image/webp", headers={"Cache-Control": "public, max-age=604800, immutable"})
+
+
+# ---------- фото из галереи: источник для скинов и задник «случайное фото» ----------
+_gallery_cache: "OrderedDict[str, bytes]" = OrderedDict()
+
+
+@poker_bp.route("/poker/gallery_photo/<int:photo_id>")
+def gallery_photo(photo_id: int):
+    """?card=1 — обрезано под карту (задник), иначе — уменьшенное целиком (для редактора скинов)."""
+    card = request.args.get("card") == "1"
+    key = f"{photo_id}:{int(card)}"
+    with _img_cache_lock:
+        data = _gallery_cache.get(key)
+        if data:
+            _gallery_cache.move_to_end(key)
+    if data is None:
+        photo = get_photo_by_id(photo_id)
+        if not photo:
+            abort(404)
+        try:
+            img = ImageOps.exif_transpose(Image.open(io.BytesIO(photo["file_bytes"]))).convert("RGB")
+        except Exception:
+            abort(404)
+        if card:
+            img = ImageOps.fit(img, CARD_SIZE, Image.Resampling.LANCZOS)
+        else:
+            img.thumbnail((1400, 1400), Image.Resampling.LANCZOS)
+        out = io.BytesIO()
+        img.save(out, "WEBP", quality=85)
+        data = out.getvalue()
+        with _img_cache_lock:
+            _gallery_cache[key] = data
+            while len(_gallery_cache) > 300:
+                _gallery_cache.popitem(last=False)
+    return Response(data, mimetype="image/webp", headers={"Cache-Control": "public, max-age=86400"})
 
 
 # ---------- магазин ----------
@@ -280,6 +319,9 @@ def admin_create_skin():
 def admin_edit_skin(skin_id: int):
     _require_admin()
     if request.method == "DELETE":
+        with table.lock:
+            if table.is_gallery_back(skin_id):
+                return _err("Системный скин нельзя удалить — можно скрыть или поменять цену")
         sk = delete_skin(skin_id)
         if not sk:
             return _err("Нет такого скина", 404)
@@ -362,13 +404,9 @@ def _warm_user_info(ids):
         _warming = False
 
 
-@poker_bp.route("/poker/admin/users")
-def admin_users():
-    """Пользователи с фишками; q — поиск по id, username или имени."""
+def _users_with_names(rows):
+    """Добавляет к (tg_id, фишки) имена из кэша; устаревшие подтягиваются в фоне."""
     global _warming
-    _require_admin()
-    q = (request.args.get("q") or "").strip().lower().lstrip("@")
-    rows = list_users_chips()
     with _info_lock:
         stale = [t for t, _ in rows if t not in _user_info or time.time() - _user_info[t]["at"] >= USER_INFO_TTL]
         info = dict(_user_info)
@@ -376,28 +414,45 @@ def admin_users():
         _warming = True
         socketio.start_background_task(_warm_user_info, stale)
     with table.lock:
-        seated = {p.tg_id: p.stack for p in table.players}
+        seated = {p.tg_id: p.stack for p in table.players}  # у сидящих за столом — актуальный стек
     users = []
     for tg_id, chips in rows:
         i = info.get(tg_id, {})
-        hay = f"{tg_id} {i.get('username', '')} {i.get('first_name', '')}".lower()
-        if q and q not in hay:
-            continue
         users.append({
             "tg_id": str(tg_id), "username": i.get("username", ""), "first_name": i.get("first_name", ""),
-            "chips": seated.get(tg_id, chips), "seated": tg_id in seated,
-            "avatar": f"/poker/admin/avatar/{tg_id}",
+            "chips": seated.get(tg_id, chips), "seated": tg_id in seated, "avatar": f"/poker/avatar/{tg_id}",
         })
     users.sort(key=lambda u: -u["chips"])
-    return jsonify({"users": users[:60], "total": len(users), "loading": bool(stale)})
+    return users, bool(stale)
 
 
-@poker_bp.route("/poker/admin/avatar/<int:tg_id>")
-def admin_avatar(tg_id: int):
+@poker_bp.route("/poker/admin/users")
+def admin_users():
+    """Пользователи с фишками; q — поиск по id, username или имени."""
     _require_admin()
+    q = (request.args.get("q") or "").strip().lower().lstrip("@")
+    users, loading = _users_with_names(list_users_chips())
+    if q:
+        users = [u for u in users if q in f"{u['tg_id']} {u['username']} {u['first_name']}".lower()]
+    return jsonify({"users": users[:60], "total": len(users), "loading": loading})
+
+
+@poker_bp.route("/poker/leaderboard")
+def leaderboard():
+    """Топ по фишкам — видно всем."""
+    users, loading = _users_with_names(list_users_chips())
+    me = _tg_id()
+    place = next((i + 1 for i, u in enumerate(users) if u["tg_id"] == str(me)), None)
+    return jsonify({"users": users[:50], "total": len(users), "loading": loading, "me": str(me) if me else None, "my_place": place})
+
+
+@poker_bp.route("/poker/avatar/<int:tg_id>")
+def avatar(tg_id: int):
     with _info_lock:
         cached = _avatars.get(tg_id)
     if cached is None or time.time() - cached[1] >= USER_INFO_TTL:
+        if cached is None and not find_user_by_tg_id(tg_id):
+            abort(404)  # только участники сообщества — не дёргаем Telegram ради любых id
         data = None
         try:
             photos = bot.get_user_profile_photos(tg_id, limit=1).photos

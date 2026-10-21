@@ -2,6 +2,8 @@ import json
 from ..import session_scope
 from ..models.tg_user import TelegramUser
 from ..models.poker import PokerSkin, PokerSkinOwner, PokerSetting
+from ..models.photo import Photo
+from sqlalchemy import func
 
 
 def get_poker_profile(tg_id: int) -> dict | None:
@@ -155,3 +157,13 @@ def list_users_chips() -> list[tuple[int, int]]:
     """Все пользователи и их фишки (для админки)."""
     with session_scope() as session:
         return [(u.tg_id, u.chips) for u in session.query(TelegramUser.tg_id, TelegramUser.chips).all()]
+
+
+def random_gallery_photo_ids(count: int) -> list[int]:
+    """Случайные фото из галереи (только отсортированные по категориям) — для задника «случайное фото»."""
+    if count <= 0:
+        return []
+    with session_scope() as session:
+        rows = (session.query(Photo.id).filter(Photo.category_id.is_not(None))
+                .order_by(func.random()).limit(count).all())
+        return [r[0] for r in rows]

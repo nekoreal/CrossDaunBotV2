@@ -262,8 +262,39 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .picked{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;margin-bottom:10px;background:linear-gradient(135deg,rgba(0,242,254,.08),rgba(157,78,221,.12));border:1px solid rgba(0,242,254,.35);animation:tagPop .3s var(--ease-spring)}
 .quick-amt{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 12px}
 .quick-amt .btn-def{width:auto;padding:6px 10px}
+/* задник «случайное фото из галереи» (пока фото на раздачу не выбрано) */
+.pc.back.gal{background:linear-gradient(135deg,#9d4edd,#00f2fe)}
+.pc.back.gal::after{content:'🎲';inset:0;display:flex;align-items:center;justify-content:center;font-size:44cqw;background:radial-gradient(circle,rgba(255,255,255,.25),transparent 70%);box-shadow:none}
+/* источник фото и кроппер */
+.src-bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:12px;padding:10px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08)}
+.src-title{font-weight:700;color:var(--accent-purple);font-size:.85rem;margin-right:4px}
+.src-bar label.btn-def{cursor:pointer}
+.src-bar input[type=file]{display:none}
+.gal-pick{display:flex;gap:6px;align-items:center}
+.gal-pick .adm-input{width:96px;padding:7px 9px}
+button.rank-slot{color:var(--text-main);font:inherit}
+.rank-slot.active{border-color:var(--warning);box-shadow:0 0 14px rgba(255,183,3,.45);transform:translateY(-2px)}
+.crop-box{display:flex;flex-direction:column;align-items:center;gap:10px;margin-bottom:12px}
+.crop-stage{padding:18px;border-radius:14px;background:repeating-conic-gradient(rgba(255,255,255,.04) 0 25%,transparent 0 50%) 0 0/18px 18px,#0f1a22;border:1px solid rgba(0,242,254,.2)}
+.pc.crop-frame{width:200px;cursor:grab;touch-action:none;user-select:none;background-repeat:no-repeat;box-shadow:0 0 0 2px rgba(0,242,254,.5),0 10px 30px rgba(0,0,0,.6)}
+.pc.crop-frame:active{cursor:grabbing}
+.pc.crop-frame .cn{pointer-events:none}
+.crop-tools{display:flex;align-items:center;gap:10px;width:100%;max-width:300px}
+.crop-tools input[type=range]{flex:1;accent-color:var(--accent-cyan)}
+.crop-empty{padding:26px;border-radius:12px;border:1px dashed rgba(0,242,254,.35);color:var(--text-muted);text-align:center;width:100%}
+@media(max-width:420px){.pc.crop-frame{width:170px}}
+/* лидерборд */
+.lb-list{display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow-y:auto;scrollbar-width:thin}
+.lb-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);animation:slideIn .35s var(--ease-out) backwards}
+.lb-row.top1{border-color:rgba(255,183,3,.6);background:rgba(255,183,3,.08);box-shadow:0 0 18px rgba(255,183,3,.2)}
+.lb-row.top2{border-color:rgba(200,210,230,.5)}
+.lb-row.top3{border-color:rgba(205,127,50,.55)}
+.lb-row.me{border-color:var(--accent-cyan);box-shadow:0 0 14px rgba(0,242,254,.25)}
+.lb-place{width:28px;text-align:center;font-weight:800;color:var(--text-muted);font-family:monospace;flex:none}
+.lb-row.top1 .lb-place,.lb-row.top2 .lb-place,.lb-row.top3 .lb-place{font-size:1.25rem}
 #editorModal{z-index:10001}  /* редактор открывается поверх настроек и админки */
-.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:10002;padding:10px 18px;border-radius:12px;background:rgba(18,22,31,.95);border:1px solid rgba(0,242,254,.4);box-shadow:0 8px 30px rgba(0,0,0,.5);animation:fadeIn .3s ease}
+#cropModal{z-index:10003}    /* расположение фото — поверх редактора */
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:10004;padding:10px 18px;border-radius:12px;background:rgba(18,22,31,.95);border:1px solid rgba(0,242,254,.4);box-shadow:0 8px 30px rgba(0,0,0,.5);animation:fadeIn .3s ease}
 
 /* --- РЕАЛИСТИЧНЫЕ КАРТЫ (размеры шрифтов в cqw = от ширины карты) --- */
 :root{--pc-back-frame:#12161f;--pc-back-a:rgba(157,78,221,.75);--pc-back-b:rgba(0,242,254,.18)}
@@ -378,6 +409,7 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
     </div>
     <div class="tools-left">
       {% if is_admin %}<button class="btn-def btn-sm btn-admin auto" onclick="openAdmin()">🛠 Админ</button>{% endif %}
+      <button class="btn-def btn-sm auto" onclick="openLeaders()">🏆 Лидеры</button>
       <button class="btn-def btn-sm auto" onclick="openSettings()">⚙️ Настройки</button>
     </div>
   </div>
@@ -466,7 +498,8 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
       <label class="fld" id="edPriceBox"><span>Цена, 🪙 (0 — бесплатно)</span><input id="edPrice" type="number" min="0" value="0"></label>
     </div>
     <div id="edBack">
-      <label class="drop">📁 Выбрать картинку задника<input type="file" accept="image/*" onchange="edSetFile('back', this.files[0])"></label>
+      <div id="edBackBar" class="src-bar"></div>
+      <div id="edBackCrop" class="crop-box"></div>
     </div>
     <div id="edFront">
       <div class="set-title">Цвета (подпись ранга и масти поверх картинки)</div>
@@ -477,13 +510,34 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
         <label>♦ <input type="color" id="edColor_d" value="#d62828" oninput="edPreview()"></label>
         <label>♣ <input type="color" id="edColor_c" value="#12161f" oninput="edPreview()"></label>
       </div>
-      <div class="set-title">Картинки рангов — по желанию (без картинки карта рисуется обычной раскладкой)</div>
+      <div class="set-title">Картинки рангов — нажмите на ранг и выберите фото (по желанию; без фото карта рисуется обычной раскладкой)</div>
       <div id="edRanks" class="rank-grid"></div>
+      <div id="edRankBar" class="src-bar"></div>
     </div>
     <div class="set-title">Превью</div>
     <div id="edPreviewBox" class="prev-cards big-prev"></div>
     <div id="edNote" class="skin-hint"></div>
     <button id="edSave" class="btn-def" onclick="edSubmit()">Сохранить</button>
+  </div>
+</div>
+
+<!-- РАСПОЛОЖЕНИЕ ФОТО (для рангов лица; у задника — прямо в редакторе) -->
+<div id="cropModal" class="modal hidden" onclick="if(event.target===this)closeCrop()">
+  <div class="modal-card glass">
+    <button class="modal-close" type="button" onclick="closeCrop()">✕</button>
+    <h2 id="cropTitle">✏️ Расположение фото</h2>
+    <div id="cropBox" class="crop-box"></div>
+    <button class="btn-def" onclick="closeCrop()">Готово</button>
+  </div>
+</div>
+
+<!-- ЛИДЕРЫ -->
+<div id="leaderModal" class="modal hidden" onclick="if(event.target===this)closeLeaders()">
+  <div class="modal-card glass wide">
+    <button class="modal-close" type="button" onclick="closeLeaders()">✕</button>
+    <h2>🏆 Лидеры по фишкам</h2>
+    <div id="lbNote" class="skin-hint"></div>
+    <div id="lbList" class="lb-list"></div>
   </div>
 </div>
 
@@ -651,6 +705,7 @@ function cardHTML(c, cls = '', d = 0, sk = null) {
     if (!c) {
         sk = sk || MY.back;
         return sk.image ? `<div class="pc back photo ${cls}" style="background-image:url('${sk.image}')"></div>`
+            : sk.special === 'gallery' ? `<div class="pc back gal ${cls}"></div>`
             : `<div class="pc back ${cls}" data-cards="${isStd(sk) ? sk.key : 'classic'}"></div>`;
     }
     sk = sk || MY.front;
@@ -1011,76 +1066,195 @@ async function pickSkin(kind, key) {
 function openSettings() { renderSkinGrid(); $('settingsModal').classList.remove('hidden'); loadSkins(); }
 function closeSettings() { $('settingsModal').classList.add('hidden'); }
 
-/* ---- редактор скина ---- */
+/* ---- редактор скина ----
+   Фото — из файла или из галереи по ID. Расположение в карте: перетаскивание + масштаб.
+   Обрезка делается в браузере (canvas), на сервер уходит готовая картинка 5:7. */
 const ED_RANKS = 'AKQJT98765432';
+const rankName = r => r === 'T' ? '10' : r;
 let ED = null;
 function openEditor(mode, kind) {
-    ED = { mode, kind, files: {}, urls: {} };
+    ED = { mode, kind, slots: {}, active: 'A' };
     $('edTitle').innerText = mode === 'user' ? '📤 Свой задник' : kind === 'front' ? '➕ Новый скин лица' : '➕ Новый скин задника';
     $('edName').value = ''; $('edPrice').value = 0;
     $('edPriceBox').classList.toggle('hidden', mode === 'user');
     $('edBack').classList.toggle('hidden', kind !== 'back');
     $('edFront').classList.toggle('hidden', kind !== 'front');
     $('edNote').innerText = mode === 'user'
-        ? `Стоимость загрузки: ${SK ? SK.custom_back_price : '?'} 🪙. Картинка обрежется под пропорции карты (5:7). Задник увидят все игроки.`
-        : 'Картинки обрезаются под пропорции карты (5:7) и сохраняются в отдельный S3-бакет скинов.';
-    $('edRanks').innerHTML = [...ED_RANKS].map(r => `<label class="rank-slot" id="edSlot_${r}">
-        <b>${r === 'T' ? '10' : r}</b><input type="file" accept="image/*" onchange="edSetFile('${r}', this.files[0])">
-        <button type="button" class="x" onclick="event.preventDefault();edSetFile('${r}', null)">✕</button></label>`).join('');
-    edPreview();
+        ? `Стоимость загрузки: ${SK ? SK.custom_back_price : '?'} 🪙. Задник увидят все игроки.`
+        : 'Картинки сохраняются в отдельный S3-бакет скинов.';
+    edRender();
     $('editorModal').classList.remove('hidden');
 }
 function closeEditor() {
-    if (ED) Object.values(ED.urls).forEach(u => URL.revokeObjectURL(u));
-    ED = null; $('editorModal').classList.add('hidden');
+    if (ED) Object.values(ED.slots).forEach(sl => sl.obj && URL.revokeObjectURL(sl.src));
+    ED = null; closeCrop(); $('editorModal').classList.add('hidden');
 }
-function edSetFile(part, file) {
-    if (ED.urls[part]) URL.revokeObjectURL(ED.urls[part]);
-    delete ED.urls[part]; delete ED.files[part];
-    if (file) { ED.files[part] = file; ED.urls[part] = URL.createObjectURL(file); }
-    const slot = $('edSlot_' + part);
-    if (slot) { slot.classList.toggle('has', !!file); slot.style.backgroundImage = file ? `url('${ED.urls[part]}')` : ''; }
+// панель выбора фото для части карты (back или ранг)
+function srcBarHTML(part) {
+    const has = !!ED.slots[part];
+    return `<span class="src-title">${part === 'back' ? 'Фото задника' : 'Ранг ' + rankName(part)}</span>
+        <label class="btn-def btn-sm auto">📁 Файл<input type="file" accept="image/*" onchange="edFile('${part}', this.files[0])"></label>
+        <div class="gal-pick"><input id="edGal_${part}" class="adm-input" type="number" min="1" placeholder="ID фото"
+            onkeydown="if(event.key==='Enter')edGallery('${part}')"><button class="btn-def btn-sm auto" onclick="edGallery('${part}')">🖼 Из галереи</button></div>
+        ${has && part !== 'back' ? `<button class="btn-def btn-sm auto" onclick="openCrop('${part}')">✏️ Расположить</button>` : ''}
+        ${has ? `<button class="btn-def btn-sm btn-fold auto" onclick="edClear('${part}')">✕ Убрать</button>` : ''}`;
+}
+function edRender() {
+    if (ED.kind === 'back') {
+        $('edBackBar').innerHTML = srcBarHTML('back');
+        if (ED.slots.back) mountCropper($('edBackCrop'), 'back');
+        else $('edBackCrop').innerHTML = '<div class="crop-empty">Загрузите файл или укажите ID фото из галереи — потом расположите его в карте</div>';
+    } else {
+        $('edRanks').innerHTML = [...ED_RANKS].map(r => {
+            const sl = ED.slots[r];
+            return `<button type="button" class="rank-slot ${sl ? 'has' : ''} ${r === ED.active ? 'active' : ''}"
+                style="${sl ? `background-image:url('${sl.thumb}')` : ''}" onclick="edSelectRank('${r}')"><b>${rankName(r)}</b></button>`;
+        }).join('');
+        $('edRankBar').innerHTML = srcBarHTML(ED.active);
+    }
     edPreview();
 }
+function edSelectRank(r) { ED.active = r; edRender(); }
+function edLoad(part, src, obj) {
+    const img = new Image();
+    img.onload = () => {
+        const old = ED && ED.slots[part]; if (old && old.obj) URL.revokeObjectURL(old.src);
+        ED.slots[part] = { img, src, obj, crop: { z: 1, cx: .5, cy: .5 } };   // изначально — по центру, «как было»
+        edThumb(part); edRender();
+    };
+    img.onerror = () => { if (obj) URL.revokeObjectURL(src); toast('Не удалось открыть фото'); };
+    img.src = src;
+}
+function edFile(part, file) { if (file) edLoad(part, URL.createObjectURL(file), true); }
+function edGallery(part) {
+    const id = parseInt($('edGal_' + part).value, 10);
+    if (!id) return toast('Укажите ID фото из галереи');
+    edLoad(part, '/poker/gallery_photo/' + id, false);
+}
+function edClear(part) {
+    const sl = ED.slots[part]; if (sl && sl.obj) URL.revokeObjectURL(sl.src);
+    delete ED.slots[part]; edRender();
+}
+// геометрия: фото всегда закрывает карту; crop.cx/cy — центр кадра в долях фото, z — масштаб
+function cropGeom(sl, FW, FH) {
+    const w = sl.img.naturalWidth, h = sl.img.naturalHeight, c = sl.crop;
+    const sc = Math.max(FW / w, FH / h) * c.z, bw = w * sc, bh = h * sc, hx = FW / 2 / bw, hy = FH / 2 / bh;
+    c.cx = Math.min(1 - hx, Math.max(hx, c.cx)); c.cy = Math.min(1 - hy, Math.max(hy, c.cy));
+    return { bw, bh, ox: FW / 2 - c.cx * bw, oy: FH / 2 - c.cy * bh };
+}
+function cropCanvas(sl, W, H) {
+    const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+    const g = cropGeom(sl, W, H); cv.getContext('2d').drawImage(sl.img, g.ox, g.oy, g.bw, g.bh);
+    return cv;
+}
+function edThumb(part) { const sl = ED.slots[part]; if (sl) sl.thumb = cropCanvas(sl, 150, 210).toDataURL('image/jpeg', .85); }
+// кроппер: карта-рамка (у лица — с подписью ранга), фото двигается пальцем/мышью, масштаб — ползунком, колесом или щипком
+function mountCropper(box, part) {
+    const sl = ED.slots[part]; if (!sl) return;
+    const desc = part === 'back' ? null : { key: 'crop', bg: $('edBg').value, colors: { h: $('edColor_h').value }, images: { [part]: sl.src } };
+    box.innerHTML = `<div class="crop-stage">${part === 'back' ? `<div class="pc back photo crop-frame"></div>` : cardHTML(part + 'h', 'crop-frame', 0, desc)}</div>
+        <div class="crop-tools"><span>🔍</span><input type="range" min="1" max="4" step="0.01" value="${sl.crop.z}">
+        <button class="btn-def btn-sm auto" type="button" title="Сбросить">↺</button></div>
+        <div class="skin-hint">Перетащите фото, масштаб — ползунком, колесом мыши или двумя пальцами</div>`;
+    const el = box.querySelector('.crop-frame'), range = box.querySelector('input[type=range]');
+    const apply = () => {
+        const g = cropGeom(sl, el.clientWidth, el.clientHeight);
+        el.style.backgroundImage = `url('${sl.src}')`;
+        el.style.backgroundSize = `${g.bw}px ${g.bh}px`; el.style.backgroundPosition = `${g.ox}px ${g.oy}px`;
+        range.value = sl.crop.z;
+    };
+    let commitT = null;
+    const commit = () => { clearTimeout(commitT); commitT = setTimeout(() => { edThumb(part); if (part !== 'back') edRenderRanksOnly(); edPreview(); }, 120); };
+    const zoomTo = z => { sl.crop.z = Math.min(4, Math.max(1, z)); apply(); commit(); };
+    const pts = new Map(); let pinch0 = null;
+    el.onpointerdown = e => { el.setPointerCapture(e.pointerId); pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); if (pts.size === 2) pinch0 = null; };
+    el.onpointermove = e => {
+        const p = pts.get(e.pointerId); if (!p) return;
+        if (pts.size === 2) {   // щипок — масштаб
+            pts.set(e.pointerId, { x: e.clientX, y: e.clientY });
+            const [a, b] = [...pts.values()], d = Math.hypot(a.x - b.x, a.y - b.y);
+            if (pinch0) zoomTo(pinch0.z * d / pinch0.d); else pinch0 = { d, z: sl.crop.z };
+            return;
+        }
+        const g = cropGeom(sl, el.clientWidth, el.clientHeight);
+        sl.crop.cx -= (e.clientX - p.x) / g.bw; sl.crop.cy -= (e.clientY - p.y) / g.bh;
+        pts.set(e.pointerId, { x: e.clientX, y: e.clientY }); apply();
+    };
+    el.onpointerup = el.onpointercancel = e => { pts.delete(e.pointerId); pinch0 = null; commit(); };
+    el.addEventListener('wheel', e => { e.preventDefault(); zoomTo(sl.crop.z * (1 - e.deltaY * .0015)); }, { passive: false });
+    range.oninput = () => zoomTo(+range.value);
+    box.querySelector('button').onclick = () => { sl.crop = { z: 1, cx: .5, cy: .5 }; apply(); commit(); };
+    requestAnimationFrame(apply);
+}
+function edRenderRanksOnly() {
+    document.querySelectorAll('#edRanks .rank-slot').forEach((el, i) => {
+        const sl = ED.slots[ED_RANKS[i]]; el.style.backgroundImage = sl ? `url('${sl.thumb}')` : '';
+    });
+}
+function openCrop(part) {
+    $('cropTitle').innerText = '✏️ Расположение фото · ' + rankName(part);
+    $('cropModal').classList.remove('hidden');
+    mountCropper($('cropBox'), part);
+}
+function closeCrop() { $('cropModal').classList.add('hidden'); $('cropBox').innerHTML = ''; }
 function edPreview() {
     if (!ED) return;
     if (ED.kind === 'back') {
-        const d = ED.urls.back ? { key: 'preview', image: ED.urls.back } : { key: 'classic' };
-        $('edPreviewBox').innerHTML = cardHTML(null, 'deal', 0, d) + cardHTML(null, 'deal', .1, d);
+        const d = ED.slots.back ? { key: 'preview', image: ED.slots.back.thumb } : { key: 'classic' };
+        $('edPreviewBox').innerHTML = cardHTML(null, '', 0, d) + cardHTML(null, '', 0, d);
         return;
     }
     const desc = { key: 'preview', bg: $('edBg').value, images: {}, colors: {} };
     'shdc'.split('').forEach(su => desc.colors[su] = $('edColor_' + su).value);
-    Object.entries(ED.urls).forEach(([r, u]) => desc.images[r] = u);
-    // в превью — ранги с картинками, иначе пример
-    const ranks = Object.keys(ED.urls).length ? [...ED_RANKS].filter(r => ED.urls[r]).slice(0, 6) : ['A', 'K', 'Q', 'T'];
+    Object.entries(ED.slots).forEach(([r, sl]) => desc.images[r] = sl.thumb);
+    const withImg = [...ED_RANKS].filter(r => ED.slots[r]);
+    const ranks = withImg.length ? withImg.slice(0, 6) : ['A', 'K', 'Q', 'T'];
     $('edPreviewBox').innerHTML = ranks.map((r, i) => cardHTML(r + 'shdc'[i % 4], '', 0, desc)).join('');
 }
+const toBlob = cv => new Promise(res => cv.toBlob(b => b ? res(b) : cv.toBlob(res, 'image/png'), 'image/webp', .9));
 async function edSubmit() {
     const fd = new FormData(), name = $('edName').value.trim();
     if (!name && ED.mode === 'admin') return toast('Укажите название');
+    if (ED.kind === 'back' && !ED.slots.back) return toast('Выберите фото задника');
+    if (ED.mode === 'user' && !confirm(`Загрузить задник за ${SK ? SK.custom_back_price : ''} фишек?`)) return;
     fd.append('name', name || 'Мой задник');
-    let url = '/poker/admin/skins';
-    if (ED.mode === 'user') {
-        if (!ED.files.back) return toast('Выберите картинку');
-        if (!confirm(`Загрузить задник за ${SK ? SK.custom_back_price : ''} фишек?`)) return;
-        fd.append('image', ED.files.back); url = '/poker/skins/upload_back';
-    } else {
+    // обрезаем по выбранному расположению: 360×504 (5:7)
+    for (const [part, sl] of Object.entries(ED.slots))
+        fd.append(part === 'back' ? 'image' : 'rank_' + part, await toBlob(cropCanvas(sl, 360, 504)), part + '.webp');
+    let url = '/poker/skins/upload_back';
+    if (ED.mode === 'admin') {
+        url = '/poker/admin/skins';
         fd.append('kind', ED.kind); fd.append('price', $('edPrice').value || 0);
-        if (ED.kind === 'back') { if (!ED.files.back) return toast('Выберите картинку'); fd.append('image', ED.files.back); }
-        else {
+        if (ED.kind === 'front') {
             fd.append('bg', $('edBg').value);
             'shdc'.split('').forEach(su => fd.append('color_' + su, $('edColor_' + su).value));
-            Object.entries(ED.files).forEach(([r, f]) => fd.append('rank_' + r, f));
         }
     }
     const btn = $('edSave'); btn.disabled = true; btn.innerText = 'Загружаем…';
     try {
         await api(url, { body: fd });
         toast(ED.mode === 'user' ? '🎉 Задник загружен и выбран' : '✅ Скин добавлен');
-        closeEditor(); await loadSkins(); if (!$('adminModal')?.classList.contains('hidden')) admLoadSkins();
+        closeEditor(); await loadSkins(); if ($('adminModal') && !$('adminModal').classList.contains('hidden')) admLoadSkins();
     } catch (e) { toast(e.message); }
     finally { btn.disabled = false; btn.innerText = 'Сохранить'; }
+}
+
+/* ---- лидеры ---- */
+let lbPollT = null;
+function openLeaders() { $('leaderModal').classList.remove('hidden'); loadLeaders(); }
+function closeLeaders() { clearTimeout(lbPollT); $('leaderModal').classList.add('hidden'); }
+async function loadLeaders() {
+    clearTimeout(lbPollT);
+    try {
+        const d = await api('/poker/leaderboard'), medal = ['🥇', '🥈', '🥉'];
+        $('lbList').innerHTML = d.users.map((u, i) => `<div class="lb-row ${i < 3 ? 'top' + (i + 1) : ''} ${u.tg_id === d.me ? 'me' : ''}" style="animation-delay:${Math.min(i, 15) * .03}s">
+            <span class="lb-place">${medal[i] || i + 1}</span>${userAv(u)}
+            <div class="u-info"><b>${esc(userLabel(u))}${u.tg_id === d.me ? ' · вы' : ''}</b><small>${u.username ? '@' + esc(u.username) : ''}</small></div>
+            ${u.seated ? '<span class="tag ok">за столом</span>' : ''}<span class="u-chips">🪙 ${u.chips}</span></div>`).join('')
+            || '<div class="skin-hint">Пока пусто</div>';
+        $('lbNote').innerText = (d.loading ? '⏳ Подтягиваем имена… ' : '') + `Игроков: ${d.total}` + (d.my_place ? ` · вы на ${d.my_place} месте` : '');
+        if (d.loading && !$('leaderModal').classList.contains('hidden')) lbPollT = setTimeout(loadLeaders, 2500);
+    } catch (e) { toast(e.message); }
 }
 
 /* ---- админ-панель ---- */
@@ -1173,8 +1347,9 @@ async function admGiveChips() {
 
 document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
+    if (!$('cropModal').classList.contains('hidden')) return closeCrop();
     if (!$('editorModal').classList.contains('hidden')) return closeEditor();
-    closeSettings(); if ($('adminModal')) closeAdmin();
+    closeSettings(); closeLeaders(); if ($('adminModal')) closeAdmin();
 });
 </script>
 </body>
