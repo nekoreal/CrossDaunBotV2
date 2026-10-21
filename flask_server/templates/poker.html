@@ -139,7 +139,8 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 /* --- СТИЛИ КАРТ (переменные наследуются: работает и в игре, и в превью) --- */
 :root{--pc-bg:linear-gradient(160deg,#1c2333,#12161f);--pc-border:rgba(0,242,254,.3);--pc-s:#f0f4f8;--pc-c:#f0f4f8;--pc-h:#ff5555;--pc-d:#ff5555}
 [data-cards="classic"]{--pc-bg:linear-gradient(160deg,#fff,#e8ebf0);--pc-border:#c9ced8;--pc-s:#12161f;--pc-c:#12161f;--pc-h:#d62828;--pc-d:#d62828}
-[data-cards="four"]{--pc-border:rgba(255,255,255,.25);--pc-s:#f0f4f8;--pc-h:#ff5555;--pc-d:#4da8ff;--pc-c:#00e676}
+[data-cards="neon"]{--pc-bg:linear-gradient(160deg,#1c2333,#12161f);--pc-border:rgba(0,242,254,.3);--pc-s:#f0f4f8;--pc-c:#f0f4f8;--pc-h:#ff5555;--pc-d:#ff5555}
+[data-cards="four"]{--pc-bg:linear-gradient(160deg,#1c2333,#12161f);--pc-border:rgba(255,255,255,.25);--pc-s:#f0f4f8;--pc-h:#ff5555;--pc-d:#4da8ff;--pc-c:#00e676}
 [data-cards="gold"]{--pc-bg:linear-gradient(160deg,#2a210d,#14100a);--pc-border:rgba(255,183,3,.55);--pc-s:#ffd166;--pc-c:#ffd166;--pc-h:#ff8a65;--pc-d:#ff8a65}
 
 /* --- ПОДСВЕТКА КОМБИНАЦИЙ --- */
@@ -184,6 +185,7 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 /* --- РЕАЛИСТИЧНЫЕ КАРТЫ (размеры шрифтов в cqw = от ширины карты) --- */
 :root{--pc-back-frame:#12161f;--pc-back-a:rgba(157,78,221,.75);--pc-back-b:rgba(0,242,254,.18)}
 [data-cards="classic"]{--pc-back-frame:#fff;--pc-back-a:#c1272d;--pc-back-b:#f6dcdc}
+[data-cards="neon"]{--pc-back-frame:#12161f;--pc-back-a:rgba(157,78,221,.75);--pc-back-b:rgba(0,242,254,.18)}
 [data-cards="four"]{--pc-back-frame:#1c2333;--pc-back-a:#4da8ff;--pc-back-b:#12161f}
 [data-cards="gold"]{--pc-back-frame:#14100a;--pc-back-a:#ffb703;--pc-back-b:#2a210d}
 .pc{font-family:Georgia,'Times New Roman',serif;box-shadow:0 1px 2px rgba(0,0,0,.5),0 6px 14px rgba(0,0,0,.4)}
@@ -206,14 +208,51 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .pc.mini .pips,.pc.mini .face,.pc.mini .ace,.pc.mini .cn.br{display:none}
 .pc.mini .cn.tl{position:static}
 .pc.mini .cn b{font-size:46cqw}.pc.mini .cn i{font-size:42cqw}
-.seat-empty{position:absolute;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;background:rgba(18,22,31,.6);border:1px dashed rgba(255,255,255,.18);color:var(--text-muted);font-size:.7rem;font-weight:600;display:flex;align-items:center;justify-content:center;text-align:center;z-index:2;transition:all .25s ease}
-button.seat-empty{cursor:pointer;color:var(--accent-cyan);border-color:rgba(0,242,254,.4)}
-button.seat-empty:hover{background:rgba(0,242,254,.12);border-color:var(--accent-cyan);box-shadow:0 0 14px rgba(0,242,254,.35)}
 .tools-left{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .btn-stand{color:var(--danger);border-color:rgba(255,85,85,.35)}
 .watch-note{text-align:center;color:var(--text-muted);font-size:.9rem;padding:10px 0}
 .watch-note a{color:var(--accent-cyan)}
-@media(max-width:600px){.seat{width:66px}.seat-empty{width:40px;height:40px;font-size:.6rem}.pc.mini{width:20px}}
+@media(max-width:600px){.seat{width:66px}.pc.mini{width:20px}.tag{font-size:.6rem}}
+
+/* --- СЛОТЫ ИГРОКОВ: плавная пересадка, появление и уход --- */
+@keyframes seatIn{from{opacity:0;scale:.3;filter:blur(6px)}to{opacity:1;scale:1;filter:none}}
+@keyframes seatOut{to{opacity:0;scale:.4;filter:blur(6px)}}
+@keyframes chipPop{from{scale:0}to{scale:1}}
+@keyframes floatUp{0%{opacity:0;transform:translate(-50%,0) scale(.6)}15%{opacity:1;transform:translate(-50%,-14px) scale(1.15)}100%{opacity:0;transform:translate(-50%,-70px) scale(1)}}
+@keyframes ringDrain{0%{stroke-dashoffset:0;stroke:var(--accent-cyan)}65%{stroke:var(--warning)}100%{stroke-dashoffset:100;stroke:var(--danger)}}
+@keyframes tagPop{from{opacity:0;scale:.5}to{opacity:1;scale:1}}
+@keyframes potBump{50%{scale:1.25;color:#fff}}
+@keyframes shimmer{to{background-position:-200% 0}}
+@keyframes barDrain{from{transform:scaleX(1)}to{transform:scaleX(0)}}
+@keyframes winGlow{0%,100%{box-shadow:0 0 18px rgba(0,230,118,.35)}50%{box-shadow:0 0 34px rgba(0,230,118,.75)}}
+.seat-slot{position:absolute;transform:translate(-50%,-50%);z-index:2;transition:left .7s var(--ease-out),top .7s var(--ease-out);animation:seatIn .55s var(--ease-spring) backwards}
+.seat-slot.leaving{animation:seatOut .4s ease forwards;pointer-events:none}
+.seat-slot .seat{position:relative;transform:none;left:auto;top:auto}
+.seat.winner{animation:winGlow 1.2s ease-in-out infinite}
+.seat.waiting-next{opacity:.65;border-style:dashed}
+.seat.offline .av{filter:grayscale(1) brightness(.6)}
+.av-wrap{position:relative;display:flex}
+.ring{position:absolute;inset:-5px;width:calc(100% + 10px);height:calc(100% + 10px);transform:rotate(-90deg);pointer-events:none}
+.ring circle{fill:none;stroke-width:2.6;stroke-linecap:round;stroke-dasharray:100;animation:ringDrain linear forwards}
+.tag{font-size:.66rem;font-weight:700;padding:2px 7px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--text-muted);white-space:nowrap;animation:tagPop .35s var(--ease-spring)}
+.tag.ok{color:var(--success);border-color:rgba(0,230,118,.45);background:rgba(0,230,118,.08)}
+.tag.off{color:var(--danger);border-color:rgba(255,85,85,.45);background:rgba(255,85,85,.08)}
+.bet-chip{transition:left .5s var(--ease-out),top .5s var(--ease-out),opacity .5s ease;animation:chipPop .35s var(--ease-spring)}
+.bet-chip.collect{left:50%!important;top:50%!important;opacity:0}
+.fly-chip{position:absolute;z-index:5;transform:translate(-50%,-50%);width:16px;height:16px;border-radius:50%;background:radial-gradient(circle at 35% 35%,#ffe08a,var(--warning) 55%,#b07800);border:2px dashed rgba(255,255,255,.55);box-shadow:0 0 12px rgba(255,183,3,.6);transition:left .8s var(--ease-out),top .8s var(--ease-out),opacity .3s ease .6s;pointer-events:none}
+.win-float{position:absolute;left:50%;top:-6px;z-index:6;color:var(--success);font-family:monospace;font-weight:900;font-size:1.05rem;text-shadow:0 0 12px rgba(0,230,118,.8);white-space:nowrap;pointer-events:none;animation:floatUp 1.8s var(--ease-out) forwards}
+#pot.bump{display:inline-block;animation:potBump .45s var(--ease-spring)}
+.lobby{display:flex;flex-direction:column;gap:10px}
+.btn-ready{color:var(--success);border-color:rgba(0,230,118,.45)}
+.btn-ready:hover:not(:disabled){background:rgba(0,230,118,.14)!important;border-color:var(--success)!important;box-shadow:0 0 20px rgba(0,230,118,.3)!important}
+.btn-ready.is-ready{color:var(--text-muted);border-color:rgba(255,255,255,.2)}
+.btn-join{background:linear-gradient(90deg,rgba(0,242,254,.08),rgba(157,78,221,.18),rgba(0,242,254,.08));background-size:200% 100%;animation:shimmer 3s linear infinite}
+.next-hand{display:flex;flex-direction:column;gap:6px;align-items:center;color:var(--text-muted);font-size:.85rem}
+.next-bar{width:100%;height:4px;border-radius:4px;background:rgba(255,255,255,.08);overflow:hidden}
+.next-bar i{display:block;height:100%;background:linear-gradient(90deg,var(--accent-cyan),var(--accent-purple));transform-origin:left;animation:barDrain linear forwards}
+.felt{transition:box-shadow .6s ease}
+.felt.hot{box-shadow:inset 0 0 45px rgba(0,0,0,.55),0 0 40px rgba(0,230,118,.25)}
+
 </style>
 </head>
 <body>
@@ -250,14 +289,14 @@ button.seat-empty:hover{background:rgba(0,242,254,.12);border-color:var(--accent
   <div class="tools-row">
     <div class="tools-left">
       <button id="btnBonus" class="btn-def btn-sm btn-bonus auto hidden" onclick="claimBonus()">💰 Взять деньги</button>
-      <button id="btnStand" class="btn-def btn-sm btn-stand auto hidden" onclick="standUp()">🚪 Встать</button>
+      <button id="btnStand" class="btn-def btn-sm btn-stand auto hidden" onclick="leaveGame()">🚪 Выйти из-за стола</button>
       <span id="bankChips" class="badge hidden"></span>
     </div>
     <button class="btn-def btn-sm auto" onclick="openSettings()">⚙️ Настройки</button>
   </div>
 
   <div class="table-wrap">
-    <div class="table-rail"><div class="felt">
+    <div class="table-rail"><div id="felt" class="felt">
       <div id="stage" class="stage">Ожидание</div>
       <div class="pot">Банк: <b id="pot">0</b></div>
       <div id="board" class="board"></div>
@@ -269,14 +308,17 @@ button.seat-empty:hover{background:rgba(0,242,254,.12);border-color:var(--accent
   <div id="myName" class="my-name"></div>
   <div id="statusLine" class="status-line"></div>
 
-  <!-- Ожидание / начало -->
-  <div id="screenWaiting"><button class="btn-def" onclick="startHand()">Раздать карты</button></div>
+  <!-- Лобби: присоединиться / готов -->
+  <div id="screenLobby" class="lobby">
+    <button id="btnJoin" class="btn-def btn-join hidden" onclick="joinGame()">🪑 Присоединиться к игре</button>
+    <button id="btnReady" class="btn-def btn-ready hidden" onclick="toggleReady()">✅ Готов</button>
+  </div>
   <div id="watchNote" class="watch-note hidden"></div>
 
   <!-- Итоги раздачи -->
   <div id="screenResults" class="hidden">
     <div id="results" class="results"></div>
-    <button class="btn-def seated-only" onclick="startHand()">Следующая раздача</button>
+    <div id="nextHand" class="next-hand"></div>
   </div>
 
   <!-- Ставки -->
@@ -328,17 +370,18 @@ button.seat-empty:hover{background:rgba(0,242,254,.12);border-color:var(--accent
    ---------------------------------------------------------------------
    Клиент -> сервер (transport.emit):
      'join_table'                       — подписаться на стол (зритель), в ответ придёт table_state
-     'sit' {seat} / 'stand'             — сесть на место 0..9 / встать (только авторизованные)
-     'start_hand'                       — начать раздачу
+     'join_game' / 'leave_game'         — сесть за стол / выйти (только авторизованные; ставки остаются в банке)
+     'set_ready' {ready}                — готовность до первой раздачи; дальше раздачи идут сами,
+                                          а присоединившиеся садятся со следующей раздачи
      'player_action' {type, amount}     — type: 'fold' | 'check' | 'call' | 'raise'
                                           amount — для raise: итоговая ставка игрока («рейз до»)
    Сервер -> клиент (transport.on):
      'table_state' {                    — полное состояние стола (персонализированное!)
-         status: 'waiting'|'betting'|'showdown', stage, hand_no, me: id|null (null = зритель), blinds:[sb,bb],
-         logged_in, max_seats, bank_chips (баланс, когда не за столом), card_style,
+         status: 'waiting'|'betting'|'showdown', running, stage, hand_no, me: id|null (null = зритель), blinds:[sb,bb],
+         logged_in, max_players, bank_chips (баланс, когда не за столом), server_now, turn_time, next_hand_at,
          pot, community:['As','Td',..], current_bet, min_raise_to,
          to_act: id|null, deadline: epoch-секунды|null, winners:[{id,name,amount,hand_name}],
-         players:[{id,seat,name,photo_url,stack,bet,folded,all_in,in_hand,last_action,is_dealer,
+         players:[{id,name,photo_url,stack,bet,folded,all_in,in_hand,ready,online,offline_until,last_action,is_dealer,
                    cards: ['Ah','Kd'] | null}]   // чужие cards = null, пока не шоудаун
      }
      'hand_result' {hand_no, pot, winners:[{id,name,amount,hand_name}]}  — для истории
@@ -399,9 +442,11 @@ transport.on('alert', d => toast(d.message));
 transport.on('bonus_result', d => toast(d.message || ('+' + d.amount)));
 
 /* ---- отправка действий ---- */
-function startHand() { transport.emit('start_hand'); }
-function sitDown(seat) { transport.emit('sit', { seat }); }
-function standUp() { transport.emit('stand'); }
+function joinGame() { transport.emit('join_game'); }
+function leaveGame() { transport.emit('leave_game'); }
+function toggleReady() { const m = me(); if (m) transport.emit('set_ready', { ready: !m.ready }); }
+let clockSkew = 0;  // сервер - клиент, сек
+const nowS = () => Date.now() / 1000 + clockSkew;
 function sendAction(type, amount) { transport.emit('player_action', { type, amount }); }
 function sendCallOrCheck() { sendAction(toCall() > 0 ? 'call' : 'check'); }
 function sendRaise() { sendAction('raise', +$('raiseNum').value); }
@@ -444,8 +489,9 @@ function cardHTML(c, cls = '', d = 0) {
 const gc = (c, cls = '', d = 0) => cardHTML(c, cls + (HL.set.has(c) ? ' hl' : (HL.dim ? ' dim' : '')), d);
 
 function render(s) {
+    const prev = S;
     S = s; const seated = !!me(), m = me() || { cards: null, folded: true, stack: 0, bet: 0 }, myTurn = seated && s.status === 'betting' && s.to_act === s.me;
-    if (s.card_style && s.card_style !== cardStyle && STYLES.some(x => x[0] === s.card_style)) applyCardStyle(s.card_style);
+    if (s.server_now) clockSkew = s.server_now - Date.now() / 1000;
     // подсветка комбинаций: в игре — моя, на шоудауне — у победителей
     HL = { set: new Set(), dim: false };
     if (s.status === 'showdown' && s.players.filter(p => p.in_hand && !p.folded).length > 1) {
@@ -455,33 +501,12 @@ function render(s) {
     } else if (s.status === 'betting' && m.cards && m.cards.length && !m.folded && s.community.length >= 3) {
         madeCards(bestHand([...m.cards, ...s.community])).forEach(c => HL.set.add(c));
     }
-    $('handNo').innerText = s.hand_no; $('blinds').innerText = s.blinds.join('/'); $('playersCount').innerText = s.players.length + '/' + s.max_seats;
-    $('pot').innerText = s.pot;
+    $('handNo').innerText = s.hand_no; $('blinds').innerText = s.blinds.join('/'); $('playersCount').innerText = s.players.length + '/' + s.max_players;
+    animatePot(s.pot);
     $('stage').innerText = { waiting: 'Ожидание', preflop: 'Префлоп', flop: 'Флоп', turn: 'Тёрн', river: 'Ривер' }[s.stage] || (s.status === 'showdown' ? 'Шоудаун' : 'Ожидание');
     if (s.status === 'showdown') $('stage').innerText = 'Шоудаун';
 
-    // игроки
-    const wIds = (s.winners || []).map(w => w.id);
-    // 10 мест по кругу; своё место — внизу (зритель видит внизу место 1)
-    const n = s.max_seats, mySeat = seated ? me().seat : 0, bySeat = {};
-    s.players.forEach(p => bySeat[p.seat] = p);
-    $('seats').innerHTML = Array.from({ length: n }, (_, i) => {
-        const ang = (90 + ((i - mySeat + n) % n) * 360 / n) * Math.PI / 180, x = 50 + 44 * Math.cos(ang), y = 50 + 42 * Math.sin(ang);
-        const p = bySeat[i];
-        if (!p) return s.logged_in && !seated
-            ? `<button class="seat-empty" style="left:${x}%;top:${y}%" onclick="sitDown(${i})">Сесть</button>`
-            : `<div class="seat-empty" style="left:${x}%;top:${y}%">${i + 1}</div>`;
-        const cls = ['seat', p.id === s.me && 'me', p.id === s.to_act && 'active', p.folded && 'folded', s.status === 'showdown' && wIds.includes(p.id) && 'winner'].filter(Boolean).join(' ');
-        const minis = p.id === s.me ? '' : (p.cards ? p.cards.map(c => gc(c, 'mini')).join('') : (p.in_hand && !p.folded ? cardHTML(null, 'mini') + cardHTML(null, 'mini') : ''));
-        const chip = p.bet ? `<div class="bet-chip" style="left:${50 + (x - 50) * .47}%;top:${50 + (y - 50) * .47}%">🪙 ${p.bet}</div>` : '';
-        return chip + `<div class="${cls}" style="left:${x}%;top:${y}%">
-            ${p.is_dealer ? '<div class="dealer">D</div>' : ''}
-            <div class="av">${p.photo_url ? `<img src="${esc(p.photo_url)}" alt="">` : esc(p.name[0] || '?')}</div>
-            <div class="s-name">${esc(p.name)}</div>
-            <div class="s-stack">${p.stack}</div>
-            ${minis ? `<div class="mini-cards">${minis}</div>` : ''}
-            <div class="s-last">${esc(p.all_in && !p.folded ? 'Олл-ин' : p.last_action)}</div></div>`;
-    }).join('');
+    renderSeats(s, prev);
 
     // борд (анимируем только новые карты)
     if (s.community.length < prevBoardLen) prevBoardLen = 0;
@@ -499,24 +524,38 @@ function render(s) {
     document.querySelectorAll('.combo-card').forEach(el => el.classList.toggle('current', +el.dataset.cat === curCat));
 
     // экраны
-    $('screenWaiting').classList.toggle('hidden', s.status !== 'waiting' || !seated);
-    document.querySelectorAll('.seated-only').forEach(el => el.classList.toggle('hidden', !seated));
+    const inHand = seated && m.in_hand;
+    $('screenLobby').classList.toggle('hidden', seated && s.running);
+    $('btnJoin').classList.toggle('hidden', !s.logged_in || seated || s.players.length >= s.max_players);
+    $('btnReady').classList.toggle('hidden', !seated || s.running);
+    $('btnReady').classList.toggle('is-ready', seated && !!m.ready);
+    $('btnReady').innerText = seated && m.ready ? '❌ Я не готов' : '✅ Готов';
     $('btnStand').classList.toggle('hidden', !seated);
     $('btnBonus').classList.toggle('hidden', !s.logged_in);
     $('bankChips').classList.toggle('hidden', !s.logged_in || seated || s.bank_chips == null);
     $('bankChips').innerText = '🪙 Баланс: ' + (s.bank_chips ?? 0);
-    $('watchNote').classList.toggle('hidden', seated);
-    $('watchNote').innerHTML = s.logged_in ? '👀 Вы зритель — выберите свободное место, чтобы сесть за стол'
-        : '👀 Вы зритель. <a href="/home">Войдите через Telegram</a>, чтобы играть';
+    const note = !s.logged_in ? '👀 Вы зритель. <a href="/home">Войдите через Telegram</a>, чтобы играть'
+        : !seated ? (s.players.length >= s.max_players ? '👀 Стол заполнен — можно смотреть' : '👀 Вы смотрите игру')
+        : s.running && !inHand ? '⏳ Вы сядете за стол со следующей раздачи' : '';
+    $('watchNote').classList.toggle('hidden', !note);
+    $('watchNote').innerHTML = note;
     $('screenResults').classList.toggle('hidden', s.status !== 'showdown');
-    $('screenActions').classList.toggle('hidden', s.status !== 'betting' || !seated || !m.cards);
-    $('statusLine').innerText = s.status === 'betting' ? (myTurn ? '🎯 Ваш ход' : 'Ходит: ' + (s.players.find(p => p.id === s.to_act)?.name || '…')) : '';
+    $('screenActions').classList.toggle('hidden', s.status !== 'betting' || !inHand || !m.cards);
+    const readyN = s.players.filter(p => p.ready).length;
+    $('statusLine').innerText = s.status === 'betting' ? (myTurn ? '🎯 Ваш ход' : s.to_act ? 'Ходит: ' + (s.players.find(p => p.id === s.to_act)?.name || '…') : '🂠 Открываем карты…')
+        : !s.running ? (s.players.length < 2 ? 'Ждём игроков: нужно минимум 2' : `Ждём готовности: ${readyN}/${s.players.length}`) : '';
 
     if (s.status === 'showdown') {
         $('results').innerHTML = (s.winners || []).map((w, i) => `<div class="result-item" style="animation-delay:${i * .08}s">
             <div><div style="font-weight:600">🏆 ${esc(w.name)}</div><div class="r-hand">${esc(w.hand_name)}</div></div><span>+${w.amount}</span></div>`).join('');
+        if (!prev || prev.status !== 'showdown' || prev.hand_no !== s.hand_no) {
+            const left = Math.max(0, (s.next_hand_at || 0) - nowS());
+            $('nextHand').innerHTML = s.next_hand_at ? `<span>Следующая раздача через <b id="nextHandLeft">${Math.ceil(left)}</b> с</span>
+                <div class="next-bar"><i style="animation-duration:${left}s"></i></div>` : '';
+        }
     }
-    if (s.status === 'betting' && seated && m.cards) {
+    $('felt').classList.toggle('hot', s.status === 'showdown');
+    if (s.status === 'betting' && inHand && m.cards) {
         const c = toCall(), max = m.stack + m.bet, minTo = Math.min(s.min_raise_to, max);
         ['btnFold', 'btnCall', 'btnRaise', 'raiseRange', 'raiseNum'].forEach(id => $(id).disabled = !myTurn);
         $('btnCall').innerText = c > 0 ? (c >= m.stack ? 'Колл олл-ин ' + c : 'Колл ' + c) : 'Чек';
@@ -524,15 +563,106 @@ function render(s) {
         $('raiseRange').step = $('raiseNum').step = 10;
         if (myTurn) syncRaise(Math.max(+$('raiseNum').value || 0, minTo)); else $('btnRaise').innerText = 'Рейз';
     }
-    s.deadline && s.status === 'betting' ? startTimer(s.deadline) : stopTimer();
+    s.deadline && s.status === 'betting' ? startTimer(s.deadline) : s.status === 'showdown' && s.next_hand_at ? startTimer(s.next_hand_at) : stopTimer();
     updateBonusBtn();
+}
+
+/* ---- игроки за столом: позиции считаются от количества игроков ---- */
+const slotEls = new Map(), chipEls = new Map();
+const tableEl = () => $('seats');
+function seatPos(i, n) {
+    const ang = (90 + i * 360 / n) * Math.PI / 180;
+    return { x: 50 + 44 * Math.cos(ang), y: 50 + 41 * Math.sin(ang) };
+}
+function seatInner(s, p) {
+    const wIds = (s.winners || []).map(w => w.id);
+    const cls = ['seat', p.id === s.me && 'me', p.id === s.to_act && 'active', p.folded && 'folded',
+        s.status === 'showdown' && wIds.includes(p.id) && 'winner', s.running && !p.in_hand && 'waiting-next', !p.online && 'offline'].filter(Boolean).join(' ');
+    const minis = p.id === s.me ? '' : (p.cards ? p.cards.map(c => gc(c, 'mini')).join('') : (p.in_hand && !p.folded ? cardHTML(null, 'mini') + cardHTML(null, 'mini') : ''));
+    let ring = '';
+    if (p.id === s.to_act && s.deadline) {
+        const elapsed = s.turn_time - Math.max(0, s.deadline - nowS());
+        ring = `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16.5" pathLength="100" style="animation-duration:${s.turn_time}s;animation-delay:-${elapsed}s"/></svg>`;
+    }
+    const tag = !p.online ? `<span class="tag off">🔌 <span data-until="${p.offline_until || 0}">${Math.max(0, Math.ceil((p.offline_until || 0) - nowS()))}</span>с</span>`
+        : !s.running ? (p.ready ? '<span class="tag ok">✓ Готов</span>' : '<span class="tag">Не готов</span>')
+        : !p.in_hand ? '<span class="tag">⏳ След. раздача</span>'
+        : `<div class="s-last">${esc(p.all_in && !p.folded ? 'Олл-ин' : p.last_action)}</div>`;
+    return `<div class="${cls}">
+        ${p.is_dealer ? '<div class="dealer">D</div>' : ''}
+        <div class="av-wrap">${ring}<div class="av">${p.photo_url ? `<img src="${esc(p.photo_url)}" alt="">` : esc(p.name[0] || '?')}</div></div>
+        <div class="s-name">${esc(p.name)}</div>
+        <div class="s-stack">${p.stack}</div>
+        ${minis ? `<div class="mini-cards">${minis}</div>` : ''}
+        ${tag}</div>`;
+}
+function renderSeats(s, prev) {
+    const n = s.players.length, mi = Math.max(0, s.players.findIndex(p => p.id === s.me)), pos = {};
+    const ids = new Set(s.players.map(p => p.id));
+    s.players.forEach((p, i) => {
+        const { x, y } = seatPos((i - mi + n) % n, n); pos[p.id] = { x, y };   // я — всегда внизу
+        let el = slotEls.get(p.id);
+        if (!el) { el = document.createElement('div'); el.className = 'seat-slot'; tableEl().appendChild(el); slotEls.set(p.id, el); }
+        el.style.left = x + '%'; el.style.top = y + '%';
+        const old = el.querySelector('.win-float');
+        el.innerHTML = seatInner(s, p);
+        if (old) el.appendChild(old);
+        // ставка: фишка между игроком и центром
+        let chip = chipEls.get(p.id);
+        if (p.bet) {
+            if (!chip) { chip = document.createElement('div'); chip.className = 'bet-chip'; tableEl().appendChild(chip); chipEls.set(p.id, chip); }
+            chip.style.left = 50 + (x - 50) * .5 + '%'; chip.style.top = 50 + (y - 50) * .5 + '%';
+            chip.innerText = '🪙 ' + p.bet;
+        } else if (chip) collectChip(p.id);
+    });
+    // ушедшие игроки
+    for (const [id, el] of slotEls) if (!ids.has(id)) {
+        slotEls.delete(id); el.classList.add('leaving'); setTimeout(() => el.remove(), 420);
+    }
+    for (const id of [...chipEls.keys()]) if (!ids.has(id)) collectChip(id);
+    // выигрыш: фишки летят из банка к победителям
+    if (s.status === 'showdown' && (!prev || prev.status !== 'showdown' || prev.hand_no !== s.hand_no) && prev) {
+        (s.winners || []).forEach((w, wi) => {
+            const to = pos[w.id]; if (!to) return;
+            for (let k = 0; k < 5; k++) setTimeout(() => flyChip(50, 50, to.x, to.y), wi * 250 + k * 90);
+            setTimeout(() => {
+                const el = slotEls.get(w.id); if (!el) return;
+                const f = document.createElement('div'); f.className = 'win-float'; f.innerText = '+' + w.amount;
+                el.appendChild(f); setTimeout(() => f.remove(), 1900);
+            }, wi * 250 + 500);
+        });
+    }
+}
+// ставки уезжают в банк
+function collectChip(id) {
+    const chip = chipEls.get(id); if (!chip) return;
+    chipEls.delete(id); chip.classList.add('collect'); setTimeout(() => chip.remove(), 520);
+}
+function flyChip(x1, y1, x2, y2) {
+    const c = document.createElement('div'); c.className = 'fly-chip';
+    c.style.left = x1 + '%'; c.style.top = y1 + '%'; tableEl().appendChild(c);
+    c.getBoundingClientRect();  // зафиксировать старт перед переходом
+    c.style.left = x2 + (Math.random() - .5) * 4 + '%'; c.style.top = y2 + (Math.random() - .5) * 4 + '%'; c.style.opacity = 0;
+    setTimeout(() => c.remove(), 950);
+}
+// банк: плавный счётчик
+let potShown = 0, potRaf = null;
+function animatePot(to) {
+    const el = $('pot'), from = potShown;
+    if (to === from) return;
+    cancelAnimationFrame(potRaf); potShown = to;
+    if (to > from) { el.classList.remove('bump'); void el.offsetWidth; el.classList.add('bump'); }
+    const t0 = performance.now(), dur = 500;
+    const step = t => { const k = Math.min(1, (t - t0) / dur), e = 1 - (1 - k) ** 3; el.innerText = Math.round(from + (to - from) * e); if (k < 1) potRaf = requestAnimationFrame(step); };
+    potRaf = requestAnimationFrame(step);
 }
 
 /* ---- таймер хода ---- */
 function startTimer(end) {
     stopTimer();
     const tick = () => {
-        const left = Math.max(0, Math.ceil(end - Date.now() / 1000));
+        const left = Math.max(0, Math.ceil(end - nowS()));
+        if ($('nextHandLeft')) $('nextHandLeft').innerText = left;
         $('timer').innerText = String(Math.floor(left / 60)).padStart(2, '0') + ':' + String(left % 60).padStart(2, '0');
         $('timerBadge').classList.toggle('warning-time', left <= 10);
         if (left <= 0) stopTimer();
@@ -565,7 +695,8 @@ function toast(msg) { const t = document.createElement('div'); t.className = 'to
 function claimBonus() { transport.emit('claim_bonus'); }
 function updateBonusBtn() {
     const b = $('btnBonus'); if (!S) return;
-    const left = Math.ceil((S.bonus_next_at || 0) - Date.now() / 1000);
+    const left = Math.ceil((S.bonus_next_at || 0) - nowS());
+    document.querySelectorAll('[data-until]').forEach(el => el.innerText = Math.max(0, Math.ceil(+el.dataset.until - nowS())));
     if (left > 0) {
         const f = n => String(n).padStart(2, '0');
         b.disabled = true; b.innerText = `⏳ ${f(Math.floor(left / 3600))}:${f(Math.floor(left % 3600 / 60))}:${f(left % 60)}`;

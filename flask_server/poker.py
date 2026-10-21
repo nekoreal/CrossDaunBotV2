@@ -16,12 +16,13 @@ from telegram_bot.tg_db.db_controllers.poker_controller import (
 from flask_server.dashboard import socketio
 
 NS = "/poker"
-MAX_SEATS = 10
+MAX_PLAYERS = 10
 SB, BB = 10, 20
 TURN_TIME = 25          # сек на ход
 RUNOUT_DELAY = 1.3      # пауза между улицами, когда все в олл-ине
-DISCONNECT_GRACE = 20   # сек, через сколько отключившегося игрока поднимают из-за стола
-MAX_TIMEOUTS = 2        # столько автоходов подряд — и игрок встаёт из-за стола
+SHOWDOWN_TIME = 6       # сек показа итогов до следующей раздачи
+DISCONNECT_GRACE = 25   # сек на переподключение, потом игрока убирают из-за стола
+MAX_TIMEOUTS = 2        # столько автоходов подряд — и игрок убирается из-за стола
 BONUS_AMOUNT = 500
 BONUS_COOLDOWN = 12 * 3600
 CARD_STYLES = {"classic", "four", "neon", "gold"}
@@ -79,8 +80,8 @@ class Player:
     tg_id: int
     name: str
     photo_url: str
-    seat: int
     stack: int
+    ready: bool = False
     cards: list = field(default_factory=list)
     bet: int = 0
     total: int = 0          # всего вложено в банк за раздачу
@@ -96,27 +97,30 @@ class Player:
 class Table:
     def __init__(self):
         self.lock = RLock()
-        self.seats: list[Player | None] = [None] * MAX_SEATS
-        self.hand: list[Player] = []        # участники текущей раздачи в порядке мест
+        self.players: list[Player] = []      # за столом, в порядке посадки
+        self.hand: list[Player] = []         # участники текущей раздачи
         self.sids: dict[str, int | None] = {}
-        self.profiles: dict[int, dict] = {}  # tg_id -> {bonus_at, card_style}
+        self.profiles: dict[int, dict] = {}  # tg_id -> {chips, bonus_at, card_style}
         self.history = deque(maxlen=15)
+        self.running = False                 # все нажали «Готов» — раздачи идут одна за другой
         self.status = "waiting"              # waiting, betting, showdown
         self.stage = ""
         self.hand_no = 0
-        self.dealer_seat = -1
+        self.dealer_idx = -1                 # индекс дилера в self.hand
         self.deck: list[str] = []
         self.board: list[str] = []
         self.cur = 0                         # индекс в self.hand
         self.cur_bet = 0
         self.min_raise = BB
         self.deadline = None
+        self.next_hand_at = None
         self.winners: list[dict] = []
         self.gen = 0                         # поколение таймера: старые таймеры игнорируются
+        self.offline_since: dict[int, float] = {}  # tg_id игрока за столом -> когда отключился
 
     # ---------- служебное ----------
-    def seat_of(self, tg_id) -> Player | None:
-        return next((p for p in self.seats if p and p.tg_id == tg_id), None)
+    def player_of(self, tg_id) -> Player | None:
+        return next((p for p in self.players if p.tg_id == tg_id), None)
 
     def live(self):
         return [p for p in self.hand if not p.folded]
@@ -133,23 +137,15 @@ class Table:
         except Exception as e:
             print(f"Покер: не удалось сохранить фишки: {e}")
 
-    def remove(self, p: Player):
-        self.seats[p.seat] = None
-        self.save_chips([p])
-
-    def cleanup(self, remove_busted: bool) -> bool:
-        """Поднимает из-за стола отключившихся, AFK и (опционально) игроков без фишек."""
-        online = self.online_ids()
-        removed = False
-        for p in [p for p in self.seats if p]:
-            if p.tg_id not in online or p.timeouts >= MAX_TIMEOUTS or (remove_busted and p.stack <= 0):
-                self.remove(p)
-                removed = True
-        return removed
+    def alert(self, tg_id, message):
+        for sid, t in list(self.sids.items()):
+            if t == tg_id:
+                socketio.emit("alert", {"message": message}, to=sid, namespace=NS)
 
     # ---------- подключения ----------
     def connect(self, sid, tg_id):
         self.sids[sid] = tg_id
+        self.offline_since.pop(tg_id, None)
         if tg_id is not None and tg_id not in self.profiles:
             profile = get_poker_profile(tg_id)
             if profile:
@@ -158,76 +154,114 @@ class Table:
     def disconnect(self, sid) -> int | None:
         return self.sids.pop(sid, None)
 
-    # ---------- места ----------
-    def sit(self, user: dict, seat: int) -> str | None:
+    # ---------- вход / выход ----------
+    def join(self, user: dict) -> str | None:
         tg_id = int(user["id"])
-        if not (0 <= seat < MAX_SEATS):
-            return "Нет такого места"
-        if self.seat_of(tg_id):
+        if self.player_of(tg_id):
             return "Вы уже за столом"
-        if self.seats[seat]:
-            return "Место занято"
+        if len(self.players) >= MAX_PLAYERS:
+            return "Стол заполнен"
         profile = get_poker_profile(tg_id)
         if not profile:
             return "Пользователь не найден"
         self.profiles[tg_id] = profile
         if profile["chips"] <= 0:
             return "Нет фишек — заберите бонус"
-        self.seats[seat] = Player(
+        self.players.append(Player(
             tg_id=tg_id,
             name=user.get("username") or f"id{tg_id}",
             photo_url=user.get("photo_url") or "",
-            seat=seat,
             stack=profile["chips"],
-        )
+            ready=self.running,  # игра уже идёт — сядет в следующую раздачу без «Готов»
+        ))
         return None
 
-    def stand(self, tg_id) -> str | None:
-        p = self.seat_of(tg_id)
+    def leave(self, tg_id, reason="Вышел") -> str | None:
+        p = self.player_of(tg_id)
         if not p:
             return "Вы не за столом"
-        self.remove(p)
-        # встал посреди раздачи = фолд; вложенные фишки остаются в банке
-        if self.status == "betting" and p.in_hand and not p.folded:
-            p.folded = True
-            p.last = "Встал"
-            if self.hand[self.cur] is p:
-                self.next()
-            elif len(self.live()) == 1:
-                self.finish()
+        self._remove(p, reason)
+        self.maybe_start()  # оставшиеся могли быть уже готовы
         return None
 
+    def _remove(self, p: Player, reason: str):
+        self.players.remove(p)
+        self.offline_since.pop(p.tg_id, None)
+        self.save_chips([p])
+        self.profiles.pop(p.tg_id, None)
+        # ушёл посреди раздачи = фолд; поставленные фишки остаются в банке
+        if self.status == "betting" and p.in_hand and not p.folded:
+            p.folded = True
+            p.last = reason
+            if len(self.live()) == 1:
+                self.finish()
+            elif self.deadline and self.hand[self.cur] is p:
+                self.next()
+
+    def set_ready(self, tg_id, ready: bool) -> str | None:
+        p = self.player_of(tg_id)
+        if not p:
+            return "Вы не за столом"
+        if self.running:
+            return None
+        p.ready = bool(ready)
+        self.maybe_start()
+        return None
+
+    def maybe_start(self):
+        """Первая раздача — когда все за столом нажали «Готов» (минимум двое)."""
+        if self.running or self.status == "betting":
+            return
+        if len(self.players) >= 2 and all(p.ready for p in self.players):
+            self.running = True
+            self.start_hand()
+
+    def stop_game(self):
+        self.running = False
+        self.status, self.stage, self.next_hand_at = "waiting", "", None
+        self.hand, self.board, self.winners = [], [], []
+        for p in self.players:
+            p.ready = False
+            p.in_hand = False
+
     # ---------- раздача ----------
-    def start_hand(self, tg_id) -> str | None:
-        if self.status == "betting":
-            return "Раздача уже идёт"
-        if not self.seat_of(tg_id):
-            return "Сядьте за стол, чтобы раздать карты"
-        self.cleanup(remove_busted=True)
-        players = [p for p in self.seats if p]
+    def start_hand(self):
+        if not self.running or self.status == "betting":
+            return
+        self.next_hand_at = None
+        online = self.online_ids()
+        for p in list(self.players):
+            if p.stack <= 0:
+                self.alert(p.tg_id, "Фишки закончились — заберите бонус и присоединяйтесь снова")
+                self._remove(p, "Банкрот")
+            elif p.timeouts >= MAX_TIMEOUTS:
+                self.alert(p.tg_id, "Вы пропустили несколько ходов и были убраны из-за стола")
+                self._remove(p, "AFK")
+            elif p.tg_id not in online:
+                self._remove(p, "Отключился")
+        players = list(self.players)
         if len(players) < 2:
-            return "Нужно минимум 2 игрока"
+            self.stop_game()
+            self.broadcast()
+            return
 
         self.hand_no += 1
         self.status, self.stage = "betting", "preflop"
         self.board, self.winners, self.deadline = [], [], None
         self.deck = [r + s for s in "shdc" for r in RANKS]
         random.shuffle(self.deck)
-        for p in [p for p in self.seats if p]:
-            p.in_hand = False
-            p.cards = []
         for p in players:
             p.cards = [self.deck.pop(), self.deck.pop()]
             p.bet = p.total = 0
             p.folded = p.all_in = p.acted = False
             p.in_hand = True
+            p.ready = True
             p.last = ""
         self.hand = players
 
-        # дилер — следующее занятое место после прошлого дилера
         n = len(players)
-        di = next((i for i, p in enumerate(players) if p.seat > self.dealer_seat), 0)
-        self.dealer_seat = players[di].seat
+        self.dealer_idx = (self.dealer_idx + 1) % n
+        di = self.dealer_idx
         if n == 2:  # хедз-ап: дилер ставит малый блайнд и ходит первым на префлопе
             sb, bb = di, (di + 1) % n
         else:
@@ -237,7 +271,6 @@ class Table:
         self.cur_bet, self.min_raise = BB, BB
         self.cur = bb
         self.next()
-        return None
 
     def post(self, p: Player, amount: int):
         amount = min(amount, p.stack)
@@ -248,10 +281,10 @@ class Table:
             p.all_in = True
 
     def action(self, tg_id, kind: str, amount=None, auto=False) -> str | None:
-        if self.status != "betting":
-            return "Сейчас нет раздачи"
+        if self.status != "betting" or not self.deadline:
+            return "Сейчас нет вашего хода"
         p = self.hand[self.cur]
-        if p.tg_id != tg_id or self.seat_of(tg_id) is not p:
+        if p.tg_id != tg_id or self.player_of(tg_id) is not p:
             return "Сейчас не ваш ход"
         to_call = self.cur_bet - p.bet
         if kind == "call" and to_call == 0:
@@ -324,8 +357,7 @@ class Table:
             return
         # первым ходит первый живой игрок после дилера
         n = len(self.hand)
-        di = next(i for i, p in enumerate(self.hand) if p.seat == self.dealer_seat)
-        self.cur = (di + 1) % n
+        self.cur = (self.dealer_idx + 1) % n
         while self.hand[self.cur].folded or self.hand[self.cur].all_in:
             self.cur = (self.cur + 1) % n
         self.push()
@@ -366,10 +398,13 @@ class Table:
         self.winners = [r for r in res if r["amount"] > 0]
         for p in self.hand:
             p.bet = 0
-        self.save_chips([p for p in self.seats if p])
+        self.save_chips(self.players)
         result = {"hand_no": self.hand_no, "pot": total, "winners": self.winners}
         self.history.append(result)
         socketio.emit("hand_result", result, namespace=NS)
+        # следующая раздача начнётся сама
+        self.next_hand_at = time.time() + SHOWDOWN_TIME
+        socketio.start_background_task(self._delayed, self.gen, SHOWDOWN_TIME, self.start_hand)
         self.broadcast()
 
     # ---------- таймеры ----------
@@ -392,12 +427,21 @@ class Table:
     def _delayed(self, gen, delay, fn):
         socketio.sleep(delay)
         with self.lock:
-            if self.gen == gen and self.status == "betting":
+            if self.gen == gen:
                 fn()
+
+    def _kick_if_offline(self, tg_id):
+        socketio.sleep(DISCONNECT_GRACE)
+        with self.lock:
+            since = self.offline_since.get(tg_id)
+            # переподключился (или отключился ещё раз позже) — этот таймер уже не актуален
+            if since is not None and time.time() - since >= DISCONNECT_GRACE - 0.5 and self.player_of(tg_id):
+                self.leave(tg_id, "Отключился")
+                self.broadcast()
 
     # ---------- бонус и настройки ----------
     def claim_bonus(self, tg_id) -> tuple[str | None, int]:
-        p = self.seat_of(tg_id)
+        p = self.player_of(tg_id)
         if p and self.status == "betting" and p.in_hand and not p.folded:
             return "Забрать бонус можно между раздачами", 0
         result = claim_bonus(tg_id, BONUS_AMOUNT, BONUS_COOLDOWN, time.time(), add_to_chips=p is None)
@@ -420,34 +464,38 @@ class Table:
 
     # ---------- состояние ----------
     def view(self, tg_id) -> dict:
-        me = self.seat_of(tg_id) if tg_id is not None else None
+        me = self.player_of(tg_id) if tg_id is not None else None
         live_count = len(self.live())
+        online = self.online_ids()
         profile = self.profiles.get(tg_id, {}) if tg_id is not None else {}
+        dealer = self.hand[self.dealer_idx] if self.hand and self.status != "waiting" else None
         players = []
-        for p in self.seats:
-            if not p:
-                continue
-            show = p.in_hand and p.cards and (
+        for p in self.players:
+            in_hand = p.in_hand and self.status != "waiting"
+            show = in_hand and p.cards and (
                 p is me or (self.status == "showdown" and live_count > 1 and not p.folded))
             players.append({
-                "id": str(p.tg_id), "seat": p.seat, "name": p.name, "photo_url": p.photo_url,
-                "stack": p.stack, "bet": p.bet if p.in_hand else 0, "folded": p.folded and p.in_hand,
-                "all_in": p.all_in and p.in_hand, "in_hand": p.in_hand and self.status != "waiting",
-                "last_action": p.last if p.in_hand else "", "is_dealer": p.seat == self.dealer_seat and self.status != "waiting",
+                "id": str(p.tg_id), "name": p.name, "photo_url": p.photo_url,
+                "stack": p.stack, "bet": p.bet if in_hand else 0, "folded": p.folded and in_hand,
+                "all_in": p.all_in and in_hand, "in_hand": in_hand, "ready": p.ready,
+                "online": p.tg_id in online,
+            "offline_until": (self.offline_since[p.tg_id] + DISCONNECT_GRACE) if p.tg_id in self.offline_since else None,
+                "last_action": p.last if in_hand else "", "is_dealer": p is dealer,
                 "cards": p.cards if show else None,
             })
         to_act = str(self.hand[self.cur].tg_id) if self.status == "betting" and self.deadline else None
         return {
             "status": self.status, "stage": self.stage if self.status == "betting" else "",
-            "hand_no": self.hand_no, "blinds": [SB, BB], "pot": self.pot() if self.status != "waiting" else 0,
+            "running": self.running, "hand_no": self.hand_no, "blinds": [SB, BB],
+            "pot": self.pot() if self.status != "waiting" else 0,
             "community": self.board, "current_bet": self.cur_bet, "min_raise_to": self.cur_bet + self.min_raise,
-            "to_act": to_act, "deadline": self.deadline, "winners": self.winners,
-            "players": players, "max_seats": MAX_SEATS,
+            "to_act": to_act, "deadline": self.deadline, "turn_time": TURN_TIME, "server_now": time.time(),
+            "next_hand_at": self.next_hand_at, "winners": self.winners,
+            "players": players, "max_players": MAX_PLAYERS,
             "me": str(me.tg_id) if me else None,
             "logged_in": tg_id is not None,
             "bank_chips": profile.get("chips"),
             "bonus_next_at": profile.get("bonus_at", 0), "bonus_amount": BONUS_AMOUNT,
-            "card_style": profile.get("card_style"),
         }
 
     def send_state(self, sid):
@@ -481,76 +529,70 @@ def _alert(message):
     emit("alert", {"message": message})
 
 
-def _disconnect_cleanup():
-    socketio.sleep(DISCONNECT_GRACE)
-    with table.lock:
-        if table.status != "betting" and table.cleanup(remove_busted=False):
-            table.broadcast()
-
-
 @socketio.on("connect", namespace=NS)
 def poker_connect(auth=None):
     with table.lock:
-        table.connect(request.sid, _tg_id())
+        tg_id = _tg_id()
+        table.connect(request.sid, tg_id)
+        if table.player_of(tg_id):  # вернулся за стол — убрать значок «отключился»
+            table.broadcast()
 
 
 @socketio.on("disconnect", namespace=NS)
 def poker_disconnect(*args):
     with table.lock:
         tg_id = table.disconnect(request.sid)
-        seated = tg_id is not None and table.seat_of(tg_id) is not None
-    if seated:
-        socketio.start_background_task(_disconnect_cleanup)
+        seated = tg_id is not None and table.player_of(tg_id) is not None
+        if seated and tg_id not in table.online_ids():
+            table.offline_since[tg_id] = time.time()
+            table.broadcast()
+            socketio.start_background_task(table._kick_if_offline, tg_id)
 
 
 @socketio.on("join_table", namespace=NS)
-def poker_join(data=None):
+def poker_join_table(data=None):
     with table.lock:
         table.send_state(request.sid)
         for result in table.history:
             emit("hand_result", result)
 
 
-@socketio.on("sit", namespace=NS)
-def poker_sit(data=None):
+@socketio.on("join_game", namespace=NS)
+def poker_join_game(data=None):
     user = session.get("user")
     if not user:
-        return _alert("Войдите через Telegram, чтобы сесть за стол")
-    try:
-        seat = int((data or {}).get("seat"))
-    except (TypeError, ValueError):
-        return _alert("Нет такого места")
+        return _alert("Войдите через Telegram, чтобы играть")
     with table.lock:
-        error = table.sit(user, seat)
+        error = table.join(user)
         if error:
             return _alert(error)
         table.broadcast()
 
 
-@socketio.on("stand", namespace=NS)
-def poker_stand(data=None):
+@socketio.on("leave_game", namespace=NS)
+def poker_leave_game(data=None):
     tg_id = _tg_id()
     if tg_id is None:
         return
     with table.lock:
-        error = table.stand(tg_id)
+        error = table.leave(tg_id)
         if error:
             return _alert(error)
-        table.profiles.pop(tg_id, None)
         table.connect(request.sid, tg_id)  # перечитать баланс из БД
         table.broadcast()
 
 
-@socketio.on("start_hand", namespace=NS)
-def poker_start_hand(data=None):
+@socketio.on("set_ready", namespace=NS)
+def poker_set_ready(data=None):
     tg_id = _tg_id()
     if tg_id is None:
         return _alert("Войдите через Telegram")
     with table.lock:
-        error = table.start_hand(tg_id)
+        error = table.set_ready(tg_id, (data or {}).get("ready", True))
         if error:
-            table.broadcast()
             return _alert(error)
+        if table.status != "betting":  # если раздача началась, состояние уже разослано
+            table.broadcast()
 
 
 @socketio.on("player_action", namespace=NS)
