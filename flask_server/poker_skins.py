@@ -138,35 +138,54 @@ def skin_image(skin_id: int, part: str):
 _gallery_cache: "OrderedDict[str, bytes]" = OrderedDict()
 
 
-@poker_bp.route("/poker/gallery_photo/<int:photo_id>")
-def gallery_photo(photo_id: int):
-    """?card=1 — обрезано под карту (задник), иначе — уменьшенное целиком (для редактора скинов)."""
-    card = request.args.get("card") == "1"
+def gallery_photo_bytes(photo_id: int, card: bool) -> bytes | None:
+    """card — обрезано под карту (задник), иначе — уменьшенное целиком (для редактора скинов). С кэшем."""
     key = f"{photo_id}:{int(card)}"
     with _img_cache_lock:
         data = _gallery_cache.get(key)
         if data:
             _gallery_cache.move_to_end(key)
-    if data is None:
-        photo = get_photo_by_id(photo_id)
-        if not photo:
-            abort(404)
+            return data
+    photo = get_photo_by_id(photo_id)
+    if not photo:
+        return None
+    try:
+        img = Image.open(io.BytesIO(photo["file_bytes"]))
+        img.draft("RGB", (CARD_SIZE[0] * 2, CARD_SIZE[1] * 2) if card else (1400, 1400))  # JPEG декодируется сразу уменьшенным
+        img = ImageOps.exif_transpose(img).convert("RGB")
+    except Exception:
+        return None
+    if card:
+        img = ImageOps.fit(img, CARD_SIZE, Image.Resampling.LANCZOS)
+    else:
+        img.thumbnail((1400, 1400), Image.Resampling.LANCZOS)
+    out = io.BytesIO()
+    img.save(out, "WEBP", quality=82, method=4)
+    data = out.getvalue()
+    with _img_cache_lock:
+        _gallery_cache[key] = data
+        while len(_gallery_cache) > 300:
+            _gallery_cache.popitem(last=False)
+    return data
+
+
+def _prefetch_gallery(ids):
+    for photo_id in ids:
         try:
-            img = ImageOps.exif_transpose(Image.open(io.BytesIO(photo["file_bytes"]))).convert("RGB")
-        except Exception:
-            abort(404)
-        if card:
-            img = ImageOps.fit(img, CARD_SIZE, Image.Resampling.LANCZOS)
-        else:
-            img.thumbnail((1400, 1400), Image.Resampling.LANCZOS)
-        out = io.BytesIO()
-        img.save(out, "WEBP", quality=85)
-        data = out.getvalue()
-        with _img_cache_lock:
-            _gallery_cache[key] = data
-            while len(_gallery_cache) > 300:
-                _gallery_cache.popitem(last=False)
-    return Response(data, mimetype="image/webp", headers={"Cache-Control": "public, max-age=86400"})
+            gallery_photo_bytes(photo_id, True)
+        except Exception as e:
+            print(f"Покер: не удалось подготовить фото {photo_id}: {e}")
+
+
+table.prefetch_gallery = lambda ids: socketio.start_background_task(_prefetch_gallery, list(ids))
+
+
+@poker_bp.route("/poker/gallery_photo/<int:photo_id>")
+def gallery_photo(photo_id: int):
+    data = gallery_photo_bytes(photo_id, request.args.get("card") == "1")
+    if data is None:
+        abort(404)
+    return Response(data, mimetype="image/webp", headers={"Cache-Control": "public, max-age=604800"})
 
 
 # ---------- магазин ----------
@@ -515,7 +534,11 @@ def avatar(tg_id: int):
         try:
             photos = bot.get_user_profile_photos(tg_id, limit=1).photos
             if photos:
-                data = bot.download_file(bot.get_file(photos[0][0].file_id).file_path)  # самый маленький размер
+                raw = bot.download_file(bot.get_file(photos[0][0].file_id).file_path)  # самый маленький размер
+                img = ImageOps.fit(ImageOps.exif_transpose(Image.open(io.BytesIO(raw))).convert("RGB"), (96, 96), Image.Resampling.LANCZOS)
+                out = io.BytesIO()
+                img.save(out, "WEBP", quality=80)
+                data = out.getvalue()  # ~3 КБ вместо ~15 КБ jpeg
         except Exception:
             data = None
         cached = (data, time.time())
@@ -523,7 +546,7 @@ def avatar(tg_id: int):
             _avatars[tg_id] = cached
     if not cached[0]:
         abort(404)
-    return Response(cached[0], mimetype="image/jpeg", headers={"Cache-Control": "private, max-age=3600"})
+    return Response(cached[0], mimetype="image/webp", headers={"Cache-Control": "public, max-age=86400"})
 
 
 @poker_bp.route("/poker/admin/chips", methods=["POST"])

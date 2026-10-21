@@ -249,6 +249,11 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .flip-back{animation:faceOut .8s linear var(--fd) forwards}
 .flip-front{transform:rotateY(180deg);animation:faceIn .8s linear var(--fd) backwards}
 .bslot.flipping::after{content:'';position:absolute;inset:-5px;border-radius:12px;pointer-events:none;opacity:0;box-shadow:0 0 28px rgba(0,242,254,.75),inset 0 0 14px rgba(157,78,221,.5);animation:revealFlash .9s ease calc(var(--fd) + .3s)}
+/* просмотр карты по нажатию — без анимаций */
+#board .pc:not(.empty),#myHand .pc,#seats .pc,#comboList .pc,#results .pc{cursor:zoom-in}
+#cardZoom{position:fixed;inset:0;z-index:10005;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:20px;background:rgba(5,7,10,.88);cursor:zoom-out}
+#cardZoom .pc{width:min(72vw,300px);transform:none!important;opacity:1!important;filter:none!important;animation:none!important;cursor:zoom-out}
+#cardZoom .z-label{color:var(--text-muted);font-size:.95rem}
 /* админка: список пользователей */
 .adm-search{width:100%;margin-bottom:8px}
 .user-list{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;margin-bottom:12px;scrollbar-width:thin;scrollbar-color:rgba(0,242,254,.3) transparent}
@@ -537,6 +542,9 @@ button.rank-slot{color:var(--text-main);font:inherit}
   </div>
 </div>
 
+<!-- ПРОСМОТР КАРТЫ -->
+<div id="cardZoom" class="hidden" onclick="closeZoom()"></div>
+
 <!-- ЛИДЕРЫ -->
 <div id="leaderModal" class="modal hidden" onclick="if(event.target===this)closeLeaders()">
   <div class="modal-card glass wide">
@@ -657,13 +665,19 @@ const catOf = s => Math.floor(s / KB);
    КЛИЕНТ
    ===================================================================== */
 const transport = createSocketTransport();
-const seenHands = new Set();
-let S = null, timerInterval = null, prevBoardLen = 0, prevBoardHand = null, revealAt = [], prevHandKey = '', historyCount = 0;
+let S = null, timerInterval = null, prevBoardLen = 0, prevBoardHand = null, revealAt = [], prevHandKey = '';
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
 
-transport.on('table_state', render);
-transport.on('hand_result', r => { if (!seenHands.has(r.hand_no)) { seenHands.add(r.hand_no); addHistory(r); } });
+transport.on('table_state', s => { preloadSkins(s); render(s); });
+const preloaded = new Set();
+function preloadSkins(s) {
+    const urls = [];
+    const add = d => { if (!d) return; if (d.image) urls.push(d.image); Object.values(d.images || {}).forEach(u => urls.push(u)); };
+    add(s.table_skin); s.players.forEach(p => { add(p.back_skin); add(p.front_skin); });
+    urls.forEach(u => { if (!preloaded.has(u)) { preloaded.add(u); const i = new Image(); i.decoding = 'async'; i.src = u; } });
+}
+transport.on('hand_result', addHistory);
 transport.on('alert', d => toast(d.message));
 transport.on('bonus_result', d => toast(d.message || ('+' + d.amount)));
 
@@ -673,7 +687,11 @@ function leaveGame() { transport.emit('leave_game'); }
 function toggleReady() { const m = me(); if (m) transport.emit('set_ready', { ready: !m.ready }); }
 let clockSkew = 0;  // сервер - клиент, сек
 const nowS = () => Date.now() / 1000 + clockSkew;
-function sendAction(type, amount) { transport.emit('player_action', { type, amount }); }
+function sendAction(type, amount) {
+    ['btnFold', 'btnCall', 'btnRaise', 'raiseRange', 'raiseNum'].forEach(id => $(id).disabled = true);
+    $('statusLine').innerText = '⏳ Отправляем ход…';
+    transport.emit('player_action', { type, amount });
+}
 function sendCallOrCheck() { sendAction(toCall() > 0 ? 'call' : 'check'); }
 function sendRaise() { sendAction('raise', +$('raiseNum').value); }
 const me = () => S && S.me ? S.players.find(p => p.id === S.me) : undefined;
@@ -723,7 +741,7 @@ function cardHTML(c, cls = '', d = 0, sk = null) {
         : `<div class="pips">${PIPS[r].map(([x, y]) => `<i${y > .5 ? ' class="fl"' : ''} style="left:${36 + x * 28}%;top:${17 + y * 66}%">${su}</i>`).join('')}</div>`;
     const look = isStd(sk) ? `data-cards="${sk.key}" style="--d:${d}s"`
         : `style="--d:${d}s;${skinVars(sk)}${img ? `background-image:url('${img}')` : ''}"`;
-    return `<div class="pc su-${c[1]}${img ? ' photo' : ''} ${cls}" ${look}>${corner('tl')}${center}${corner('br')}</div>`;
+    return `<div class="pc su-${c[1]}${img ? ' photo' : ''} ${cls}" data-c="${c}" ${look}>${corner('tl')}${center}${corner('br')}</div>`;
 }
 // карта в игре: с учётом подсветки комбинации
 // лицо карт на столе — по скину дилера раздачи
@@ -848,7 +866,7 @@ function seatInner(s, p) {
         : `<div class="s-last">${esc(p.all_in && !p.folded ? 'Олл-ин' : p.last_action)}</div>`;
     return `<div class="${cls}">
         ${p.is_dealer ? '<div class="dealer">D</div>' : ''}
-        <div class="av-wrap">${ring}<div class="av">${p.photo_url ? `<img src="${esc(p.photo_url)}" alt="">` : esc(p.name[0] || '?')}</div></div>
+        <div class="av-wrap">${ring}<div class="av">${p.photo_url ? `<img src="${esc(p.photo_url)}" alt="" decoding="async">` : esc(p.name[0] || '?')}</div></div>
         <div class="s-name">${esc(p.name)}</div>
         <div class="s-stack">${p.stack}</div>
         ${minis ? `<div class="mini-cards">${minis}</div>` : ''}
@@ -942,16 +960,27 @@ function stopTimer() {
 }
 
 /* ---- история ---- */
+// история — только в этом браузере (localStorage), последние HISTORY_MAX раздач
+const HISTORY_MAX = 5, HISTORY_KEY = 'pk_history';
+let handHistory = [];
+try { handHistory = JSON.parse(localStorage.getItem(HISTORY_KEY) || '[]').slice(0, HISTORY_MAX); } catch (e) { handHistory = []; }
 function addHistory(r) {
-    const list = $('historyList');
-    if (!historyCount) list.innerHTML = '';
-    historyCount++;
-    const el = document.createElement('div'); el.className = 'history-card';
-    el.innerHTML = `<div class="h-round">Раздача #${r.hand_no} · банк ${r.pot}</div>` +
-        r.winners.map(w => `<div class="h-win">🏆 ${esc(w.name)} +${w.amount}</div><div class="h-hand">${esc(w.hand_name)}</div>`).join('');
-    list.prepend(el);
-    const c = $('historyCount'); c.innerText = historyCount; c.classList.add('has-items');
+    const key = r.table_id + ':' + r.hand_no;   // номера раздач начинаются заново после перезапуска сервера
+    if (handHistory.some(h => h.key === key)) return;
+    handHistory.unshift({ key, hand_no: r.hand_no, pot: r.pot, winners: r.winners, at: r.at || Math.floor(Date.now() / 1000) });
+    handHistory = handHistory.slice(0, HISTORY_MAX);
+    try { localStorage.setItem(HISTORY_KEY, JSON.stringify(handHistory)); } catch (e) {}
+    renderHistory();
 }
+function renderHistory() {
+    const time = t => new Date(t * 1000).toLocaleTimeString('ru-RU', { hour: '2-digit', minute: '2-digit' });
+    $('historyList').innerHTML = handHistory.length ? handHistory.map(r => `<div class="history-card">
+        <div class="h-round">Раздача #${r.hand_no} · банк ${r.pot} · ${time(r.at)}</div>` +
+        r.winners.map(w => `<div class="h-win">🏆 ${esc(w.name)} +${w.amount}</div><div class="h-hand">${esc(w.hand_name)}</div>`).join('') + '</div>').join('')
+        : '<div style="color:var(--text-muted);font-size:.85rem;text-align:center;padding:10px 0">История пока пуста</div>';
+    const c = $('historyCount'); c.innerText = handHistory.length; c.classList.toggle('has-items', handHistory.length > 0);
+}
+renderHistory();
 function toggleHistory() { $('historySidebar').classList.toggle('collapsed'); }
 function toggleCombos() { $('comboSidebar').classList.toggle('collapsed'); }
 
@@ -1259,6 +1288,21 @@ async function edSubmit() {
     finally { btn.disabled = false; btn.innerText = 'Сохранить'; }
 }
 
+/* ---- просмотр карты: нажал — увидел крупно, нажал ещё раз — закрыл ---- */
+const RANK_NAMES = { A: 'Туз', K: 'Король', Q: 'Дама', J: 'Валет', T: '10' }, SUIT_NAMES = { s: 'пики', h: 'черви', d: 'бубны', c: 'трефы' };
+document.addEventListener('click', e => {
+    const el = e.target.closest('#board .pc, #myHand .pc, #seats .pc, #comboList .pc, #results .pc');
+    if (!el || el.classList.contains('empty')) return;
+    const big = el.cloneNode(true);
+    big.classList.remove('mini', 'sm', 'prev', 'big', 'deal', 'hl', 'dim');
+    const c = el.dataset.c;
+    $('cardZoom').innerHTML = '';
+    $('cardZoom').appendChild(big);
+    $('cardZoom').insertAdjacentHTML('beforeend', `<div class="z-label">${c ? `${RANK_NAMES[c[0]] || c[0]} ${SUIT_NAMES[c[1]]}` : 'Рубашка'}</div>`);
+    $('cardZoom').classList.remove('hidden');
+});
+function closeZoom() { $('cardZoom').classList.add('hidden'); $('cardZoom').innerHTML = ''; }
+
 /* ---- лидеры ---- */
 let lbPollT = null;
 function openLeaders() { $('leaderModal').classList.remove('hidden'); loadLeaders(); }
@@ -1386,6 +1430,7 @@ async function admGiveChips() {
 
 document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
+    if (!$('cardZoom').classList.contains('hidden')) return closeZoom();
     if (!$('cropModal').classList.contains('hidden')) return closeCrop();
     if (!$('editorModal').classList.contains('hidden')) return closeEditor();
     closeSettings(); closeLeaders(); if ($('adminModal')) closeAdmin();

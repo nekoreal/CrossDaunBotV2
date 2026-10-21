@@ -1,6 +1,5 @@
 import time
 import random
-from collections import deque
 from dataclasses import dataclass, field
 from itertools import combinations
 from threading import RLock
@@ -145,7 +144,8 @@ class Table:
         self.hand: list[Player] = []         # участники текущей раздачи
         self.sids: dict[str, int | None] = {}
         self.profiles: dict[int, dict] = {}  # tg_id -> {chips, bonus_at, front_skin, back_skin}
-        self.history = deque(maxlen=15)
+        self.table_id = int(time.time())     # для истории на клиенте: номера раздач начинаются заново после перезапуска
+        self.prefetch_gallery = None         # хук: заранее подготовить фото галереи (ставит poker_skins)
         self.running = False                 # все нажали «Готов» — раздачи идут одна за другой
         self.status = "waiting"              # waiting, betting, showdown
         self.stage = ""
@@ -491,6 +491,8 @@ class Table:
                 ids = []
             for i, p in enumerate(lucky):
                 p.gallery_photo = ids[i % len(ids)] if ids else None
+            if ids and self.prefetch_gallery:
+                self.prefetch_gallery(ids)  # пока карты раздаются, фото уже готовятся — рубашки появятся сразу
 
         n = len(players)
         self.dealer_idx = (self.dealer_idx + 1) % n
@@ -637,8 +639,8 @@ class Table:
         for p in self.players:
             p.ready = False  # на итогах можно снова нажать «Готов», чтобы не ждать таймер
         self.save_chips(self.players)
-        result = {"hand_no": self.hand_no, "pot": total, "winners": self.winners}
-        self.history.append(result)
+        # история раздач хранится у клиента (последние 5) — сервер только сообщает итог
+        result = {"table_id": self.table_id, "hand_no": self.hand_no, "pot": total, "winners": self.winners, "at": int(time.time())}
         socketio.emit("hand_result", result, namespace=NS)
         # следующая раздача начнётся сама
         delay = self.cfg["showdown_time"]
@@ -795,8 +797,6 @@ def poker_disconnect(*args):
 def poker_join_table(data=None):
     with table.lock:
         table.send_state(request.sid)
-        for result in table.history:
-            emit("hand_result", result)
 
 
 @socketio.on("join_game", namespace=NS)
