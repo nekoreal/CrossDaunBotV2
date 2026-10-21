@@ -33,7 +33,7 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .icon-btn:active{transform:scale(.92)}
 .icon-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .4s var(--ease-out)}
 .history-count{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--accent-purple);color:#fff;font-size:.7rem;font-weight:700;display:none;align-items:center;justify-content:center}
-.history-sidebar.collapsed .history-count.has-items{display:flex;animation:pop .4s var(--ease-spring)}
+.tool-ico .history-count.has-items{display:flex;animation:pop .4s var(--ease-spring)}
 .history-list{display:flex;flex-direction:column;gap:10px;max-height:300px;overflow-y:auto;transition:max-height .4s var(--ease-out),opacity .25s ease;scrollbar-width:thin;scrollbar-color:rgba(0,242,254,.3) transparent}
 .history-sidebar.collapsed .history-list{max-height:0;opacity:0;pointer-events:none}
 .history-sidebar.collapsed .ht-chevron{transform:rotate(-90deg)}
@@ -42,16 +42,6 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .h-round{font-size:.75rem;color:var(--text-muted);font-weight:600}
 .h-win{font-size:.85rem;font-weight:700;color:var(--accent-purple)}
 .h-hand{font-size:.8rem;color:var(--text-muted)}
-@media(min-width:1241px){
- .history-sidebar{position:absolute;top:0;right:calc(100% + 16px);width:260px;max-height:min(85vh,640px);overflow:hidden;margin:0;transition:width .45s var(--ease-out),padding .45s var(--ease-out),gap .3s ease}
- .history-list{min-width:226px}
- .history-sidebar.collapsed{width:58px;padding:10px;gap:0}
- .history-sidebar.collapsed .history-title{justify-content:center;gap:0}
- .history-sidebar.collapsed .history-title-text{display:none}
- .ht-chevron{transform:rotate(90deg)}
- .history-sidebar.collapsed .ht-chevron{display:none}
- .history-sidebar.collapsed .ht-icon{display:inline}
-}
 .ht-icon{display:none}
 
 /* --- КАРТОЧКА --- */
@@ -93,7 +83,7 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .s-stack{font-size:.8rem;color:var(--success);font-weight:700;font-family:monospace}
 .s-last{font-size:.7rem;color:var(--text-muted);min-height:1em}
 .dealer{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--warning);color:#1a1200;font-size:.7rem;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid #12161f;animation:pop .4s var(--ease-spring)}
-.mini-cards{display:flex;gap:3px;min-height:36px;align-items:center}
+.mini-cards{display:flex;gap:3px;min-height:42px;align-items:center}
 /* карты никогда не растягиваются flex-контейнером — иначе ломается пропорция 5:7 (на мобилках «сплющивались») */
 .pc{flex:none;align-self:center}
 .table-wrap{position:relative;width:100%;aspect-ratio:16/11;margin:78px 0 44px}
@@ -117,7 +107,7 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .pc.back{background:var(--pc-back-frame);border-color:var(--pc-border)}
 .pc.empty{background:transparent;border:1px dashed rgba(255,255,255,.12);box-shadow:none}
 .pc.big{width:clamp(56px,16vw,76px)}
-.pc.mini{width:26px;border-radius:5px}
+.pc.mini{width:30px;border-radius:5px}
 
 .my-hand{display:flex;align-items:center;justify-content:center;gap:14px;margin:-14px 0 6px;position:relative;z-index:3}
 .my-hand .pc{border-color:rgba(157,78,221,.6)}
@@ -164,10 +154,6 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .c-head{display:flex;justify-content:space-between;align-items:center;font-size:.85rem;font-weight:700;color:var(--accent-purple)}
 .c-head span{color:var(--text-muted);font-weight:600;font-size:.72rem}
 .c-cards{display:flex;gap:3px;margin:4px 0 2px}
-@media(min-width:1241px){
- .combo-sidebar{right:auto;left:calc(100% + 16px);margin:0}
- .combo-sidebar .ht-chevron{transform:rotate(-90deg)}
-}
 
 /* --- МОДАЛКА НАСТРОЕК --- */
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
@@ -258,10 +244,10 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .s-combo{font-size:.68rem;font-weight:800;color:var(--warning);white-space:nowrap;text-shadow:0 0 8px rgba(255,183,3,.5);animation:tagPop .4s var(--ease-spring) backwards}
 .seat.winner .s-combo{color:var(--success);text-shadow:0 0 8px rgba(0,230,118,.6)}
 @keyframes miniReveal{0%{transform:rotateY(90deg) scale(1.7);filter:brightness(2.2)}55%{transform:rotateY(-14deg) scale(1.3);filter:brightness(1.3)}100%{transform:none;filter:none}}
-.pc.shown{width:40px;border-radius:5px}
+.pc.shown{width:44px;border-radius:5px}
 .pc.shown.reveal{animation:miniReveal .75s var(--ease-spring) var(--d) backwards}
-@media(max-width:600px){.pc.shown{width:30px;border-radius:4px}}
-@media(max-width:420px){.pc.shown{width:24px;border-radius:3px}}
+@media(max-width:600px){.pc.shown{width:32px;border-radius:4px}}
+@media(max-width:420px){.pc.shown{width:25px;border-radius:3px}}
 .result-item.shown{background:rgba(255,183,3,.06);border-color:rgba(255,183,3,.3)}
 .result-item.shown span:last-child{color:var(--warning)}
 @keyframes showPulse{0%,100%{box-shadow:0 0 14px rgba(255,183,3,.3)}50%{box-shadow:0 0 26px rgba(255,183,3,.65)}}
@@ -280,6 +266,23 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 @keyframes shL{0%{transform:translate(0,calc(var(--i) * -1px));opacity:0}12%{opacity:1}30%{transform:translate(-75%,-4%) rotate(-14deg)}55%{transform:translate(-60%,2%) rotate(-7deg)}82%{transform:translate(0,calc(var(--i) * -1.5px)) rotate(0)}100%{transform:translate(0,0);opacity:0}}
 @keyframes shR{0%{transform:translate(0,calc(var(--i) * -1px));opacity:0}12%{opacity:1}30%{transform:translate(75%,-4%) rotate(14deg)}55%{transform:translate(60%,2%) rotate(7deg)}82%{transform:translate(0,calc(var(--i) * -1.5px)) rotate(0)}100%{transform:translate(0,0);opacity:0}}
 @media(max-width:420px){.shuffle{width:34px}}
+/* выпадающие панели истории и комбинаций — поверх стола внутри окна */
+@keyframes panelIn{from{opacity:0;transform:translateY(-8px) scale(.98)}to{opacity:1;transform:none}}
+.panel-pop{position:absolute;top:118px;left:16px;z-index:30;width:min(320px,calc(100% - 32px));max-height:min(72vh,600px);padding:14px;display:flex;flex-direction:column;gap:10px;background:rgba(14,17,25,.97);animation:panelIn .25s var(--ease-out)}
+.panel-pop.panel-right{left:auto;right:16px}
+.panel-pop .history-list{max-height:none;flex:1;min-height:0}
+/* горизонтальная раскладка на широком экране: стол слева, управление справа */
+.play-side{display:flex;flex-direction:column;gap:12px}
+@media(min-width:1000px){
+ .layout{max-width:1180px}
+ .play-grid{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:center}
+ .play-side{padding:16px;border-radius:16px;background:rgba(255,255,255,.025);border:1px solid rgba(255,255,255,.06);min-height:260px;justify-content:center}
+ .play-side .status-line{margin-bottom:0}
+ .table-wrap{aspect-ratio:16/10;margin:62px 0 14px}
+ .pc.big{width:64px}
+ .auth-card{padding:24px 28px}
+ .top-bar{margin-bottom:14px;padding-bottom:12px}
+}
 /* админка: список пользователей */
 .adm-search{width:100%;margin-bottom:8px}
 .user-list{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;margin-bottom:12px;scrollbar-width:thin;scrollbar-color:rgba(0,242,254,.3) transparent}
@@ -362,15 +365,16 @@ button.rank-slot{color:var(--text-main);font:inherit}
 .tools-left{display:flex;gap:6px;flex-wrap:nowrap;align-items:center;min-width:0}
 .tools-ico{flex:none}
 /* иконки панели — одинаковые квадраты, подпись во всплывающей подсказке */
-.btn-def.tool-ico{width:38px;height:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;font-size:1.05rem;flex:none}
+.btn-def.tool-ico{position:relative;overflow:visible;width:38px;height:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;font-size:1.05rem;flex:none}
 .btn-def.tool-ico.btn-admin{color:var(--warning)}
+.btn-def.tool-ico::before{display:none}  /* блик выходил за края кнопки (overflow: visible — ради счётчика) */
 .tools-left .btn-sm{white-space:nowrap}
-@media(max-width:420px){.btn-def.tool-ico{width:34px;height:34px;font-size:.95rem;border-radius:10px}.tools-left{gap:4px}.top-bar,.top-bar-left{flex-wrap:nowrap!important;gap:4px}.top-bar .badge{padding:5px 7px;font-size:.72rem;white-space:nowrap}.timer-badge{font-size:.85rem}.btn-home{width:32px;height:32px}}
+@media(max-width:420px){.btn-def.tool-ico{width:31px;height:31px;font-size:.88rem;border-radius:9px}.tools-left{gap:3px}.btn-stand .lbl{display:none}.tools-left .btn-sm{padding:6px 8px}.top-bar,.top-bar-left{flex-wrap:nowrap!important;gap:4px}.top-bar .badge{padding:5px 7px;font-size:.72rem;white-space:nowrap}.timer-badge{font-size:.85rem}.btn-home{width:32px;height:32px}}
 .btn-stand{color:var(--danger);border-color:rgba(255,85,85,.35)}
 .watch-note{text-align:center;color:var(--text-muted);font-size:.9rem;padding:10px 0}
 .watch-note a{color:var(--accent-cyan)}
-@media(max-width:600px){.seat{width:66px;gap:2px}.pc.mini{width:21px}.mini-cards{min-height:30px}.tag{font-size:.6rem}.s-stack{font-size:.72rem}.s-last{font-size:.62rem}}
-@media(max-width:420px){.auth-card{padding:18px 12px}.seat{width:58px;padding:5px 3px;border-radius:11px}.av{width:26px;height:26px;font-size:.75rem}.s-name{font-size:.66rem}.board{gap:4px;--bw:clamp(28px,8.4vw,40px)}.pc.big{width:clamp(56px,17vw,70px)}.bet-chip{font-size:.66rem;padding:2px 6px}.table-wrap{aspect-ratio:1/1.55;margin:58px 0 40px;--rx:41;--ry:44}.felt{justify-content:flex-start;padding-top:24%}.table-rail{inset:13% 9%}.mini-cards{min-height:23px}.pc.mini{width:16px;border-radius:3px}.seat{width:54px;gap:1px}.s-stack{font-size:.66rem}.dealer{width:17px;height:17px;font-size:.6rem}.my-hand{margin-top:-4px}.top-bar{flex-wrap:wrap}.badge{font-size:.75rem;padding:5px 9px}}
+@media(max-width:600px){.seat{width:66px;gap:2px}.pc.mini{width:23px}.mini-cards{min-height:33px}.tag{font-size:.6rem}.s-stack{font-size:.72rem}.s-last{font-size:.62rem}}
+@media(max-width:420px){.auth-card{padding:18px 12px}.seat{width:58px;padding:5px 3px;border-radius:11px}.av{width:26px;height:26px;font-size:.75rem}.s-name{font-size:.66rem}.board{gap:4px;--bw:clamp(28px,8.4vw,40px)}.pc.big{width:clamp(56px,17vw,70px)}.bet-chip{font-size:.66rem;padding:2px 6px}.table-wrap{aspect-ratio:1/1.55;margin:58px 0 40px;--rx:41;--ry:44}.felt{justify-content:flex-start;padding-top:24%}.table-rail{inset:13% 9%}.mini-cards{min-height:25px}.pc.mini{width:18px;border-radius:3px}.seat{width:54px;gap:1px}.s-stack{font-size:.66rem}.dealer{width:17px;height:17px;font-size:.6rem}.my-hand{margin-top:-4px}.top-bar{flex-wrap:wrap}.badge{font-size:.75rem;padding:5px 9px}}
 
 /* --- СЛОТЫ ИГРОКОВ: плавная пересадка, появление и уход --- */
 @keyframes seatIn{from{opacity:0;scale:.3;filter:blur(6px)}to{opacity:1;scale:1;filter:none}}
@@ -417,21 +421,6 @@ button.rank-slot{color:var(--text-main);font:inherit}
 <div class="glow-sphere-1"></div><div class="glow-sphere-2"></div>
 
 <div class="layout">
-
-<!-- ИСТОРИЯ РАЗДАЧ -->
-<aside id="historySidebar" class="history-sidebar glass">
-  <div class="history-title">
-    <div class="history-title-text">📜 Последние раздачи</div>
-    <button class="icon-btn" type="button" onclick="toggleHistory()" title="Свернуть/развернуть">
-      <svg class="ht-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
-      <span class="ht-icon">📜</span><span id="historyCount" class="history-count">0</span>
-    </button>
-  </div>
-  <div id="historyList" class="history-list">
-    <div style="color:var(--text-muted);font-size:.85rem;text-align:center;padding:10px 0">История пока пуста</div>
-  </div>
-</aside>
-
 <div class="auth-card glass">
   <div class="top-bar">
     <div class="top-bar-left">
@@ -443,14 +432,15 @@ button.rank-slot{color:var(--text-main);font:inherit}
     <div class="badge timer-badge" id="timerBadge">⏱ <span id="timer">00:00</span></div>
   </div>
 
-  
   <div class="tools-row">
     <div class="tools-left">
       <button id="btnBonus" class="btn-def btn-sm btn-bonus auto hidden" onclick="claimBonus()" title="Бонус">💰</button>
-      <button id="btnStand" class="btn-def btn-sm btn-stand auto hidden" onclick="leaveGame()" title="Выйти из-за стола">🚪 Выйти</button>
+      <button id="btnStand" class="btn-def btn-sm btn-stand auto hidden" onclick="leaveGame()" title="Выйти из-за стола">🚪<span class="lbl"> Выйти</span></button>
       <span id="bankChips" class="badge hidden" title="Баланс"></span>
     </div>
     <div class="tools-left tools-ico">
+      <button id="btnHistory" class="btn-def tool-ico" onclick="togglePanel('historySidebar')" title="Последние раздачи">📜<span id="historyCount" class="history-count">0</span></button>
+      <button id="btnCombos" class="btn-def tool-ico" onclick="togglePanel('comboSidebar')" title="Комбинации">🏅</button>
       {% if is_admin %}<button class="btn-def tool-ico btn-admin" onclick="openAdmin()" title="Админ-панель">🛠</button>{% endif %}
       <button class="btn-def tool-ico" onclick="openLeaders()" title="Лидеры">🏆</button>
       <button class="btn-def tool-ico" onclick="openSettings()" title="Магазин">🛒</button>
@@ -458,67 +448,75 @@ button.rank-slot{color:var(--text-main);font:inherit}
     </div>
   </div>
 
-  <div class="table-wrap">
-    <div class="table-rail"><div id="felt" class="felt">
-      <div id="stage" class="stage">Ожидание</div>
-      <div class="pot">Банк: <b id="pot">0</b></div>
-      <div id="board" class="board"></div>
-    </div></div>
-    <div id="seats"></div>
-    <div id="shuffle"></div>
-    <!-- на итогах — прямо на столе, чтобы не листать вниз -->
-    <button id="btnShow" class="btn-def btn-show hidden" onclick="showCards()">👁 Показать карты</button>
-  </div>
+  <!-- выпадающие панели: открываются поверх стола -->
+  <aside id="historySidebar" class="panel-pop glass hidden">
+    <div class="history-title"><div>📜 Последние раздачи</div>
+      <button class="icon-btn" type="button" onclick="togglePanel('historySidebar')" title="Закрыть">✕</button></div>
+    <div id="historyList" class="history-list"></div>
+  </aside>
+  <aside id="comboSidebar" class="panel-pop panel-right glass hidden">
+    <div class="history-title"><div>🏅 Комбинации</div>
+      <button class="icon-btn" type="button" onclick="togglePanel('comboSidebar')" title="Закрыть">✕</button></div>
+    <div id="comboList" class="history-list combo-list"></div>
+  </aside>
 
-  <div id="myHand" class="my-hand"></div>
-  <div id="myName" class="my-name"></div>
-  <div id="statusLine" class="status-line"></div>
-
-  <!-- Лобби: присоединиться / готов -->
-  <div id="screenLobby" class="lobby">
-    <button id="btnJoin" class="btn-def btn-join hidden" onclick="joinGame()">🪑 Сесть за стол</button>
-    <button id="btnReady" class="btn-def btn-ready hidden" onclick="toggleReady()">✅ Готов</button>
-  </div>
-  <div id="watchNote" class="watch-note hidden"></div>
-
-  <!-- Итоги раздачи -->
-  <div id="screenResults" class="hidden">
-    <div id="results" class="results"></div>
-    <div id="nextHand" class="next-hand"></div>
-  </div>
-
-  <!-- Ставки -->
-  <div id="screenActions" class="actions hidden">
-    <div class="act-row">
-      <button id="btnFold" class="btn-def btn-fold" onclick="sendAction('fold')">Фолд</button>
-      <button id="btnCall" class="btn-def" onclick="sendCallOrCheck()">Чек</button>
+  <!-- на широком экране: стол слева, управление справа -->
+  <div class="play-grid">
+    <div class="play-main">
+      <div class="table-wrap">
+        <div class="table-rail"><div id="felt" class="felt">
+          <div id="stage" class="stage">Ожидание</div>
+          <div class="pot">Банк: <b id="pot">0</b></div>
+          <div id="board" class="board"></div>
+        </div></div>
+        <div id="seats"></div>
+        <div id="shuffle"></div>
+        <!-- на итогах — прямо на столе, чтобы не листать вниз -->
+        <button id="btnShow" class="btn-def btn-show hidden" onclick="showCards()">👁 Показать карты</button>
+      </div>
+      <div id="myHand" class="my-hand"></div>
+      <div id="myName" class="my-name"></div>
     </div>
-    <div class="raise-box">
-      <div class="raise-top">
-        <input id="raiseRange" type="range" oninput="syncRaise(this.value)">
-        <input id="raiseNum" type="number" onchange="syncRaise(this.value)">
+
+    <div class="play-side">
+      <div id="statusLine" class="status-line"></div>
+
+      <!-- Лобби: присоединиться / готов -->
+      <div id="screenLobby" class="lobby">
+        <button id="btnJoin" class="btn-def btn-join hidden" onclick="joinGame()">🪑 Сесть за стол</button>
+        <button id="btnReady" class="btn-def btn-ready hidden" onclick="toggleReady()">✅ Готов</button>
       </div>
-      <div class="quick">
-        <button class="btn-def btn-sm" onclick="quickRaise(.5)">½ банка</button>
-        <button class="btn-def btn-sm" onclick="quickRaise(.75)">¾ банка</button>
-        <button class="btn-def btn-sm" onclick="quickRaise(1)">Банк</button>
-        <button class="btn-def btn-sm" onclick="quickRaise('all')">Олл-ин</button>
+      <div id="watchNote" class="watch-note hidden"></div>
+
+      <!-- Итоги раздачи -->
+      <div id="screenResults" class="hidden">
+        <div id="results" class="results"></div>
+        <div id="nextHand" class="next-hand"></div>
       </div>
-      <button id="btnRaise" class="btn-def btn-raise" onclick="sendRaise()">Рейз</button>
+
+      <!-- Ставки -->
+      <div id="screenActions" class="actions hidden">
+        <div class="act-row">
+          <button id="btnFold" class="btn-def btn-fold" onclick="sendAction('fold')">Фолд</button>
+          <button id="btnCall" class="btn-def" onclick="sendCallOrCheck()">Чек</button>
+        </div>
+        <div class="raise-box">
+          <div class="raise-top">
+            <input id="raiseRange" type="range" oninput="syncRaise(this.value)">
+            <input id="raiseNum" type="number" onchange="syncRaise(this.value)">
+          </div>
+          <div class="quick">
+            <button class="btn-def btn-sm" onclick="quickRaise(.5)">½ банка</button>
+            <button class="btn-def btn-sm" onclick="quickRaise(.75)">¾ банка</button>
+            <button class="btn-def btn-sm" onclick="quickRaise(1)">Банк</button>
+            <button class="btn-def btn-sm" onclick="quickRaise('all')">Олл-ин</button>
+          </div>
+          <button id="btnRaise" class="btn-def btn-raise" onclick="sendRaise()">Рейз</button>
+        </div>
+      </div>
     </div>
   </div>
 </div>
-<!-- ПРАВАЯ ПАНЕЛЬ: КОМБИНАЦИИ -->
-<aside id="comboSidebar" class="history-sidebar combo-sidebar glass collapsed">
-  <div class="history-title">
-    <div class="history-title-text">🏅 Комбинации</div>
-    <button class="icon-btn" type="button" onclick="toggleCombos()" title="Свернуть/развернуть">
-      <svg class="ht-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
-      <span class="ht-icon">🏅</span>
-    </button>
-  </div>
-  <div id="comboList" class="history-list combo-list"></div>
-</aside>
 </div>
 <!-- НАСТРОЙКИ: скины -->
 <div id="settingsModal" class="modal hidden" onclick="if(event.target===this)closeSettings()">
@@ -1045,8 +1043,16 @@ function renderHistory() {
     const c = $('historyCount'); c.innerText = handHistory.length; c.classList.toggle('has-items', handHistory.length > 0);
 }
 renderHistory();
-function toggleHistory() { $('historySidebar').classList.toggle('collapsed'); }
-function toggleCombos() { $('comboSidebar').classList.toggle('collapsed'); }
+// панели истории/комбинаций: одна открыта за раз, закрываются кликом мимо
+function togglePanel(id) {
+    const el = $(id), open = el.classList.contains('hidden');
+    document.querySelectorAll('.panel-pop').forEach(x => x.classList.add('hidden'));
+    el.classList.toggle('hidden', !open);
+}
+document.addEventListener('click', e => {
+    if (e.target.closest('.panel-pop, #btnHistory, #btnCombos, #cardZoom')) return;
+    document.querySelectorAll('.panel-pop').forEach(x => x.classList.add('hidden'));
+});
 
 /* ---- уведомления ---- */
 function toast(msg) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); }
@@ -1554,6 +1560,7 @@ async function admGiveChips() {
 document.addEventListener('keydown', e => {
     if (e.key !== 'Escape') return;
     if (!$('cardZoom').classList.contains('hidden')) return closeZoom();
+    document.querySelectorAll('.panel-pop').forEach(x => x.classList.add('hidden'));
     if (!$('cropModal').classList.contains('hidden')) return closeCrop();
     if (!$('editorModal').classList.contains('hidden')) return closeEditor();
     closeSettings(); closeLeaders(); if ($('adminModal')) closeAdmin();
