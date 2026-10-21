@@ -134,6 +134,7 @@ class Player:
     in_hand: bool = False
     last: str = ""
     timeouts: int = 0
+    shown: bool = False      # открыл карты на итогах раздачи
     score: int = 0
 
 
@@ -476,6 +477,7 @@ class Table:
             p.bet = p.total = 0
             p.folded = p.all_in = p.acted = False
             p.in_hand = True
+            p.shown = False
             p.ready = True
             p.last = ""
         self.hand = players
@@ -634,6 +636,10 @@ class Table:
                 prev = level
 
         self.winners = [r for r in res if r["amount"] > 0]
+        if len(live) > 1:  # настоящий шоудаун: победитель обязан открыть карты, остальные — по желанию
+            win_ids = {r["id"] for r in self.winners}
+            for p in live:
+                p.shown = p.shown or str(p.tg_id) in win_ids
         for p in self.hand:
             p.bet = 0
         for p in self.players:
@@ -701,15 +707,13 @@ class Table:
     # ---------- состояние ----------
     def view(self, tg_id) -> dict:
         me = self.player_of(tg_id) if tg_id is not None else None
-        live_count = len(self.live())
         online = self.online_ids()
         profile = self.profiles.get(tg_id, {}) if tg_id is not None else {}
         dealer = self.hand[self.dealer_idx] if self.hand and self.status != "waiting" else None
         players = []
         for p in self.players:
             in_hand = p.in_hand and self.status != "waiting"
-            show = in_hand and p.cards and (
-                p is me or (self.status == "showdown" and live_count > 1 and not p.folded))
+            show = in_hand and p.cards and (p is me or (self.status == "showdown" and p.shown))
             players.append({
                 "id": str(p.tg_id), "name": p.name, "photo_url": p.photo_url,
                 "stack": p.stack, "bet": p.bet if in_hand else 0, "folded": p.folded and in_hand,
@@ -717,7 +721,7 @@ class Table:
                 "online": p.tg_id in online,
             "offline_until": (self.offline_since[p.tg_id] + DISCONNECT_GRACE) if p.tg_id in self.offline_since else None,
                 "last_action": p.last if in_hand else "", "is_dealer": p is dealer,
-                "cards": p.cards if show else None,
+                "cards": p.cards if show else None, "shown": p.shown and self.status == "showdown",
                 "back_skin": self.back_desc(p),
                 "front_skin": self.skin_desc(p.front_skin, "front"),
             })
@@ -847,6 +851,21 @@ def poker_action(data=None):
         error = table.action(tg_id, data.get("type"), data.get("amount"))
         if error:
             return _alert(error)
+
+
+@socketio.on("show_cards", namespace=NS)
+def poker_show_cards(data=None):
+    """На итогах раздачи участник может открыть свои карты всем."""
+    tg_id = _tg_id()
+    if tg_id is None:
+        return
+    with table.lock:
+        p = table.player_of(tg_id)
+        if not p or table.status != "showdown" or not p.in_hand or not p.cards:
+            return _alert("Показать карты можно только на итогах своей раздачи")
+        if not p.shown:
+            p.shown = True
+            table.broadcast()
 
 
 @socketio.on("claim_bonus", namespace=NS)
