@@ -247,7 +247,10 @@ def skins_buy():
 
 @poker_bp.route("/poker/skins/upload_back", methods=["POST"])
 def skins_upload_back():
-    """Игрок загружает свой задник за фишки: его видят все, выбрать может только он."""
+    """
+    Игрок загружает свой задник за фишки: его видят все, выбрать может только он.
+    Свой задник у человека один — новая загрузка заменяет старый (картинка меняется, задник остаётся выбранным).
+    """
     tg_id = _tg_id()
     if tg_id is None:
         return _err("Войдите через Telegram", 401)
@@ -270,11 +273,25 @@ def skins_upload_back():
             table.refund(tg_id, price)
             table.broadcast()
             return _err("Не удалось сохранить картинку, фишки возвращены", 500)
-        sk = create_skin("back", name, 0, {"image": keys["back"]}, owner_tg_id=tg_id)
+        own = sorted((sk for sk in table.skins.values() if sk["kind"] == "back" and sk["owner_tg_id"] == tg_id),
+                     key=lambda sk: sk["id"], reverse=True)
+        if own:
+            sk, extra = own[0], own[1:]
+            old_files = _skin_keys(sk)
+            update_skin(sk["id"], name=name, data={"image": keys["back"]})
+        else:
+            sk, extra, old_files = create_skin("back", name, 0, {"image": keys["back"]}, owner_tg_id=tg_id), [], []
+        for x in extra:  # если раньше успели накопиться несколько — оставляем один
+            delete_skin(x["id"])
+            old_files += _skin_keys(x)
+            for p in table.players:
+                if p.back_skin == str(x["id"]):
+                    p.back_skin = "classic"
         table.reload_skins()
         table.select_skin(tg_id, "back", str(sk["id"]))
         table.broadcast()
-    return jsonify({"ok": True, "id": sk["id"]})
+    _remove_files(old_files)
+    return jsonify({"ok": True, "id": sk["id"], "replaced": bool(own)})
 
 
 # ---------- админка: скины ----------

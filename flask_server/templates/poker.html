@@ -1077,7 +1077,8 @@ function renderSkinGrid() {
             <small class="${x.owned && x.key !== sel ? 'owned' : ''}">${label}</small></button>`;
     }).join('');
     const acts = [];
-    if (kind === 'back' && SK && SK.logged_in) acts.push(`<button class="btn-def" onclick="openEditor('user', 'back')">📤 Загрузить свой задник · 🪙 ${SK.custom_back_price}</button>`);
+    if (kind === 'back' && SK && SK.logged_in) acts.push(`<button class="btn-def" onclick="openEditor('user', 'back')">${myOwnBack()
+        ? '🔄 Заменить свой задник' : '📤 Загрузить свой задник'} · 🪙 ${SK.custom_back_price}</button>`);
     if (SK && SK.is_admin) acts.push(`<button class="btn-def btn-admin" onclick="openEditor('admin', '${kind}')">➕ Добавить скин ${kind === 'front' ? 'лица' : 'задника'}</button>`);
     if (!LOGGED_IN) acts.push('<div class="skin-hint">Войдите через Telegram, чтобы покупать и загружать скины.</div>');
     $('skinActions').innerHTML = acts.join('');
@@ -1102,6 +1103,9 @@ async function pickSkin(kind, key) {
 function openSettings() { renderSkinGrid(); $('settingsModal').classList.remove('hidden'); loadSkins(); }
 function closeSettings() { $('settingsModal').classList.add('hidden'); }
 
+// свой (загруженный) задник игрока — он у каждого один
+const myOwnBack = () => SK && (SK.skins || []).find(x => x.kind === 'back' && x.private && x.owned);  // чужие личные (их видит админ) — owned: false
+
 /* ---- редактор скина ----
    Фото — из файла или из галереи по ID. Расположение в карте: перетаскивание + масштаб.
    Обрезка делается в браузере (canvas), на сервер уходит готовая картинка 5:7. */
@@ -1111,7 +1115,8 @@ let ED = null;
 // skin — для редактирования админом (строка каталога): поля и картинки подставляются
 function openEditor(mode, kind, skin = null) {
     ED = { mode, kind, slots: {}, active: 'A', editId: skin ? skin.id : null };
-    $('edTitle').innerText = skin ? `✏️ ${esc(skin.name)}` : mode === 'user' ? '📤 Свой задник' : kind === 'front' ? '➕ Новый скин лица' : '➕ Новый скин задника';
+    const replacing = mode === 'user' && !!myOwnBack();
+    $('edTitle').innerText = skin ? `✏️ ${esc(skin.name)}` : mode === 'user' ? (replacing ? '🔄 Замена своего задника' : '📤 Свой задник') : kind === 'front' ? '➕ Новый скин лица' : '➕ Новый скин задника';
     $('edName').value = skin ? skin.name : ''; $('edPrice').value = skin ? skin.price : 0;
     $('edPriceBox').classList.toggle('hidden', mode === 'user' || !!(skin && skin.private));
     if (skin && kind === 'front') {
@@ -1123,7 +1128,8 @@ function openEditor(mode, kind, skin = null) {
     $('edBack').classList.toggle('hidden', kind !== 'back');
     $('edFront').classList.toggle('hidden', kind !== 'front');
     $('edNote').innerText = mode === 'user'
-        ? `Стоимость загрузки: ${SK ? SK.custom_back_price : '?'} 🪙. Задник увидят все игроки.`
+        ? `Стоимость загрузки: ${SK ? SK.custom_back_price : '?'} 🪙. Задник увидят все игроки.` +
+          (replacing ? ' Свой задник может быть только один — новая картинка заменит текущую.' : '')
         : 'Картинки сохраняются в отдельный S3-бакет скинов.';
     edRender();
     $('editorModal').classList.remove('hidden');
@@ -1261,7 +1267,7 @@ async function edSubmit() {
     const fd = new FormData(), name = $('edName').value.trim();
     if (!name && ED.mode === 'admin') return toast('Укажите название');
     if (ED.kind === 'back' && !ED.slots.back) return toast('Выберите фото задника');
-    if (ED.mode === 'user' && !confirm(`Загрузить задник за ${SK ? SK.custom_back_price : ''} фишек?`)) return;
+    if (ED.mode === 'user' && !confirm(`${myOwnBack() ? 'Заменить свой задник' : 'Загрузить задник'} за ${SK ? SK.custom_back_price : ''} фишек?`)) return;
     fd.append('name', name || 'Мой задник');
     // обрезаем по выбранному расположению: 360×504 (5:7); нетронутые картинки скина оставляем как есть
     const keep = [];
@@ -1282,7 +1288,7 @@ async function edSubmit() {
     const btn = $('edSave'); btn.disabled = true; btn.innerText = 'Загружаем…';
     try {
         await api(url, { body: fd });
-        toast(ED.mode === 'user' ? '🎉 Задник загружен и выбран' : ED.editId ? '✅ Скин сохранён' : '✅ Скин добавлен');
+        toast(ED.mode === 'user' ? (myOwnBack() ? '🎉 Задник заменён' : '🎉 Задник загружен и выбран') : ED.editId ? '✅ Скин сохранён' : '✅ Скин добавлен');
         closeEditor(); await loadSkins(); if ($('adminModal') && !$('adminModal').classList.contains('hidden')) admLoadSkins();
     } catch (e) { toast(e.message); }
     finally { btn.disabled = false; btn.innerText = 'Сохранить'; }
