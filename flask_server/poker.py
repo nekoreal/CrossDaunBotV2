@@ -381,8 +381,9 @@ class Table:
         if not profile:
             return "Пользователь не найден"
         self.profiles[tg_id] = profile
-        if profile["chips"] <= 0:
-            return "Нет фишек — заберите бонус"
+        bb = (self.pending_cfg or self.cfg)["big_blind"]  # блайнды следующей раздачи
+        if profile["chips"] < bb:
+            return f"Нужно минимум {bb} фишек — большой блайнд"
         self.players.append(Player(
             tg_id=tg_id,
             name=user.get("username") or f"id{tg_id}",
@@ -453,8 +454,8 @@ class Table:
             self._cfg, self.pending_cfg = self.pending_cfg, None
         online = self.online_ids()
         for p in list(self.players):
-            if p.stack <= 0:
-                self.alert(p.tg_id, "Фишки закончились — заберите бонус и присоединяйтесь снова")
+            if p.stack < self.cfg["big_blind"]:  # не хватает даже на большой блайнд
+                self.alert(p.tg_id, f"Меньше {self.cfg['big_blind']} фишек — не хватает на блайнд")
                 self._remove(p, "Банкрот")
             elif p.timeouts >= MAX_TIMEOUTS:
                 self.alert(p.tg_id, "Вы пропустили несколько ходов и были убраны из-за стола")

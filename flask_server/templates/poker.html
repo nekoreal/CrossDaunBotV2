@@ -152,7 +152,7 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .pc.dim{opacity:.35}
 
 /* --- ПАНЕЛЬ ИНСТРУМЕНТОВ --- */
-.tools-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.tools-row{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:nowrap}
 .btn-def.auto{width:auto;padding:8px 14px}
 .btn-bonus{color:var(--warning);border-color:rgba(255,183,3,.45)}
 .btn-bonus:hover:not(:disabled){background:rgba(255,183,3,.14)!important;border-color:var(--warning)!important;box-shadow:0 0 20px rgba(255,183,3,.25)!important}
@@ -258,10 +258,17 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .s-combo{font-size:.68rem;font-weight:800;color:var(--warning);white-space:nowrap;text-shadow:0 0 8px rgba(255,183,3,.5);animation:tagPop .4s var(--ease-spring) backwards}
 .seat.winner .s-combo{color:var(--success);text-shadow:0 0 8px rgba(0,230,118,.6)}
 @keyframes miniReveal{0%{transform:rotateY(90deg) scale(1.7);filter:brightness(2.2)}55%{transform:rotateY(-14deg) scale(1.3);filter:brightness(1.3)}100%{transform:none;filter:none}}
-.pc.mini.reveal{animation:miniReveal .75s var(--ease-spring) var(--d) backwards}
+.pc.shown{width:40px;border-radius:5px}
+.pc.shown.reveal{animation:miniReveal .75s var(--ease-spring) var(--d) backwards}
+@media(max-width:600px){.pc.shown{width:30px;border-radius:4px}}
+@media(max-width:420px){.pc.shown{width:24px;border-radius:3px}}
 .result-item.shown{background:rgba(255,183,3,.06);border-color:rgba(255,183,3,.3)}
 .result-item.shown span:last-child{color:var(--warning)}
-.btn-show{color:var(--warning);border-color:rgba(255,183,3,.45);margin-bottom:10px}
+@keyframes showPulse{0%,100%{box-shadow:0 0 14px rgba(255,183,3,.3)}50%{box-shadow:0 0 26px rgba(255,183,3,.65)}}
+.btn-def.btn-show{position:absolute;left:50%;top:73.5%;transform:translate(-50%,-50%);z-index:7;width:auto;padding:10px 18px;white-space:nowrap;
+  color:var(--warning);border-color:rgba(255,183,3,.6);background:rgba(18,22,31,.92);animation:tagPop .35s var(--ease-spring),showPulse 1.6s ease-in-out .35s infinite}
+.btn-def.btn-show:active:not(:disabled){transform:translate(-50%,-50%) scale(.96)}
+@media(max-width:420px){.btn-def.btn-show{top:60%;padding:8px 14px;font-size:.85rem}}
 /* магазин: баланс */
 .shop-balance{display:inline-flex;align-items:center;gap:6px;margin:-6px 0 14px;padding:6px 12px;border-radius:10px;background:rgba(0,230,118,.08);border:1px solid rgba(0,230,118,.35);color:var(--success);font-family:monospace;font-weight:800}
 /* перемешивание колоды перед раздачей */
@@ -352,7 +359,13 @@ button.rank-slot{color:var(--text-main);font:inherit}
 .pc.mini .pips,.pc.mini .face,.pc.mini .ace,.pc.mini .cn.br{display:none}
 .pc.mini .cn.tl{position:static}
 .pc.mini .cn b{font-size:46cqw}.pc.mini .cn i{font-size:42cqw}
-.tools-left{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tools-left{display:flex;gap:6px;flex-wrap:nowrap;align-items:center;min-width:0}
+.tools-ico{flex:none}
+/* иконки панели — одинаковые квадраты, подпись во всплывающей подсказке */
+.btn-def.tool-ico{width:38px;height:38px;padding:0;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;font-size:1.05rem;flex:none}
+.btn-def.tool-ico.btn-admin{color:var(--warning)}
+.tools-left .btn-sm{white-space:nowrap}
+@media(max-width:420px){.btn-def.tool-ico{width:34px;height:34px;font-size:.95rem;border-radius:10px}.tools-left{gap:4px}.top-bar,.top-bar-left{flex-wrap:nowrap!important;gap:4px}.top-bar .badge{padding:5px 7px;font-size:.72rem;white-space:nowrap}.timer-badge{font-size:.85rem}.btn-home{width:32px;height:32px}}
 .btn-stand{color:var(--danger);border-color:rgba(255,85,85,.35)}
 .watch-note{text-align:center;color:var(--text-muted);font-size:.9rem;padding:10px 0}
 .watch-note a{color:var(--accent-cyan)}
@@ -423,9 +436,9 @@ button.rank-slot{color:var(--text-main);font:inherit}
   <div class="top-bar">
     <div class="top-bar-left">
       <a href="/" class="btn-home" title="На главную"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></a>
-      <div class="badge badge-purple">🃏 Раздача: <span id="handNo">0</span></div>
-      <div class="badge badge-warning">🪙 Блайнды: <span id="blinds">—</span></div>
-      <div class="badge badge-cyan">👥 <span id="playersCount">0</span></div>
+      <div class="badge badge-purple" title="Раздача">🃏 #<span id="handNo">0</span></div>
+      <div class="badge badge-warning" title="Блайнды">🪙 <span id="blinds">—</span></div>
+      <div class="badge badge-cyan" title="Игроки">👥 <span id="playersCount">0</span></div>
     </div>
     <div class="badge timer-badge" id="timerBadge">⏱ <span id="timer">00:00</span></div>
   </div>
@@ -433,15 +446,15 @@ button.rank-slot{color:var(--text-main);font:inherit}
   
   <div class="tools-row">
     <div class="tools-left">
-      <button id="btnBonus" class="btn-def btn-sm btn-bonus auto hidden" onclick="claimBonus()">💰 Взять деньги</button>
-      <button id="btnStand" class="btn-def btn-sm btn-stand auto hidden" onclick="leaveGame()">🚪 Выйти из-за стола</button>
-      <span id="bankChips" class="badge hidden"></span>
+      <button id="btnBonus" class="btn-def btn-sm btn-bonus auto hidden" onclick="claimBonus()" title="Бонус">💰</button>
+      <button id="btnStand" class="btn-def btn-sm btn-stand auto hidden" onclick="leaveGame()" title="Выйти из-за стола">🚪 Выйти</button>
+      <span id="bankChips" class="badge hidden" title="Баланс"></span>
     </div>
-    <div class="tools-left">
-      {% if is_admin %}<button class="btn-def btn-sm btn-admin auto" onclick="openAdmin()">🛠 Админ</button>{% endif %}
-      <button class="btn-def btn-sm auto" onclick="openLeaders()">🏆 Лидеры</button>
-      <button id="btnSound" class="btn-def btn-sm auto" onclick="toggleSound()" title="Звук">🔊</button>
-      <button class="btn-def btn-sm auto" onclick="openSettings()">🛒 Магазин</button>
+    <div class="tools-left tools-ico">
+      {% if is_admin %}<button class="btn-def tool-ico btn-admin" onclick="openAdmin()" title="Админ-панель">🛠</button>{% endif %}
+      <button class="btn-def tool-ico" onclick="openLeaders()" title="Лидеры">🏆</button>
+      <button class="btn-def tool-ico" onclick="openSettings()" title="Магазин">🛒</button>
+      <button id="btnSound" class="btn-def tool-ico" onclick="toggleSound()" title="Звук">🔊</button>
     </div>
   </div>
 
@@ -453,6 +466,8 @@ button.rank-slot{color:var(--text-main);font:inherit}
     </div></div>
     <div id="seats"></div>
     <div id="shuffle"></div>
+    <!-- на итогах — прямо на столе, чтобы не листать вниз -->
+    <button id="btnShow" class="btn-def btn-show hidden" onclick="showCards()">👁 Показать карты</button>
   </div>
 
   <div id="myHand" class="my-hand"></div>
@@ -461,7 +476,7 @@ button.rank-slot{color:var(--text-main);font:inherit}
 
   <!-- Лобби: присоединиться / готов -->
   <div id="screenLobby" class="lobby">
-    <button id="btnJoin" class="btn-def btn-join hidden" onclick="joinGame()">🪑 Присоединиться к игре</button>
+    <button id="btnJoin" class="btn-def btn-join hidden" onclick="joinGame()">🪑 Сесть за стол</button>
     <button id="btnReady" class="btn-def btn-ready hidden" onclick="toggleReady()">✅ Готов</button>
   </div>
   <div id="watchNote" class="watch-note hidden"></div>
@@ -469,7 +484,6 @@ button.rank-slot{color:var(--text-main);font:inherit}
   <!-- Итоги раздачи -->
   <div id="screenResults" class="hidden">
     <div id="results" class="results"></div>
-    <button id="btnShow" class="btn-def btn-show hidden" onclick="showCards()">👁 Показать мои карты</button>
     <div id="nextHand" class="next-hand"></div>
   </div>
 
@@ -536,7 +550,7 @@ button.rank-slot{color:var(--text-main);font:inherit}
       <div id="edBackCrop" class="crop-box"></div>
     </div>
     <div id="edFront">
-      <div class="set-title">Цвета (подпись ранга и масти поверх картинки)</div>
+      <div class="set-title">Цвета</div>
       <div class="colors">
         <label>Фон <input type="color" id="edBg" value="#ffffff" oninput="edPreview()"></label>
         <label>♠ <input type="color" id="edColor_s" value="#12161f" oninput="edPreview()"></label>
@@ -544,7 +558,7 @@ button.rank-slot{color:var(--text-main);font:inherit}
         <label>♦ <input type="color" id="edColor_d" value="#d62828" oninput="edPreview()"></label>
         <label>♣ <input type="color" id="edColor_c" value="#12161f" oninput="edPreview()"></label>
       </div>
-      <div class="set-title">Картинки рангов — нажмите на ранг и выберите фото (по желанию; без фото карта рисуется обычной раскладкой)</div>
+      <div class="set-title">Фото рангов (необязательно)</div>
       <div id="edRanks" class="rank-grid"></div>
       <div id="edRankBar" class="src-bar"></div>
     </div>
@@ -712,7 +726,7 @@ let clockSkew = 0;  // сервер - клиент, сек
 const nowS = () => Date.now() / 1000 + clockSkew;
 function sendAction(type, amount) {
     ['btnFold', 'btnCall', 'btnRaise', 'raiseRange', 'raiseNum'].forEach(id => $(id).disabled = true);
-    $('statusLine').innerText = '⏳ Отправляем ход…';
+    $('statusLine').innerText = '⏳';
     transport.emit('player_action', { type, amount });
 }
 function sendCallOrCheck() { sendAction(toCall() > 0 ? 'call' : 'check'); }
@@ -833,23 +847,23 @@ function render(s) {
     $('btnReady').classList.toggle('hidden', !canReady);
     $('btnReady').classList.toggle('is-ready', seated && !!m.ready);
     $('btnReady').innerText = s.status === 'showdown'
-        ? (m.ready ? '⏳ Ждём остальных · отменить' : '✅ Готов к следующей раздаче')
+        ? (m.ready ? '⏳ Ждём остальных' : '✅ Готов')
         : (m.ready ? '❌ Я не готов' : '✅ Готов');
     $('btnStand').classList.toggle('hidden', !seated);
     $('btnBonus').classList.toggle('hidden', !s.logged_in);
     $('bankChips').classList.toggle('hidden', !s.logged_in || seated || s.bank_chips == null);
-    $('bankChips').innerText = '🪙 Баланс: ' + (s.bank_chips ?? 0);
-    const note = !s.logged_in ? '👀 Вы зритель. <a href="/home">Войдите через Telegram</a>, чтобы играть'
-        : !seated ? (s.players.length >= s.max_players ? '👀 Стол заполнен — можно смотреть' : '👀 Вы смотрите игру')
-        : s.running && !inHand ? '⏳ Вы сядете за стол со следующей раздачи' : '';
+    $('bankChips').innerText = '🪙 ' + (s.bank_chips ?? 0);
+    const note = !s.logged_in ? '👀 <a href="/home">Войдите</a>, чтобы играть'
+        : !seated ? (s.players.length >= s.max_players ? '👀 Стол заполнен' : '')
+        : s.running && !inHand ? '⏳ Со следующей раздачи' : '';
     $('watchNote').classList.toggle('hidden', !note);
     $('watchNote').innerHTML = note;
     $('screenResults').classList.toggle('hidden', s.status !== 'showdown');
     $('screenActions').classList.toggle('hidden', s.status !== 'betting' || !inHand || !m.cards);
     const readyN = s.players.filter(p => p.ready).length;
     $('statusLine').innerText = s.status === 'betting' ? (myTurn ? '🎯 Ваш ход' : s.to_act ? 'Ходит: ' + (s.players.find(p => p.id === s.to_act)?.name || '…') : '🂠 Открываем карты…')
-        : !s.running ? (s.players.length < 2 ? 'Ждём игроков: нужно минимум 2' : `Ждём готовности: ${readyN}/${s.players.length}`)
-        : s.status === 'showdown' ? `Готовы: ${readyN}/${s.players.length} — все готовы, и раздача начнётся сразу` : '';
+        : !s.running ? (s.players.length < 2 ? 'Нужно минимум 2 игрока' : `Готовы ${readyN}/${s.players.length}`)
+        : s.status === 'showdown' ? `Готовы ${readyN}/${s.players.length}` : '';
 
     if (s.status === 'showdown') {
         const byId = Object.fromEntries(s.players.map(p => [p.id, p])), wIds = (s.winners || []).map(w => w.id);
@@ -863,7 +877,7 @@ function render(s) {
         $('results').innerHTML = [...winRows, ...shownRows].join('');
         if (!prev || prev.status !== 'showdown' || prev.hand_no !== s.hand_no) {
             const left = Math.max(0, (s.next_hand_at || 0) - nowS());
-            $('nextHand').innerHTML = s.next_hand_at ? `<span>Следующая раздача через <b id="nextHandLeft">${Math.ceil(left)}</b> с</span>
+            $('nextHand').innerHTML = s.next_hand_at ? `<span>Новая раздача через <b id="nextHandLeft">${Math.ceil(left)}</b> с</span>
                 <div class="next-bar"><i style="animation-duration:${left}s"></i></div>` : '';
         }
     }
@@ -899,7 +913,8 @@ function seatInner(s, p, idx = 0) {
     if (fresh) { shownSeen.add(seenKey); if (S && S.hand_no === s.hand_no && prevBoardHand !== null) playFlick(.05); }
     const reveal = fresh && prevBoardHand !== null ? ' reveal' : '';
     const backDeal = dealFx ? ' deal' : '', backD = dealFx ? SHUFFLE_T + idx * .06 : 0;
-    const minis = p.id === s.me ? '' : (p.cards ? p.cards.map((c, k) => gc(c, 'mini' + reveal, k * .14, p.front_skin)).join('')
+    // открытые карты — в скине владельца, крупнее мини-рубашек и без затемнения (подсветка комбинации победителя остаётся)
+    const minis = p.id === s.me ? '' : (p.cards ? p.cards.map((c, k) => cardHTML(c, 'shown' + reveal + (HL.set.has(c) ? ' hl' : ''), k * .14, p.front_skin)).join('')
         : (p.in_hand && !p.folded ? cardHTML(null, 'mini' + backDeal, backD, p.back_skin) + cardHTML(null, 'mini' + backDeal, backD + .03, p.back_skin) : ''));
     const showCombo = s.status === 'showdown' && p.in_hand && p.cards && (p.id !== s.me || p.shown);
     const combo = showCombo ? `<div class="s-combo">${wIds.includes(p.id) ? '🏆 ' : ''}${comboName(p.cards, s.community)}</div>` : '';
@@ -1044,8 +1059,9 @@ function updateBonusBtn() {
     document.querySelectorAll('[data-until]').forEach(el => el.innerText = Math.max(0, Math.ceil(+el.dataset.until - nowS())));
     if (left > 0) {
         const f = n => String(n).padStart(2, '0');
-        b.disabled = true; b.innerText = `⏳ ${f(Math.floor(left / 3600))}:${f(Math.floor(left % 3600 / 60))}:${f(left % 60)}`;
-    } else { b.disabled = false; b.innerText = '💰 Взять ' + (S.bonus_amount || 'деньги'); }
+        // больше часа — ч:мм, иначе мм:сс
+        b.disabled = true; b.innerText = '⏳ ' + (left >= 3600 ? `${Math.floor(left / 3600)}:${f(Math.floor(left % 3600 / 60))}` : `${f(Math.floor(left / 60))}:${f(left % 60)}`);
+    } else { b.disabled = false; b.innerText = '💰 +' + (S.bonus_amount || ''); }
 }
 setInterval(updateBonusBtn, 1000);
 
@@ -1113,8 +1129,8 @@ function setSkinTab(t) {
 function renderSkinGrid() {
     const kind = skinTab, sel = MY[kind].key;
     $('skinHint').innerText = kind === 'front'
-        ? 'Лицо карт на столе берётся у дилера раздачи: когда дилер — вы, все видят ваш скин.'
-        : 'Задник ваших карт видят все игроки за столом.';
+        ? 'На столе — лицо карт дилера, в руке — ваше.'
+        : 'Ваш задник видят все.';
     const std = STD_SKINS.map((key, i) => ({ key, name: ['Классика', '4 цвета', 'Неон', 'Золото'][i], owned: true, desc: { key } }));
     // чужие личные задники (их видит только админ в каталоге) в выборе не показываем
     const items = [...std, ...((SK && SK.skins) || []).filter(x => x.kind === kind && (!x.private || x.owned))];
@@ -1129,7 +1145,7 @@ function renderSkinGrid() {
     if (kind === 'back' && SK && SK.logged_in) acts.push(`<button class="btn-def" onclick="openEditor('user', 'back')">${myOwnBack()
         ? '🔄 Заменить свой задник' : '📤 Загрузить свой задник'} · 🪙 ${SK.custom_back_price}</button>`);
     if (SK && SK.is_admin) acts.push(`<button class="btn-def btn-admin" onclick="openEditor('admin', '${kind}')">➕ Добавить скин ${kind === 'front' ? 'лица' : 'задника'}</button>`);
-    if (!LOGGED_IN) acts.push('<div class="skin-hint">Войдите через Telegram, чтобы покупать и загружать скины.</div>');
+    if (!LOGGED_IN) acts.push('<div class="skin-hint">Войдите, чтобы покупать скины</div>');
     $('skinActions').innerHTML = acts.join('');
 }
 async function pickSkin(kind, key) {
@@ -1177,9 +1193,9 @@ function openEditor(mode, kind, skin = null) {
     $('edBack').classList.toggle('hidden', kind !== 'back');
     $('edFront').classList.toggle('hidden', kind !== 'front');
     $('edNote').innerText = mode === 'user'
-        ? `Стоимость загрузки: ${SK ? SK.custom_back_price : '?'} 🪙. Задник увидят все игроки.` +
-          (replacing ? ' Свой задник может быть только один — новая картинка заменит текущую.' : '')
-        : 'Картинки сохраняются в отдельный S3-бакет скинов.';
+        ? `Цена: ${SK ? SK.custom_back_price : '?'} 🪙` +
+          (replacing ? ' · заменит текущий' : '')
+        : '';
     edRender();
     $('editorModal').classList.remove('hidden');
 }
@@ -1255,7 +1271,7 @@ function mountCropper(box, part) {
     box.innerHTML = `<div class="crop-stage">${part === 'back' ? `<div class="pc back photo crop-frame"></div>` : cardHTML(part + 'h', 'crop-frame', 0, desc)}</div>
         <div class="crop-tools"><span>🔍</span><input type="range" min="1" max="4" step="0.01" value="${sl.crop.z}">
         <button class="btn-def btn-sm auto" type="button" title="Сбросить">↺</button></div>
-        <div class="skin-hint">Перетащите фото, масштаб — ползунком, колесом мыши или двумя пальцами</div>`;
+        <div class="skin-hint">Двигайте фото, ползунок — масштаб</div>`;
     const el = box.querySelector('.crop-frame'), range = box.querySelector('input[type=range]');
     const apply = () => {
         const g = cropGeom(sl, el.clientWidth, el.clientHeight);
@@ -1423,7 +1439,7 @@ async function loadLeaders() {
             <div class="u-info"><b>${esc(userLabel(u))}${u.tg_id === d.me ? ' · вы' : ''}</b><small>${u.username ? '@' + esc(u.username) : ''}</small></div>
             ${u.seated ? '<span class="tag ok">за столом</span>' : ''}<span class="u-chips">🪙 ${u.chips}</span></div>`).join('')
             || '<div class="skin-hint">Пока пусто</div>';
-        $('lbNote').innerText = (d.loading ? '⏳ Подтягиваем имена… ' : '') + `Игроков: ${d.total}` + (d.my_place ? ` · вы на ${d.my_place} месте` : '');
+        $('lbNote').innerText = (d.loading ? '⏳ ' : '') + `Игроков: ${d.total}` + (d.my_place ? ` · вы на ${d.my_place} месте` : '');
         if (d.loading && !$('leaderModal').classList.contains('hidden')) lbPollT = setTimeout(loadLeaders, 2500);
     } catch (e) { toast(e.message); }
 }
@@ -1441,7 +1457,7 @@ function setAdminTab(t) {
 async function admLoadSettings() {
     try {
         const d = await api('/poker/admin/settings'), cur = d.pending || d.active;
-        $('admPending').innerText = d.pending ? '⏳ Есть изменения — вступят в силу со следующей раздачи' : '';
+        $('admPending').innerText = d.pending ? '⏳ Применится со следующей раздачи' : '';
         $('admForm').innerHTML = d.spec.map(f => `<label class="fld"><span>${esc(f.label)}
             ${d.pending && d.pending[f.key] !== d.active[f.key] ? `<b class="pend">сейчас ${d.active[f.key]}</b>` : ''}</span>
             <input type="number" data-key="${f.key}" min="${f.min}" max="${f.max}" value="${cur[f.key]}"></label>`).join('');
@@ -1502,7 +1518,7 @@ async function admLoadUsers() {
     try {
         const d = await api('/poker/admin/users?q=' + encodeURIComponent($('admUserQ').value.trim()));
         d.users.forEach(u => admUsers[u.tg_id] = u);
-        $('admUserNote').innerText = (d.loading ? '⏳ Подтягиваем имена из Telegram… ' : '') + `Найдено: ${d.total}` + (d.total > d.users.length ? `, показаны первые ${d.users.length}` : '');
+        $('admUserNote').innerText = (d.loading ? '⏳ ' : '') + `Найдено: ${d.total}` + (d.total > d.users.length ? `, показаны первые ${d.users.length}` : '');
         $('admUserList').innerHTML = d.users.map((u, i) => `<button type="button" class="user-row ${u.tg_id === admPick ? 'sel' : ''}" style="animation-delay:${Math.min(i, 12) * .02}s" onclick="admPickUser('${u.tg_id}')">
             ${userAv(u)}<div class="u-info"><b>${esc(userLabel(u))}</b><small>${u.username ? '@' + esc(u.username) + ' · ' : ''}id ${u.tg_id}</small></div>
             ${u.seated ? '<span class="tag ok">за столом</span>' : ''}<span class="u-chips">🪙 ${u.chips}</span></button>`).join('')
