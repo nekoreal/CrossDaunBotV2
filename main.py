@@ -9,6 +9,7 @@ from telegram_bot.tg_db import engine, Base, add_missing_columns
 from telegram_bot.tg_db.models.tg_user import TelegramUser
 from telegram_bot.tg_db.models.tg_teg import TelegramTag
 from telegram_bot.tg_db.models.tg_at_user_tag import UserTagAssociation
+from telegram_bot.tg_db.models.poker import PokerSkin, PokerSkinOwner, PokerSetting
 import logging
 
 
@@ -39,6 +40,7 @@ def main():
 
     Base.metadata.create_all(bind=engine)
     add_missing_columns()
+    s3.skins_s3_client.ensure_bucket()
     telegram_thread = threading.Thread(target=run_telegram_bot)
     telegram_thread.start()
 

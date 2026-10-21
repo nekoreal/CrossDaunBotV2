@@ -180,6 +180,56 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .style-opt.active{border-color:var(--accent-cyan);box-shadow:0 0 18px rgba(0,242,254,.3);background:rgba(0,242,254,.08)}
 .prev-cards{display:flex;gap:4px}
 .pc.prev{width:44px;border-radius:6px}
+.modal-card.wide{max-width:680px;max-height:92vh;overflow-y:auto;scrollbar-width:thin}
+.tabs{display:flex;gap:6px;margin-bottom:14px;padding:4px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.tab{flex:1;padding:9px 10px;border-radius:9px;border:0;background:transparent;color:var(--text-muted);font-weight:700;font-size:.9rem;cursor:pointer;transition:all .25s ease}
+.tab:hover{color:var(--text-main)}
+.tab.active{background:linear-gradient(135deg,rgba(0,242,254,.18),rgba(157,78,221,.22));color:#fff;box-shadow:0 0 14px rgba(0,242,254,.2)}
+.skin-hint{font-size:.8rem;color:var(--text-muted);margin:0 0 12px;line-height:1.4}
+.style-grid{grid-template-columns:repeat(auto-fill,minmax(140px,1fr))}
+.style-opt{position:relative;animation:tagPop .35s var(--ease-spring) backwards}
+.style-opt small{font-size:.72rem;font-weight:700;color:var(--warning)}
+.style-opt small.owned{color:var(--text-muted)}
+.style-opt.active small{color:var(--accent-cyan)}
+.style-opt.locked .prev-cards{filter:saturate(.6)}
+.style-opt .off{position:absolute;top:6px;left:6px;font-size:.62rem;color:var(--danger)}
+.skin-actions{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.pc.photo{background-size:cover;background-position:center}
+.pc.photo .cn{padding:1.5cqw 2.5cqw;border-radius:4px;background:rgba(10,12,16,.5);text-shadow:0 1px 2px rgba(0,0,0,.7)}
+.pc.back.photo::after{display:none}
+.pc.back.photo{background-color:#12161f}
+/* редактор скинов */
+.ed-grid{display:grid;grid-template-columns:2fr 1fr;gap:10px;margin-bottom:14px}
+.fld{display:flex;flex-direction:column;gap:5px;font-size:.78rem;color:var(--text-muted)}
+.fld input,.adm-input{padding:9px 10px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);color:var(--text-main);font-size:.9rem;outline:none;transition:border-color .2s}
+.fld input:focus,.adm-input:focus{border-color:var(--accent-cyan)}
+.colors{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px}
+.colors label{display:flex;align-items:center;gap:6px;padding:6px 10px;border-radius:10px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);font-size:.95rem}
+.colors input[type=color]{width:30px;height:26px;border:0;background:none;cursor:pointer;padding:0}
+.rank-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(58px,1fr));gap:8px;margin-bottom:14px}
+.rank-slot{position:relative;aspect-ratio:5/7;border-radius:8px;border:1px dashed rgba(0,242,254,.35);background:rgba(255,255,255,.03) center/cover no-repeat;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:all .25s ease;overflow:hidden}
+.rank-slot:hover{border-color:var(--accent-cyan);box-shadow:0 0 12px rgba(0,242,254,.3);transform:translateY(-2px)}
+.rank-slot.has{border-style:solid;border-color:rgba(157,78,221,.6)}
+.rank-slot b{font-family:Georgia,serif;font-size:1.1rem;padding:2px 7px;border-radius:6px;background:rgba(10,12,16,.6)}
+.rank-slot input{display:none}
+.rank-slot .x{position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;border:0;background:rgba(255,85,85,.85);color:#fff;font-size:.65rem;cursor:pointer;display:none}
+.rank-slot.has .x{display:block}
+.drop{display:flex;align-items:center;justify-content:center;gap:8px;padding:18px;border-radius:12px;border:1px dashed rgba(0,242,254,.4);color:var(--accent-cyan);font-weight:600;cursor:pointer;margin-bottom:14px;transition:all .25s ease}
+.drop:hover{background:rgba(0,242,254,.06);box-shadow:0 0 16px rgba(0,242,254,.2)}
+.drop input{display:none}
+.big-prev{justify-content:center;flex-wrap:wrap;gap:8px;margin-bottom:14px;padding:14px;border-radius:12px;background:radial-gradient(ellipse at center,rgba(0,242,254,.1),transparent 70%),#0f1a22}
+.big-prev .pc{width:64px}
+/* админка */
+.adm-form{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-bottom:12px}
+.adm-form .pend{color:var(--warning);font-size:.7rem}
+.adm-row{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);margin-bottom:8px;flex-wrap:wrap;animation:slideIn .3s var(--ease-out) backwards}
+.adm-row .prev-cards .pc{width:30px}
+.adm-info{flex:1;min-width:120px;display:flex;flex-direction:column;gap:2px}
+.adm-info small{color:var(--text-muted);font-size:.72rem}
+.adm-row .adm-input{width:90px}
+.adm-row label{font-size:.78rem;color:var(--text-muted);display:flex;align-items:center;gap:4px}
+.adm-note{font-size:.8rem;color:var(--warning);margin-bottom:10px;min-height:1em}
+.btn-admin{color:var(--warning);border-color:rgba(255,183,3,.4)}
 .toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:10000;padding:10px 18px;border-radius:12px;background:rgba(18,22,31,.95);border:1px solid rgba(0,242,254,.4);box-shadow:0 8px 30px rgba(0,0,0,.5);animation:fadeIn .3s ease}
 
 /* --- РЕАЛИСТИЧНЫЕ КАРТЫ (размеры шрифтов в cqw = от ширины карты) --- */
@@ -292,7 +342,10 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
       <button id="btnStand" class="btn-def btn-sm btn-stand auto hidden" onclick="leaveGame()">🚪 Выйти из-за стола</button>
       <span id="bankChips" class="badge hidden"></span>
     </div>
-    <button class="btn-def btn-sm auto" onclick="openSettings()">⚙️ Настройки</button>
+    <div class="tools-left">
+      {% if is_admin %}<button class="btn-def btn-sm btn-admin auto" onclick="openAdmin()">🛠 Админ</button>{% endif %}
+      <button class="btn-def btn-sm auto" onclick="openSettings()">⚙️ Настройки</button>
+    </div>
   </div>
 
   <div class="table-wrap">
@@ -354,15 +407,85 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
   <div id="comboList" class="history-list combo-list"></div>
 </aside>
 </div>
-<!-- НАСТРОЙКИ -->
+<!-- НАСТРОЙКИ: скины -->
 <div id="settingsModal" class="modal hidden" onclick="if(event.target===this)closeSettings()">
-  <div class="modal-card glass">
+  <div class="modal-card glass wide">
     <button class="modal-close" type="button" onclick="closeSettings()">✕</button>
-    <h2>⚙️ Настройки</h2>
-    <div class="set-title">Стиль карт</div>
+    <h2>⚙️ Настройки · скины</h2>
+    <div class="tabs">
+      <button class="tab active" data-tab="front" onclick="setSkinTab('front')">🂡 Лицо карт</button>
+      <button class="tab" data-tab="back" onclick="setSkinTab('back')">🂠 Задник</button>
+    </div>
+    <div id="skinHint" class="skin-hint"></div>
     <div id="styleGrid" class="style-grid"></div>
+    <div id="skinActions" class="skin-actions"></div>
   </div>
 </div>
+
+<!-- РЕДАКТОР СКИНА (админ: лицо/задник; игрок: свой задник) -->
+<div id="editorModal" class="modal hidden" onclick="if(event.target===this)closeEditor()">
+  <div class="modal-card glass wide">
+    <button class="modal-close" type="button" onclick="closeEditor()">✕</button>
+    <h2 id="edTitle">Новый скин</h2>
+    <div class="ed-grid">
+      <label class="fld"><span>Название</span><input id="edName" maxlength="60" placeholder="Например, «Космос»"></label>
+      <label class="fld" id="edPriceBox"><span>Цена, 🪙 (0 — бесплатно)</span><input id="edPrice" type="number" min="0" value="0"></label>
+    </div>
+    <div id="edBack">
+      <label class="drop">📁 Выбрать картинку задника<input type="file" accept="image/*" onchange="edSetFile('back', this.files[0])"></label>
+    </div>
+    <div id="edFront">
+      <div class="set-title">Цвета (подпись ранга и масти поверх картинки)</div>
+      <div class="colors">
+        <label>Фон <input type="color" id="edBg" value="#ffffff" oninput="edPreview()"></label>
+        <label>♠ <input type="color" id="edColor_s" value="#12161f" oninput="edPreview()"></label>
+        <label>♥ <input type="color" id="edColor_h" value="#d62828" oninput="edPreview()"></label>
+        <label>♦ <input type="color" id="edColor_d" value="#d62828" oninput="edPreview()"></label>
+        <label>♣ <input type="color" id="edColor_c" value="#12161f" oninput="edPreview()"></label>
+      </div>
+      <div class="set-title">Картинки рангов — по желанию (без картинки карта рисуется обычной раскладкой)</div>
+      <div id="edRanks" class="rank-grid"></div>
+    </div>
+    <div class="set-title">Превью</div>
+    <div id="edPreviewBox" class="prev-cards big-prev"></div>
+    <div id="edNote" class="skin-hint"></div>
+    <button id="edSave" class="btn-def" onclick="edSubmit()">Сохранить</button>
+  </div>
+</div>
+
+<!-- АДМИН-ПАНЕЛЬ -->
+{% if is_admin %}
+<div id="adminModal" class="modal hidden" onclick="if(event.target===this)closeAdmin()">
+  <div class="modal-card glass wide">
+    <button class="modal-close" type="button" onclick="closeAdmin()">✕</button>
+    <h2>🛠 Админ-панель покера</h2>
+    <div class="tabs">
+      <button class="tab active" data-atab="settings" onclick="setAdminTab('settings')">⚙️ Стол</button>
+      <button class="tab" data-atab="skins" onclick="setAdminTab('skins')">🎨 Скины</button>
+      <button class="tab" data-atab="chips" onclick="setAdminTab('chips')">🪙 Фишки</button>
+    </div>
+    <div id="admSettings">
+      <div id="admPending" class="adm-note"></div>
+      <div id="admForm" class="adm-form"></div>
+      <button class="btn-def" onclick="admSaveSettings()">Сохранить настройки</button>
+    </div>
+    <div id="admSkins" class="hidden">
+      <div class="act-row" style="margin-bottom:12px">
+        <button class="btn-def btn-sm" onclick="openEditor('admin', 'front')">➕ Скин лица</button>
+        <button class="btn-def btn-sm" onclick="openEditor('admin', 'back')">➕ Скин задника</button>
+      </div>
+      <div id="admSkinList"></div>
+    </div>
+    <div id="admChips" class="hidden">
+      <div class="adm-form">
+        <label class="fld"><span>Telegram ID</span><input id="admChipsId" type="number"></label>
+        <label class="fld"><span>Сумма (минус — списать)</span><input id="admChipsAmount" type="number" value="1000"></label>
+      </div>
+      <button class="btn-def" onclick="admGiveChips()">Начислить</button>
+    </div>
+  </div>
+</div>
+{% endif %}
 
 <script>
 /* =====================================================================
@@ -387,7 +510,9 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
      'hand_result' {hand_no, pot, winners:[{id,name,amount,hand_name}]}  — для истории
      'alert' {message}                  — ошибка/уведомление
    Дополнительно:
-     клиент -> сервер: 'claim_bonus' (забрать бонус, раз в 12 ч), 'save_settings' {card_style}
+     клиент -> сервер: 'claim_bonus' (забрать бонус)
+     скины и админка — HTTP: /poker/skins*, /poker/admin/* (см. flask_server/poker_skins.py);
+     в table_state: table_skin (лицо карт стола = скин дилера), players[].back_skin (задник игрока)
      сервер -> клиент: 'bonus_result' {amount, message}; в table_state: bonus_next_at (epoch-сек), bonus_amount
    Карты: ранг [2-9TJQKA] + масть [shdc]
    ===================================================================== */
@@ -476,17 +601,32 @@ const PIPS = {
     'T': [[0, 0], [1, 0], [.5, 1 / 6], [0, 1 / 3], [1, 1 / 3], [0, 2 / 3], [1, 2 / 3], [.5, 5 / 6], [0, 1], [1, 1]]
 };
 let HL = { set: new Set(), dim: false };
-function cardHTML(c, cls = '', d = 0) {
-    if (!c) return `<div class="pc back ${cls}"></div>`;
+const STD_SKINS = ['classic', 'four', 'neon', 'gold'];
+const isStd = sk => STD_SKINS.includes(sk && sk.key);
+// свой скин лица: фон и цвета мастей через CSS-переменные карты
+const skinVars = sk => { const c = sk.colors || {}; return `--pc-bg:${sk.bg || '#fff'};--pc-border:rgba(255,255,255,.28);--pc-s:${c.s};--pc-h:${c.h};--pc-d:${c.d};--pc-c:${c.c};`; };
+// sk — описание скина {key, image|images, colors, bg}; по умолчанию — мои настройки
+function cardHTML(c, cls = '', d = 0, sk = null) {
+    if (!c) {
+        sk = sk || MY.back;
+        return sk.image ? `<div class="pc back photo ${cls}" style="background-image:url('${sk.image}')"></div>`
+            : `<div class="pc back ${cls}" data-cards="${isStd(sk) ? sk.key : 'classic'}"></div>`;
+    }
+    sk = sk || MY.front;
     const r = c[0], su = SUIT[c[1]], rk = r === 'T' ? '10' : r;
+    const img = !isStd(sk) && sk.images && sk.images[r];
     const corner = pos => `<div class="cn ${pos}${rk === '10' ? ' t10' : ''}"><b>${rk}</b><i>${su}</i></div>`;
-    const center = r === 'A' ? `<div class="ace">${su}</div>`
+    const center = img ? '' : r === 'A' ? `<div class="ace">${su}</div>`
         : 'JQK'.includes(r) ? `<div class="face">${r}<i class="fs t">${su}</i><i class="fs b">${su}</i></div>`
         : `<div class="pips">${PIPS[r].map(([x, y]) => `<i${y > .5 ? ' class="fl"' : ''} style="left:${36 + x * 28}%;top:${17 + y * 66}%">${su}</i>`).join('')}</div>`;
-    return `<div class="pc su-${c[1]} ${cls}" style="--d:${d}s">${corner('tl')}${center}${corner('br')}</div>`;
+    const look = isStd(sk) ? `data-cards="${sk.key}" style="--d:${d}s"`
+        : `style="--d:${d}s;${skinVars(sk)}${img ? `background-image:url('${img}')` : ''}"`;
+    return `<div class="pc su-${c[1]}${img ? ' photo' : ''} ${cls}" ${look}>${corner('tl')}${center}${corner('br')}</div>`;
 }
 // карта в игре: с учётом подсветки комбинации
-const gc = (c, cls = '', d = 0) => cardHTML(c, cls + (HL.set.has(c) ? ' hl' : (HL.dim ? ' dim' : '')), d);
+// лицо карт на столе — по скину дилера раздачи
+const tableSkin = () => (S && S.table_skin) || MY.front;
+const gc = (c, cls = '', d = 0) => cardHTML(c, cls + (HL.set.has(c) ? ' hl' : (HL.dim ? ' dim' : '')), d, tableSkin());
 
 function render(s) {
     const prev = S;
@@ -525,11 +665,14 @@ function render(s) {
 
     // экраны
     const inHand = seated && m.in_hand;
-    $('screenLobby').classList.toggle('hidden', seated && s.running);
+    const canReady = seated && (!s.running || s.status === 'showdown');
+    $('screenLobby').classList.toggle('hidden', seated && !canReady);
     $('btnJoin').classList.toggle('hidden', !s.logged_in || seated || s.players.length >= s.max_players);
-    $('btnReady').classList.toggle('hidden', !seated || s.running);
+    $('btnReady').classList.toggle('hidden', !canReady);
     $('btnReady').classList.toggle('is-ready', seated && !!m.ready);
-    $('btnReady').innerText = seated && m.ready ? '❌ Я не готов' : '✅ Готов';
+    $('btnReady').innerText = s.status === 'showdown'
+        ? (m.ready ? '⏳ Ждём остальных · отменить' : '✅ Готов к следующей раздаче')
+        : (m.ready ? '❌ Я не готов' : '✅ Готов');
     $('btnStand').classList.toggle('hidden', !seated);
     $('btnBonus').classList.toggle('hidden', !s.logged_in);
     $('bankChips').classList.toggle('hidden', !s.logged_in || seated || s.bank_chips == null);
@@ -543,7 +686,8 @@ function render(s) {
     $('screenActions').classList.toggle('hidden', s.status !== 'betting' || !inHand || !m.cards);
     const readyN = s.players.filter(p => p.ready).length;
     $('statusLine').innerText = s.status === 'betting' ? (myTurn ? '🎯 Ваш ход' : s.to_act ? 'Ходит: ' + (s.players.find(p => p.id === s.to_act)?.name || '…') : '🂠 Открываем карты…')
-        : !s.running ? (s.players.length < 2 ? 'Ждём игроков: нужно минимум 2' : `Ждём готовности: ${readyN}/${s.players.length}`) : '';
+        : !s.running ? (s.players.length < 2 ? 'Ждём игроков: нужно минимум 2' : `Ждём готовности: ${readyN}/${s.players.length}`)
+        : s.status === 'showdown' ? `Готовы: ${readyN}/${s.players.length} — все готовы, и раздача начнётся сразу` : '';
 
     if (s.status === 'showdown') {
         $('results').innerHTML = (s.winners || []).map((w, i) => `<div class="result-item" style="animation-delay:${i * .08}s">
@@ -578,14 +722,15 @@ function seatInner(s, p) {
     const wIds = (s.winners || []).map(w => w.id);
     const cls = ['seat', p.id === s.me && 'me', p.id === s.to_act && 'active', p.folded && 'folded',
         s.status === 'showdown' && wIds.includes(p.id) && 'winner', s.running && !p.in_hand && 'waiting-next', !p.online && 'offline'].filter(Boolean).join(' ');
-    const minis = p.id === s.me ? '' : (p.cards ? p.cards.map(c => gc(c, 'mini')).join('') : (p.in_hand && !p.folded ? cardHTML(null, 'mini') + cardHTML(null, 'mini') : ''));
+    const minis = p.id === s.me ? '' : (p.cards ? p.cards.map(c => gc(c, 'mini')).join('') : (p.in_hand && !p.folded ? cardHTML(null, 'mini', 0, p.back_skin) + cardHTML(null, 'mini', 0, p.back_skin) : ''));
     let ring = '';
     if (p.id === s.to_act && s.deadline) {
         const elapsed = s.turn_time - Math.max(0, s.deadline - nowS());
         ring = `<svg class="ring" viewBox="0 0 36 36"><circle cx="18" cy="18" r="16.5" pathLength="100" style="animation-duration:${s.turn_time}s;animation-delay:-${elapsed}s"/></svg>`;
     }
     const tag = !p.online ? `<span class="tag off">🔌 <span data-until="${p.offline_until || 0}">${Math.max(0, Math.ceil((p.offline_until || 0) - nowS()))}</span>с</span>`
-        : !s.running ? (p.ready ? '<span class="tag ok">✓ Готов</span>' : '<span class="tag">Не готов</span>')
+        : (!s.running || s.status === 'showdown') && p.ready ? '<span class="tag ok">✓ Готов</span>'
+        : !s.running ? '<span class="tag">Не готов</span>'
         : !p.in_hand ? '<span class="tag">⏳ След. раздача</span>'
         : `<div class="s-last">${esc(p.all_in && !p.folded ? 'Олл-ин' : p.last_action)}</div>`;
     return `<div class="${cls}">
@@ -704,6 +849,16 @@ function updateBonusBtn() {
 }
 setInterval(updateBonusBtn, 1000);
 
+/* ---- мои скины (для превью, справочника и пока нет раздачи) ---- */
+const SERVER_SKINS = {{ skins | tojson }};   // {front, back} из БД, если авторизован
+const LOGGED_IN = {{ (user is not none) | tojson }};
+let MY = SERVER_SKINS || { front: { key: 'classic' }, back: { key: 'classic' } };
+if (!SERVER_SKINS) try {   // гость — только стандартные, в localStorage
+    const f = localStorage.getItem('pk_front'), b = localStorage.getItem('pk_back');
+    if (STD_SKINS.includes(f)) MY.front = { key: f };
+    if (STD_SKINS.includes(b)) MY.back = { key: b };
+} catch (e) {}
+
 /* ---- справочник комбинаций ---- */
 const COMBOS = [
     { cat: 9, name: 'Роял-флеш', ex: ['As', 'Ks', 'Qs', 'Js', 'Ts'], d: 'Стрит-флеш от десятки до туза' },
@@ -717,35 +872,214 @@ const COMBOS = [
     { cat: 1, name: 'Пара', ex: ['As', 'Ah', 'Kd', '8c', '3s'], d: 'Две карты одного ранга' },
     { cat: 0, name: 'Старшая карта', ex: ['As', 'Jh', '8d', '5c', '2s'], d: 'Комбинации нет — решает старшая карта' }
 ];
-$('comboList').innerHTML = COMBOS.map((c, i) => `<div class="history-card combo-card" data-cat="${c.cat}">
-    <div class="c-head">${i + 1}. ${c.name}<span>${i === 0 ? 'сильнейшая' : i === 9 ? 'слабейшая' : ''}</span></div>
-    <div class="c-cards">${c.ex.map(x => cardHTML(x, 'sm')).join('')}</div>
-    <div class="h-hand">${c.d}</div></div>`).join('');
+function renderCombos() {
+    $('comboList').innerHTML = COMBOS.map((c, i) => `<div class="history-card combo-card" data-cat="${c.cat}">
+        <div class="c-head">${i + 1}. ${c.name}<span>${i === 0 ? 'сильнейшая' : i === 9 ? 'слабейшая' : ''}</span></div>
+        <div class="c-cards">${c.ex.map(x => cardHTML(x, 'sm')).join('')}</div>
+        <div class="h-hand">${c.d}</div></div>`).join('');
+}
+renderCombos();
 
-/* ---- настройки: стиль карт ---- */
-const STYLES = [['classic', 'Классика'], ['four', '4 цвета'], ['neon', 'Неон'], ['gold', 'Золото']];
-const SERVER_CARD_STYLE = {{ (card_style or '') | tojson }};  // стиль, сохранённый в БД
-let cardStyle = SERVER_CARD_STYLE || 'classic';
-if (!SERVER_CARD_STYLE) try { cardStyle = localStorage.getItem('pk_cards') || 'classic'; } catch (e) {}
-if (!STYLES.some(x => x[0] === cardStyle)) cardStyle = 'classic';
-document.body.dataset.cards = cardStyle;
-function renderStyleGrid() {
-    $('styleGrid').innerHTML = STYLES.map(([id, name]) => `<button type="button" class="style-opt ${id === cardStyle ? 'active' : ''}" data-cards="${id}" onclick="setCardStyle('${id}')">
-        <div class="prev-cards">${['As', 'Kh', 'Qd', 'Jc'].map(c => cardHTML(c, 'prev')).join('')}</div><span>${name}</span></button>`).join('');
+/* ---- HTTP API ---- */
+async function api(url, { json, body, method } = {}) {
+    const headers = { 'X-Requested-With': 'poker' };
+    if (json) headers['Content-Type'] = 'application/json';
+    const r = await fetch(url, { method: method || (json || body ? 'POST' : 'GET'), headers, body: json ? JSON.stringify(json) : body });
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) throw new Error(d.error || 'Ошибка ' + r.status);
+    return d;
 }
-function applyCardStyle(id) {
-    cardStyle = id; document.body.dataset.cards = id;
-    try { localStorage.setItem('pk_cards', id); } catch (e) {}
+
+/* ---- настройки: скины лица и задника ---- */
+const PREV_FRONT = ['As', 'Kh', 'Qd', 'Jc'];
+let SK = null, skinTab = 'front';
+const prevHTML = (kind, desc) => kind === 'front' ? PREV_FRONT.map(c => cardHTML(c, 'prev', 0, desc)).join('')
+    : cardHTML(null, 'prev', 0, desc) + cardHTML(null, 'prev', 0, desc);
+async function loadSkins() {
+    try {
+        SK = await api('/poker/skins');
+        if (SK.logged_in) {   // мои выбранные скины — из каталога
+            const find = (kind, key) => STD_SKINS.includes(key) ? { key } : (SK.skins.find(x => x.key === key) || {}).desc || { key: 'classic' };
+            MY = { front: find('front', SK.selected.front), back: find('back', SK.selected.back) };
+        }
+    } catch (e) { toast(e.message); }
+    renderSkinGrid(); renderCombos(); if (S) render(S);
 }
-function setCardStyle(id) {
-    applyCardStyle(id);
-    if (S) S.card_style = id;
-    transport.emit('save_settings', { card_style: id });  // в БД; гостю — только localStorage
-    renderStyleGrid();
+function setSkinTab(t) {
+    skinTab = t;
+    document.querySelectorAll('#settingsModal .tab').forEach(b => b.classList.toggle('active', b.dataset.tab === t));
+    renderSkinGrid();
 }
-function openSettings() { renderStyleGrid(); $('settingsModal').classList.remove('hidden'); }
+function renderSkinGrid() {
+    const kind = skinTab, sel = MY[kind].key;
+    $('skinHint').innerText = kind === 'front'
+        ? 'Лицо карт на столе берётся у дилера раздачи: когда дилер — вы, все видят ваш скин.'
+        : 'Задник ваших карт видят все игроки за столом.';
+    const std = STD_SKINS.map((key, i) => ({ key, name: ['Классика', '4 цвета', 'Неон', 'Золото'][i], owned: true, desc: { key } }));
+    // чужие личные задники (их видит только админ в каталоге) в выборе не показываем
+    const items = [...std, ...((SK && SK.skins) || []).filter(x => x.kind === kind && (!x.private || x.owned))];
+    $('styleGrid').innerHTML = items.map((x, i) => {
+        const label = x.key === sel ? '✓ Выбран' : x.private ? 'Ваш' : x.owned ? (x.price ? 'Куплен' : 'Бесплатно') : '🪙 ' + x.price;
+        return `<button type="button" class="style-opt ${x.key === sel ? 'active' : ''} ${x.owned ? '' : 'locked'}" style="animation-delay:${i * .03}s" onclick="pickSkin('${kind}', '${x.key}')">
+            ${x.is_active === false ? '<span class="off">скрыт</span>' : ''}
+            <div class="prev-cards">${prevHTML(kind, x.desc)}</div><span>${esc(x.name)}</span>
+            <small class="${x.owned && x.key !== sel ? 'owned' : ''}">${label}</small></button>`;
+    }).join('');
+    const acts = [];
+    if (kind === 'back' && SK && SK.logged_in) acts.push(`<button class="btn-def" onclick="openEditor('user', 'back')">📤 Загрузить свой задник · 🪙 ${SK.custom_back_price}</button>`);
+    if (SK && SK.is_admin) acts.push(`<button class="btn-def btn-admin" onclick="openEditor('admin', '${kind}')">➕ Добавить скин ${kind === 'front' ? 'лица' : 'задника'}</button>`);
+    if (!LOGGED_IN) acts.push('<div class="skin-hint">Войдите через Telegram, чтобы покупать и загружать скины.</div>');
+    $('skinActions').innerHTML = acts.join('');
+}
+async function pickSkin(kind, key) {
+    if (!LOGGED_IN) {
+        if (!STD_SKINS.includes(key)) return;
+        MY[kind] = { key }; try { localStorage.setItem(kind === 'front' ? 'pk_front' : 'pk_back', key); } catch (e) {}
+        renderSkinGrid(); renderCombos(); if (S) render(S); return;
+    }
+    const item = STD_SKINS.includes(key) ? { owned: true } : SK.skins.find(x => x.key === key);
+    try {
+        if (item.owned) await api('/poker/skins/select', { json: { kind, key } });
+        else {
+            if (!confirm(`Купить «${item.name}» за ${item.price} фишек?`)) return;
+            await api('/poker/skins/buy', { json: { skin_id: item.id } });
+            toast('🎉 Скин куплен');
+        }
+        await loadSkins();
+    } catch (e) { toast(e.message); }
+}
+function openSettings() { renderSkinGrid(); $('settingsModal').classList.remove('hidden'); loadSkins(); }
 function closeSettings() { $('settingsModal').classList.add('hidden'); }
-document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSettings(); });
+
+/* ---- редактор скина ---- */
+const ED_RANKS = 'AKQJT98765432';
+let ED = null;
+function openEditor(mode, kind) {
+    ED = { mode, kind, files: {}, urls: {} };
+    $('edTitle').innerText = mode === 'user' ? '📤 Свой задник' : kind === 'front' ? '➕ Новый скин лица' : '➕ Новый скин задника';
+    $('edName').value = ''; $('edPrice').value = 0;
+    $('edPriceBox').classList.toggle('hidden', mode === 'user');
+    $('edBack').classList.toggle('hidden', kind !== 'back');
+    $('edFront').classList.toggle('hidden', kind !== 'front');
+    $('edNote').innerText = mode === 'user'
+        ? `Стоимость загрузки: ${SK ? SK.custom_back_price : '?'} 🪙. Картинка обрежется под пропорции карты (5:7). Задник увидят все игроки.`
+        : 'Картинки обрезаются под пропорции карты (5:7) и сохраняются в отдельный S3-бакет скинов.';
+    $('edRanks').innerHTML = [...ED_RANKS].map(r => `<label class="rank-slot" id="edSlot_${r}">
+        <b>${r === 'T' ? '10' : r}</b><input type="file" accept="image/*" onchange="edSetFile('${r}', this.files[0])">
+        <button type="button" class="x" onclick="event.preventDefault();edSetFile('${r}', null)">✕</button></label>`).join('');
+    edPreview();
+    $('editorModal').classList.remove('hidden');
+}
+function closeEditor() {
+    if (ED) Object.values(ED.urls).forEach(u => URL.revokeObjectURL(u));
+    ED = null; $('editorModal').classList.add('hidden');
+}
+function edSetFile(part, file) {
+    if (ED.urls[part]) URL.revokeObjectURL(ED.urls[part]);
+    delete ED.urls[part]; delete ED.files[part];
+    if (file) { ED.files[part] = file; ED.urls[part] = URL.createObjectURL(file); }
+    const slot = $('edSlot_' + part);
+    if (slot) { slot.classList.toggle('has', !!file); slot.style.backgroundImage = file ? `url('${ED.urls[part]}')` : ''; }
+    edPreview();
+}
+function edPreview() {
+    if (!ED) return;
+    if (ED.kind === 'back') {
+        const d = ED.urls.back ? { key: 'preview', image: ED.urls.back } : { key: 'classic' };
+        $('edPreviewBox').innerHTML = cardHTML(null, 'deal', 0, d) + cardHTML(null, 'deal', .1, d);
+        return;
+    }
+    const desc = { key: 'preview', bg: $('edBg').value, images: {}, colors: {} };
+    'shdc'.split('').forEach(su => desc.colors[su] = $('edColor_' + su).value);
+    Object.entries(ED.urls).forEach(([r, u]) => desc.images[r] = u);
+    // в превью — ранги с картинками, иначе пример
+    const ranks = Object.keys(ED.urls).length ? [...ED_RANKS].filter(r => ED.urls[r]).slice(0, 6) : ['A', 'K', 'Q', 'T'];
+    $('edPreviewBox').innerHTML = ranks.map((r, i) => cardHTML(r + 'shdc'[i % 4], '', 0, desc)).join('');
+}
+async function edSubmit() {
+    const fd = new FormData(), name = $('edName').value.trim();
+    if (!name && ED.mode === 'admin') return toast('Укажите название');
+    fd.append('name', name || 'Мой задник');
+    let url = '/poker/admin/skins';
+    if (ED.mode === 'user') {
+        if (!ED.files.back) return toast('Выберите картинку');
+        if (!confirm(`Загрузить задник за ${SK ? SK.custom_back_price : ''} фишек?`)) return;
+        fd.append('image', ED.files.back); url = '/poker/skins/upload_back';
+    } else {
+        fd.append('kind', ED.kind); fd.append('price', $('edPrice').value || 0);
+        if (ED.kind === 'back') { if (!ED.files.back) return toast('Выберите картинку'); fd.append('image', ED.files.back); }
+        else {
+            fd.append('bg', $('edBg').value);
+            'shdc'.split('').forEach(su => fd.append('color_' + su, $('edColor_' + su).value));
+            Object.entries(ED.files).forEach(([r, f]) => fd.append('rank_' + r, f));
+        }
+    }
+    const btn = $('edSave'); btn.disabled = true; btn.innerText = 'Загружаем…';
+    try {
+        await api(url, { body: fd });
+        toast(ED.mode === 'user' ? '🎉 Задник загружен и выбран' : '✅ Скин добавлен');
+        closeEditor(); await loadSkins(); if (!$('adminModal')?.classList.contains('hidden')) admLoadSkins();
+    } catch (e) { toast(e.message); }
+    finally { btn.disabled = false; btn.innerText = 'Сохранить'; }
+}
+
+/* ---- админ-панель ---- */
+function openAdmin() { $('adminModal').classList.remove('hidden'); setAdminTab('settings'); }
+function closeAdmin() { $('adminModal').classList.add('hidden'); }
+function setAdminTab(t) {
+    document.querySelectorAll('#adminModal .tab').forEach(b => b.classList.toggle('active', b.dataset.atab === t));
+    ['settings', 'skins', 'chips'].forEach(x => $('adm' + x[0].toUpperCase() + x.slice(1)).classList.toggle('hidden', x !== t));
+    if (t === 'settings') admLoadSettings();
+    if (t === 'skins') admLoadSkins();
+}
+async function admLoadSettings() {
+    try {
+        const d = await api('/poker/admin/settings'), cur = d.pending || d.active;
+        $('admPending').innerText = d.pending ? '⏳ Есть изменения — вступят в силу со следующей раздачи' : '';
+        $('admForm').innerHTML = d.spec.map(f => `<label class="fld"><span>${esc(f.label)}
+            ${d.pending && d.pending[f.key] !== d.active[f.key] ? `<b class="pend">сейчас ${d.active[f.key]}</b>` : ''}</span>
+            <input type="number" data-key="${f.key}" min="${f.min}" max="${f.max}" value="${cur[f.key]}"></label>`).join('');
+    } catch (e) { toast(e.message); }
+}
+async function admSaveSettings() {
+    const values = {};
+    document.querySelectorAll('#admForm input').forEach(i => values[i.dataset.key] = +i.value);
+    try { await api('/poker/admin/settings', { json: { values } }); toast('✅ Сохранено'); admLoadSettings(); }
+    catch (e) { toast(e.message); }
+}
+async function admLoadSkins() {
+    await loadSkins();
+    const list = (SK && SK.skins) || [];
+    $('admSkinList').innerHTML = list.length ? list.map((x, i) => `<div class="adm-row" style="animation-delay:${i * .03}s">
+        <div class="prev-cards">${x.kind === 'front' ? cardHTML('Kh', '', 0, x.desc) + cardHTML('As', '', 0, x.desc) : cardHTML(null, '', 0, x.desc)}</div>
+        <div class="adm-info"><b>${esc(x.name)}</b><small>#${x.id} · ${x.kind === 'front' ? 'лицо' : 'задник'}${x.private ? ' · личный, tg ' + x.owner_tg_id : ''}</small></div>
+        ${x.private ? '' : `<input class="adm-input" type="number" min="0" value="${x.price}" id="admPrice_${x.id}" title="Цена">
+        <label><input type="checkbox" id="admActive_${x.id}" ${x.is_active ? 'checked' : ''}> в магазине</label>
+        <button class="btn-def btn-sm auto" onclick="admSaveSkin(${x.id})">💾</button>`}
+        <button class="btn-def btn-sm btn-fold auto" onclick="admDeleteSkin(${x.id}, '${esc(x.name).replace(/'/g, '')}')">🗑</button></div>`).join('')
+        : '<div class="skin-hint">Своих скинов пока нет</div>';
+}
+async function admSaveSkin(id) {
+    try { await api('/poker/admin/skins/' + id, { json: { price: +$('admPrice_' + id).value, is_active: $('admActive_' + id).checked } }); toast('✅ Сохранено'); admLoadSkins(); }
+    catch (e) { toast(e.message); }
+}
+async function admDeleteSkin(id, name) {
+    if (!confirm(`Удалить скин «${name}»? У всех, у кого он выбран, вернётся классика.`)) return;
+    try { await api('/poker/admin/skins/' + id, { method: 'DELETE' }); toast('🗑 Удалён'); admLoadSkins(); }
+    catch (e) { toast(e.message); }
+}
+async function admGiveChips() {
+    try {
+        const d = await api('/poker/admin/chips', { json: { tg_id: $('admChipsId').value, amount: $('admChipsAmount').value } });
+        toast('✅ Баланс: ' + d.chips);
+    } catch (e) { toast(e.message); }
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if (!$('editorModal').classList.contains('hidden')) return closeEditor();
+    closeSettings(); if ($('adminModal')) closeAdmin();
+});
 </script>
 </body>
 </html>

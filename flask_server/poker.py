@@ -7,25 +7,60 @@ from threading import RLock
 from flask import Blueprint, request, session, render_template
 from flask_socketio import emit
 
+from config import ADMIN_ID, MODER_ID
 from telegram_bot.tg_db.db_controllers.poker_controller import (
     get_poker_profile,
     set_chips_many,
-    set_card_style,
+    add_chips,
+    set_skin_choice,
     claim_bonus,
+    get_all_skins,
+    get_owned_skin_ids,
+    buy_skin,
+    get_settings,
+    save_settings,
 )
 from flask_server.dashboard import socketio
 
 NS = "/poker"
-MAX_PLAYERS = 10
-SB, BB = 10, 20
-TURN_TIME = 25          # сек на ход
+MAX_PLAYERS_LIMIT = 10
 RUNOUT_DELAY = 1.3      # пауза между улицами, когда все в олл-ине
-SHOWDOWN_TIME = 6       # сек показа итогов до следующей раздачи
 DISCONNECT_GRACE = 25   # сек на переподключение, потом игрока убирают из-за стола
 MAX_TIMEOUTS = 2        # столько автоходов подряд — и игрок убирается из-за стола
-BONUS_AMOUNT = 500
-BONUS_COOLDOWN = 12 * 3600
-CARD_STYLES = {"classic", "four", "neon", "gold"}
+STD_SKINS = {"classic": "Классика", "four": "4 цвета", "neon": "Неон", "gold": "Золото"}
+ADMIN_IDS = {ADMIN_ID, MODER_ID}
+
+# настройки из админ-панели: ключ -> (по умолчанию, мин, макс, подпись)
+SETTINGS_SPEC = {
+    "small_blind": (10, 1, 1_000_000, "Малый блайнд"),
+    "big_blind": (20, 2, 2_000_000, "Большой блайнд"),
+    "turn_time": (35, 10, 180, "Время на ход, сек"),
+    "showdown_time": (15, 3, 120, "Пауза до следующей раздачи, сек"),
+    "max_players": (10, 2, MAX_PLAYERS_LIMIT, "Максимум игроков"),
+    "bonus_amount": (500, 0, 10_000_000, "Бонус, фишек"),
+    "bonus_cooldown_hours": (12, 1, 24 * 14, "Откат бонуса, часов"),
+    "custom_back_price": (2000, 0, 100_000_000, "Цена загрузки своего задника"),
+}
+
+
+def is_admin(tg_id) -> bool:
+    return tg_id is not None and int(tg_id) in ADMIN_IDS
+
+
+def validate_settings(values: dict) -> tuple[dict, str | None]:
+    clean = {}
+    for key, raw in (values or {}).items():
+        if key not in SETTINGS_SPEC:
+            continue
+        _, lo, hi, label = SETTINGS_SPEC[key]
+        try:
+            v = int(raw)
+        except (TypeError, ValueError):
+            return {}, f"{label}: нужно целое число"
+        if not lo <= v <= hi:
+            return {}, f"{label}: от {lo} до {hi}"
+        clean[key] = v
+    return clean, None
 
 # --- оценка комбинаций (та же схема, что и в клиенте) ---
 RANKS = "23456789TJQKA"
@@ -81,6 +116,7 @@ class Player:
     name: str
     photo_url: str
     stack: int
+    back_skin: str = "classic"
     ready: bool = False
     cards: list = field(default_factory=list)
     bet: int = 0
@@ -100,7 +136,7 @@ class Table:
         self.players: list[Player] = []      # за столом, в порядке посадки
         self.hand: list[Player] = []         # участники текущей раздачи
         self.sids: dict[str, int | None] = {}
-        self.profiles: dict[int, dict] = {}  # tg_id -> {chips, bonus_at, card_style}
+        self.profiles: dict[int, dict] = {}  # tg_id -> {chips, bonus_at, front_skin, back_skin}
         self.history = deque(maxlen=15)
         self.running = False                 # все нажали «Готов» — раздачи идут одна за другой
         self.status = "waiting"              # waiting, betting, showdown
@@ -111,12 +147,163 @@ class Table:
         self.board: list[str] = []
         self.cur = 0                         # индекс в self.hand
         self.cur_bet = 0
-        self.min_raise = BB
+        self.min_raise = 0
+        self._cfg: dict | None = None
+        self.pending_cfg: dict | None = None   # изменения из админки ждут следующей раздачи
+        self._skins: dict[int, dict] | None = None
+        self.table_front = "classic"          # лицо карт на столе — по настройке дилера раздачи
         self.deadline = None
         self.next_hand_at = None
         self.winners: list[dict] = []
         self.gen = 0                         # поколение таймера: старые таймеры игнорируются
         self.offline_since: dict[int, float] = {}  # tg_id игрока за столом -> когда отключился
+
+    # ---------- настройки ----------
+    @property
+    def cfg(self) -> dict:
+        if self._cfg is None:
+            self._cfg = {k: v[0] for k, v in SETTINGS_SPEC.items()}
+            try:
+                self._cfg.update({k: v for k, v in get_settings().items() if k in SETTINGS_SPEC})
+            except Exception as e:
+                print(f"Покер: не удалось загрузить настройки: {e}")
+        return self._cfg
+
+    def update_settings(self, values: dict) -> str | None:
+        clean, error = validate_settings(values)
+        if error:
+            return error
+        merged = {**self.cfg, **(self.pending_cfg or {}), **clean}
+        if merged["big_blind"] < merged["small_blind"]:
+            return "Большой блайнд не может быть меньше малого"
+        save_settings(clean)
+        if not self.running and self.status == "waiting":
+            self._cfg = merged       # игры нет — применяем сразу
+            self.pending_cfg = None
+        else:
+            self.pending_cfg = merged
+        return None
+
+    # ---------- скины ----------
+    @property
+    def skins(self) -> dict[int, dict]:
+        if self._skins is None:
+            try:
+                self._skins = {sk["id"]: sk for sk in get_all_skins()}
+            except Exception as e:
+                print(f"Покер: не удалось загрузить скины: {e}")
+                return {}
+        return self._skins
+
+    def reload_skins(self):
+        self._skins = None
+
+    def skin_desc(self, key, kind: str) -> dict:
+        """Описание скина для клиента: стандартный — только ключ, свой — картинки и цвета."""
+        key = str(key or "classic")
+        if key in STD_SKINS:
+            return {"key": key}
+        try:
+            sk = self.skins.get(int(key))
+        except ValueError:
+            sk = None
+        if not sk or sk["kind"] != kind:
+            return {"key": "classic"}
+        url = lambda part: f"/poker/skin_img/{sk['id']}/{part}"
+        if kind == "back":
+            return {"key": key, "image": url("back")}
+        data = sk["data"]
+        return {"key": key, "bg": data.get("bg"), "colors": data.get("colors", {}),
+                "images": {r: url(r) for r in data.get("images", {})}}
+
+    def can_use_skin(self, tg_id, kind: str, key: str) -> bool:
+        if key in STD_SKINS:
+            return True
+        try:
+            sk = self.skins.get(int(key))
+        except ValueError:
+            return False
+        if not sk or sk["kind"] != kind:
+            return False
+        if sk["owner_tg_id"] is None and sk["price"] == 0 and sk["is_active"]:
+            return True
+        return sk["id"] in get_owned_skin_ids(tg_id)
+
+    def select_skin(self, tg_id, kind: str, key: str) -> str | None:
+        if kind not in ("front", "back"):
+            return "Неизвестный тип скина"
+        key = str(key)
+        if not self.can_use_skin(tg_id, kind, key):
+            return "Этот скин вам недоступен"
+        set_skin_choice(tg_id, kind, key)
+        self.profiles.setdefault(tg_id, {})[f"{kind}_skin"] = key
+        p = self.player_of(tg_id)
+        if p and kind == "back":
+            p.back_skin = key
+        return None
+
+    def charge(self, tg_id, amount: int) -> str | None:
+        """Списывает фишки: со стека, если игрок за столом (и не в активной раздаче), иначе — в БД."""
+        if amount <= 0:
+            return None
+        p = self.player_of(tg_id)
+        if p:
+            if self.status == "betting" and p.in_hand and not p.folded:
+                return "Покупки — между раздачами (или после фолда)"
+            if p.stack < amount:
+                return "Недостаточно фишек"
+            p.stack -= amount
+            self.save_chips([p])
+            return None
+        profile = get_poker_profile(tg_id)
+        if not profile or profile["chips"] < amount:
+            return "Недостаточно фишек"
+        new = add_chips(tg_id, -amount)
+        self.profiles.setdefault(tg_id, {})["chips"] = new
+        return None
+
+    def refund(self, tg_id, amount: int):
+        self.give_chips(tg_id, amount)
+
+    def give_chips(self, tg_id, amount: int) -> int | None:
+        p = self.player_of(tg_id)
+        if p:
+            p.stack = max(0, p.stack + amount)
+            self.save_chips([p])
+            return p.stack
+        new = add_chips(tg_id, amount)
+        if new is not None:
+            self.profiles.setdefault(tg_id, {})["chips"] = new
+        return new
+
+    def buy(self, tg_id, skin_id: int) -> str | None:
+        sk = self.skins.get(skin_id)
+        if not sk or not sk["is_active"] or sk["owner_tg_id"] is not None:
+            return "Скин не продаётся"
+        if sk["price"] == 0:
+            return None  # бесплатный — доступен всем
+        p = self.player_of(tg_id)
+        if p:
+            if self.status == "betting" and p.in_hand and not p.folded:
+                return "Покупки — между раздачами (или после фолда)"
+            if p.stack < sk["price"]:
+                return "Недостаточно фишек"
+        error = buy_skin(tg_id, skin_id, sk["price"], charge_db=p is None)
+        if error:
+            return error
+        if p:
+            p.stack -= sk["price"]
+            self.save_chips([p])
+        else:
+            self.profiles.pop(tg_id, None)
+            self.connect_profile(tg_id)
+        return None
+
+    def connect_profile(self, tg_id):
+        if tg_id is not None and tg_id not in self.profiles:
+            profile = get_poker_profile(tg_id)
+            if profile:
+                self.profiles[tg_id] = profile
 
     # ---------- служебное ----------
     def player_of(self, tg_id) -> Player | None:
@@ -146,10 +333,7 @@ class Table:
     def connect(self, sid, tg_id):
         self.sids[sid] = tg_id
         self.offline_since.pop(tg_id, None)
-        if tg_id is not None and tg_id not in self.profiles:
-            profile = get_poker_profile(tg_id)
-            if profile:
-                self.profiles[tg_id] = profile
+        self.connect_profile(tg_id)
 
     def disconnect(self, sid) -> int | None:
         return self.sids.pop(sid, None)
@@ -159,7 +343,7 @@ class Table:
         tg_id = int(user["id"])
         if self.player_of(tg_id):
             return "Вы уже за столом"
-        if len(self.players) >= MAX_PLAYERS:
+        if len(self.players) >= self.cfg["max_players"]:
             return "Стол заполнен"
         profile = get_poker_profile(tg_id)
         if not profile:
@@ -172,6 +356,7 @@ class Table:
             name=user.get("username") or f"id{tg_id}",
             photo_url=user.get("photo_url") or "",
             stack=profile["chips"],
+            back_skin=profile["back_skin"] if self.can_use_skin(tg_id, "back", profile["back_skin"]) else "classic",
             ready=self.running,  # игра уже идёт — сядет в следующую раздачу без «Готов»
         ))
         return None
@@ -202,19 +387,21 @@ class Table:
         p = self.player_of(tg_id)
         if not p:
             return "Вы не за столом"
-        if self.running:
+        if self.status == "betting":
             return None
         p.ready = bool(ready)
         self.maybe_start()
         return None
 
     def maybe_start(self):
-        """Первая раздача — когда все за столом нажали «Готов» (минимум двое)."""
-        if self.running or self.status == "betting":
+        """
+        Первая раздача — когда все за столом нажали «Готов» (минимум двое).
+        На итогах раздачи: все нажали «Готов» — следующая начинается сразу, не дожидаясь таймера.
+        """
+        if self.status == "betting" or len(self.players) < 2 or not all(p.ready for p in self.players):
             return
-        if len(self.players) >= 2 and all(p.ready for p in self.players):
-            self.running = True
-            self.start_hand()
+        self.running = True
+        self.start_hand()
 
     def stop_game(self):
         self.running = False
@@ -229,6 +416,8 @@ class Table:
         if not self.running or self.status == "betting":
             return
         self.next_hand_at = None
+        if self.pending_cfg:  # изменения из админки вступают в силу с этой раздачи
+            self._cfg, self.pending_cfg = self.pending_cfg, None
         online = self.online_ids()
         for p in list(self.players):
             if p.stack <= 0:
@@ -262,13 +451,16 @@ class Table:
         n = len(players)
         self.dealer_idx = (self.dealer_idx + 1) % n
         di = self.dealer_idx
+        front = self.profiles.get(players[di].tg_id, {}).get("front_skin", "classic")
+        self.table_front = front if self.can_use_skin(players[di].tg_id, "front", front) else "classic"
         if n == 2:  # хедз-ап: дилер ставит малый блайнд и ходит первым на префлопе
             sb, bb = di, (di + 1) % n
         else:
             sb, bb = (di + 1) % n, (di + 2) % n
-        self.post(players[sb], SB)
-        self.post(players[bb], BB)
-        self.cur_bet, self.min_raise = BB, BB
+        sb_amount, bb_amount = self.cfg["small_blind"], self.cfg["big_blind"]
+        self.post(players[sb], sb_amount)
+        self.post(players[bb], bb_amount)
+        self.cur_bet, self.min_raise = bb_amount, bb_amount
         self.cur = bb
         self.next()
 
@@ -341,7 +533,7 @@ class Table:
         for p in self.hand:
             p.bet = 0
             p.acted = False
-        self.cur_bet, self.min_raise = 0, BB
+        self.cur_bet, self.min_raise = 0, self.cfg["big_blind"]
         if self.stage == "river":
             return self.finish()
         count = 3 if self.stage == "preflop" else 1
@@ -398,13 +590,16 @@ class Table:
         self.winners = [r for r in res if r["amount"] > 0]
         for p in self.hand:
             p.bet = 0
+        for p in self.players:
+            p.ready = False  # на итогах можно снова нажать «Готов», чтобы не ждать таймер
         self.save_chips(self.players)
         result = {"hand_no": self.hand_no, "pot": total, "winners": self.winners}
         self.history.append(result)
         socketio.emit("hand_result", result, namespace=NS)
         # следующая раздача начнётся сама
-        self.next_hand_at = time.time() + SHOWDOWN_TIME
-        socketio.start_background_task(self._delayed, self.gen, SHOWDOWN_TIME, self.start_hand)
+        delay = self.cfg["showdown_time"]
+        self.next_hand_at = time.time() + delay
+        socketio.start_background_task(self._delayed, self.gen, delay, self.start_hand)
         self.broadcast()
 
     # ---------- таймеры ----------
@@ -417,8 +612,9 @@ class Table:
         self.deadline = None
         if self.status != "betting":
             return
-        self.deadline = time.time() + TURN_TIME
-        socketio.start_background_task(self._delayed, self.gen, TURN_TIME, self._on_timeout)
+        turn_time = self.cfg["turn_time"]
+        self.deadline = time.time() + turn_time
+        socketio.start_background_task(self._delayed, self.gen, turn_time, self._on_timeout)
 
     def _on_timeout(self):
         p = self.hand[self.cur]
@@ -444,23 +640,17 @@ class Table:
         p = self.player_of(tg_id)
         if p and self.status == "betting" and p.in_hand and not p.folded:
             return "Забрать бонус можно между раздачами", 0
-        result = claim_bonus(tg_id, BONUS_AMOUNT, BONUS_COOLDOWN, time.time(), add_to_chips=p is None)
+        amount = self.cfg["bonus_amount"]
+        result = claim_bonus(tg_id, amount, self.cfg["bonus_cooldown_hours"] * 3600, time.time(), add_to_chips=p is None)
         if result is None:
             return "Бонус ещё недоступен", 0
         self.profiles.setdefault(tg_id, {})["bonus_at"] = result["bonus_at"]
         if p:
-            p.stack += BONUS_AMOUNT
+            p.stack += amount
             self.save_chips([p])
         else:
             self.profiles[tg_id]["chips"] = result["chips"]
-        return None, BONUS_AMOUNT
-
-    def save_settings(self, tg_id, card_style) -> str | None:
-        if card_style not in CARD_STYLES:
-            return "Неизвестный стиль карт"
-        set_card_style(tg_id, card_style)
-        self.profiles.setdefault(tg_id, {})["card_style"] = card_style
-        return None
+        return None, amount
 
     # ---------- состояние ----------
     def view(self, tg_id) -> dict:
@@ -482,20 +672,22 @@ class Table:
             "offline_until": (self.offline_since[p.tg_id] + DISCONNECT_GRACE) if p.tg_id in self.offline_since else None,
                 "last_action": p.last if in_hand else "", "is_dealer": p is dealer,
                 "cards": p.cards if show else None,
+                "back_skin": self.skin_desc(p.back_skin, "back"),
             })
         to_act = str(self.hand[self.cur].tg_id) if self.status == "betting" and self.deadline else None
         return {
             "status": self.status, "stage": self.stage if self.status == "betting" else "",
-            "running": self.running, "hand_no": self.hand_no, "blinds": [SB, BB],
+            "running": self.running, "hand_no": self.hand_no, "blinds": [self.cfg["small_blind"], self.cfg["big_blind"]],
             "pot": self.pot() if self.status != "waiting" else 0,
             "community": self.board, "current_bet": self.cur_bet, "min_raise_to": self.cur_bet + self.min_raise,
-            "to_act": to_act, "deadline": self.deadline, "turn_time": TURN_TIME, "server_now": time.time(),
+            "to_act": to_act, "deadline": self.deadline, "turn_time": self.cfg["turn_time"], "server_now": time.time(),
             "next_hand_at": self.next_hand_at, "winners": self.winners,
-            "players": players, "max_players": MAX_PLAYERS,
+            "players": players, "max_players": self.cfg["max_players"],
+            "table_skin": self.skin_desc(self.table_front, "front"), "is_admin": is_admin(tg_id),
             "me": str(me.tg_id) if me else None,
             "logged_in": tg_id is not None,
             "bank_chips": profile.get("chips"),
-            "bonus_next_at": profile.get("bonus_at", 0), "bonus_amount": BONUS_AMOUNT,
+            "bonus_next_at": profile.get("bonus_at", 0), "bonus_amount": self.cfg["bonus_amount"],
         }
 
     def send_state(self, sid):
@@ -513,11 +705,15 @@ poker_bp = Blueprint("poker_bp", __name__)
 @poker_bp.route("/poker")
 def poker_page():
     user = session.get("user")
-    card_style = None
+    skins = None
     if user:
-        profile = get_poker_profile(int(user["id"]))
-        card_style = profile and profile["card_style"]
-    return render_template("poker.html", user=user, card_style=card_style)
+        tg_id = int(user["id"])
+        profile = get_poker_profile(tg_id)
+        if profile:
+            with table.lock:
+                skins = {"front": table.skin_desc(profile["front_skin"], "front"),
+                         "back": table.skin_desc(profile["back_skin"], "back")}
+    return render_template("poker.html", user=user, skins=skins, is_admin=bool(user) and is_admin(user["id"]))
 
 
 def _tg_id():
@@ -620,12 +816,5 @@ def poker_claim_bonus(data=None):
         table.broadcast()
 
 
-@socketio.on("save_settings", namespace=NS)
-def poker_save_settings(data=None):
-    tg_id = _tg_id()
-    if tg_id is None:
-        return  # гость: стиль хранится только в localStorage
-    with table.lock:
-        error = table.save_settings(tg_id, (data or {}).get("card_style"))
-        if error:
-            _alert(error)
+# HTTP-роуты скинов и админ-панели
+from flask_server import poker_skins  # noqa: E402,F401

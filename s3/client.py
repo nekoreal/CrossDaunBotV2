@@ -25,6 +25,19 @@ class S3Client:
             aws_secret_access_key=self.secret_key
         )
 
+    def ensure_bucket(self) -> bool:
+        """Создаёт бакет, если его ещё нет."""
+        try:
+            self.s3_client.head_bucket(Bucket=self.bucket_name)
+            return True
+        except ClientError:
+            try:
+                self.s3_client.create_bucket(Bucket=self.bucket_name)
+                return True
+            except ClientError as e:
+                make_log(txtfile="s3.txt", text=f"S3 Create Bucket Error: {e}")
+                return False
+
     @logger(
         txtfile="s3.txt",
         print_log=True,

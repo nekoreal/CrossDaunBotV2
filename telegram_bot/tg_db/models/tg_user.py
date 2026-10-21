@@ -25,7 +25,9 @@ class TelegramUser(Base):
 
     # покер
     chips = Column(Integer, default=1000, server_default="1000", nullable=False)
-    poker_card_style = Column(String(20), default="classic", server_default="classic", nullable=False)
+    # скины: стандартный ("classic", "four", "neon", "gold") или id скина из poker_skins
+    poker_card_style = Column(String(20), default="classic", server_default="classic", nullable=False)  # лицо карт
+    poker_back_skin = Column(String(20), default="classic", server_default="classic", nullable=False)   # задник
     poker_bonus_at = Column(Float, default=0, server_default="0", nullable=False)  # epoch-сек, когда доступен следующий бонус
 
     at_user_tag = relationship("UserTagAssociation", back_populates="user", cascade="all, delete-orphan")
@@ -46,6 +48,7 @@ class TelegramUser(Base):
             "nya_count_month": self.nya_count_month,
             "chips": self.chips,
             "poker_card_style": self.poker_card_style,
+            "poker_back_skin": self.poker_back_skin,
             "poker_bonus_at": self.poker_bonus_at,
         }
 
