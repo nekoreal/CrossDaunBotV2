@@ -103,6 +103,8 @@ def update_skin(skin_id: int, **fields) -> dict | None:
         for k in ("name", "price", "is_active"):
             if k in fields and fields[k] is not None:
                 setattr(skin, k, fields[k])
+        if fields.get("data") is not None:
+            skin.data = json.dumps(fields["data"])
         return _skin_dict(skin)
 
 

@@ -17,7 +17,7 @@ from telegram_bot.tg_db.db_controllers.poker_controller import (
 from telegram_bot.tg_db.db_controllers.photo_controller import get_photo_by_id
 from telegram_bot.tg_db.db_controllers.user_controller import find_user_by_tg_id
 from flask_server.dashboard import socketio
-from flask_server.poker import poker_bp, table, is_admin, STD_SKINS, SETTINGS_SPEC
+from flask_server.poker import poker_bp, table, is_admin, STD_SKINS, SETTINGS_SPEC, IMMEDIATE_SETTINGS
 
 RANKS = "AKQJT98765432"
 SUITS = "shdc"
@@ -264,55 +264,106 @@ def _require_admin():
         abort(403)
 
 
-@poker_bp.route("/poker/admin/skins", methods=["POST"])
-def admin_create_skin():
+def _skin_form(kind: str):
     """
-    multipart: kind=front|back, name, price;
-      back  — image;
-      front — bg, color_s/h/d/c, rank_A ... rank_2 (картинки рангов, любые — необязательны).
+    Общая часть создания и редактирования (multipart): name, price;
+      back  — image; front — bg, color_s/h/d/c, rank_A ... rank_2 (картинки рангов — необязательны).
+    Возвращает (поля, картинки {часть: webp}) или строку ошибки.
     """
-    _require_admin()
     form = request.form
-    kind = form.get("kind")
     name = (form.get("name") or "").strip()[:60]
-    if kind not in ("front", "back") or not name:
-        return _err("Укажите тип и название")
+    if not name:
+        return "Укажите название"
     try:
         price = max(0, int(form.get("price") or 0))
     except ValueError:
-        return _err("Цена — целое число")
+        return "Цена — целое число"
     images = {}
     try:
         if kind == "back":
-            if not request.files.get("image"):
-                return _err("Нужна картинка задника")
-            images["back"] = _process_image(request.files["image"])
+            if request.files.get("image"):
+                images["back"] = _process_image(request.files["image"])
         else:
             for r in RANKS:
                 f = request.files.get(f"rank_{r}")
                 if f and f.filename:
                     images[r] = _process_image(f)
     except ValueError as e:
-        return _err(str(e))
-    data = {}
+        return str(e)
+    fields = {"name": name, "price": price}
     if kind == "front":
         colors = {su: form.get(f"color_{su}", "") for su in SUITS}
         bg = form.get("bg", "#ffffff")
         if not all(HEX_COLOR.match(c) for c in [*colors.values(), bg]):
-            return _err("Цвета — в формате #rrggbb")
-        data = {"colors": colors, "bg": bg, "images": {}}
+            return "Цвета — в формате #rrggbb"
+        fields.update(colors=colors, bg=bg)
+    return fields, images
+
+
+@poker_bp.route("/poker/admin/skins", methods=["POST"])
+def admin_create_skin():
+    _require_admin()
+    kind = request.form.get("kind")
+    if kind not in ("front", "back"):
+        return _err("Неизвестный тип скина")
+    parsed = _skin_form(kind)
+    if isinstance(parsed, str):
+        return _err(parsed)
+    fields, images = parsed
+    if kind == "back" and "back" not in images:
+        return _err("Нужна картинка задника")
     keys = _upload(images) if images else {}
     if keys is None:
         return _err("Не удалось загрузить картинки в S3", 500)
     if kind == "back":
         data = {"image": keys["back"]}
     else:
-        data["images"] = keys
-    sk = create_skin(kind, name, price, data)
+        data = {"colors": fields["colors"], "bg": fields["bg"], "images": keys}
+    sk = create_skin(kind, fields["name"], fields["price"], data)
     with table.lock:
         table.reload_skins()
         table.broadcast()
     return jsonify({"ok": True, "id": sk["id"]})
+
+
+@poker_bp.route("/poker/admin/skins/<int:skin_id>/edit", methods=["POST"])
+def admin_edit_skin_full(skin_id: int):
+    """
+    Редактирование скина: те же поля, что при создании; keep — части через запятую, картинки которых
+    не менялись (остальные либо пришли новыми файлами, либо удалены).
+    """
+    _require_admin()
+    with table.lock:
+        sk = table.skins.get(skin_id)
+        gallery = table.is_gallery_back(skin_id)
+    if not sk:
+        return _err("Нет такого скина", 404)
+    if gallery:
+        return _err("У случайного задника из галереи меняется только цена")
+    parsed = _skin_form(sk["kind"])
+    if isinstance(parsed, str):
+        return _err(parsed)
+    fields, images = parsed
+    keep = {x for x in (request.form.get("keep") or "").split(",") if x}
+    old_parts = {"back": sk["data"]["image"]} if sk["kind"] == "back" else dict(sk["data"].get("images", {}))
+    kept = {part: key for part, key in old_parts.items() if part in keep and part not in images}
+    if sk["kind"] == "back" and not kept and "back" not in images:
+        return _err("Нужна картинка задника")
+    uploaded = _upload(images) if images else {}
+    if uploaded is None:
+        return _err("Не удалось загрузить картинки в S3", 500)
+    parts = {**kept, **uploaded}
+    data = {"image": parts["back"]} if sk["kind"] == "back" else {"colors": fields["colors"], "bg": fields["bg"], "images": parts}
+    # у личного задника игрока цены нет
+    price = 0 if sk["owner_tg_id"] is not None else fields["price"]
+    if not update_skin(skin_id, name=fields["name"], price=price, data=data):
+        _remove_files(uploaded.values())
+        return _err("Нет такого скина", 404)
+    _remove_files([key for part, key in old_parts.items() if part not in kept])  # заменённые и удалённые
+    with table.lock:
+        table.reload_skins()
+        table.broadcast()
+    return jsonify({"ok": True})
 
 
 @poker_bp.route("/poker/admin/skins/<int:skin_id>", methods=["POST", "DELETE"])
@@ -332,12 +383,16 @@ def admin_edit_skin(skin_id: int):
                     if str(profile.get(f"{kind}_skin")) == str(skin_id):
                         profile[f"{kind}_skin"] = "classic"
             for p in table.players:
-                if p.back_skin == str(skin_id):
-                    p.back_skin = "classic"
+                for kind in ("front", "back"):
+                    if getattr(p, f"{kind}_skin") == str(skin_id):
+                        setattr(p, f"{kind}_skin", "classic")
             table.reload_skins()
             table.broadcast()
         return jsonify({"ok": True})
     body = request.get_json(silent=True) or {}
+    with table.lock:
+        if table.is_gallery_back(skin_id):  # системный: только цена
+            body = {k: v for k, v in body.items() if k == "price"}
     fields = {}
     if "name" in body:
         fields["name"] = str(body["name"]).strip()[:60] or None
@@ -366,8 +421,11 @@ def admin_settings():
                 return _err(error)
             table.broadcast()
         return jsonify({
-            "spec": [{"key": k, "default": v[0], "min": v[1], "max": v[2], "label": v[3]} for k, v in SETTINGS_SPEC.items()],
+            # цена своего задника — во вкладке «Скины»
+            "spec": [{"key": k, "default": v[0], "min": v[1], "max": v[2], "label": v[3]}
+                     for k, v in SETTINGS_SPEC.items() if k not in IMMEDIATE_SETTINGS],
             "active": table.cfg, "pending": table.pending_cfg,
+            "custom_back_price": table.cfg["custom_back_price"],
         })
 
 

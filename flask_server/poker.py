@@ -45,6 +45,8 @@ SETTINGS_SPEC = {
     "bonus_cooldown_hours": (12, 1, 24 * 14, "Откат бонуса, часов"),
     "custom_back_price": (2000, 0, 100_000_000, "Цена загрузки своего задника"),
 }
+# эти настройки — цены магазина: меняются сразу (не ждут следующей раздачи) и живут во вкладке «Скины»
+IMMEDIATE_SETTINGS = {"custom_back_price"}
 
 
 def is_admin(tg_id) -> bool:
@@ -121,6 +123,7 @@ class Player:
     photo_url: str
     stack: int
     back_skin: str = "classic"
+    front_skin: str = "classic"        # лицо его карт на руках (видно всем на шоудауне)
     gallery_photo: int | None = None   # задник «случайное фото»: фото на текущую раздачу
     ready: bool = False
     cards: list = field(default_factory=list)
@@ -186,7 +189,10 @@ class Table:
             self._cfg = merged       # игры нет — применяем сразу
             self.pending_cfg = None
         else:
-            self.pending_cfg = merged
+            for k in IMMEDIATE_SETTINGS & clean.keys():
+                self.cfg[k] = clean[k]
+            if any(merged[k] != self.cfg[k] for k in merged):
+                self.pending_cfg = merged
         return None
 
     # ---------- скины ----------
@@ -226,14 +232,14 @@ class Table:
             sk = None
         if not sk or sk["kind"] != kind:
             return {"key": "classic"}
-        url = lambda part: f"/poker/skin_img/{sk['id']}/{part}"
-        if kind == "back":
-            if sk["data"].get("special") == "gallery":
-                return {"key": key, "special": "gallery"}
-            return {"key": key, "image": url("back")}
+        url = lambda part, s3_key: f"/poker/skin_img/{sk['id']}/{part}?v={s3_key.split('/')[0][:10]}"
         data = sk["data"]
+        if kind == "back":
+            if data.get("special") == "gallery":
+                return {"key": key, "special": "gallery"}
+            return {"key": key, "image": url("back", data["image"])}
         return {"key": key, "bg": data.get("bg"), "colors": data.get("colors", {}),
-                "images": {r: url(r) for r in data.get("images", {})}}
+                "images": {r: url(r, k) for r, k in data.get("images", {}).items()}}
 
     def back_desc(self, p: Player) -> dict:
         desc = self.skin_desc(p.back_skin, "back")
@@ -263,8 +269,8 @@ class Table:
         set_skin_choice(tg_id, kind, key)
         self.profiles.setdefault(tg_id, {})[f"{kind}_skin"] = key
         p = self.player_of(tg_id)
-        if p and kind == "back":
-            p.back_skin = key
+        if p:
+            setattr(p, f"{kind}_skin", key)
         return None
 
     def charge(self, tg_id, amount: int) -> str | None:
@@ -382,6 +388,7 @@ class Table:
             photo_url=user.get("photo_url") or "",
             stack=profile["chips"],
             back_skin=profile["back_skin"] if self.can_use_skin(tg_id, "back", profile["back_skin"]) else "classic",
+            front_skin=profile["front_skin"] if self.can_use_skin(tg_id, "front", profile["front_skin"]) else "classic",
             ready=self.running,  # игра уже идёт — сядет в следующую раздачу без «Готов»
         ))
         return None
@@ -710,21 +717,23 @@ class Table:
                 "last_action": p.last if in_hand else "", "is_dealer": p is dealer,
                 "cards": p.cards if show else None,
                 "back_skin": self.back_desc(p),
+                "front_skin": self.skin_desc(p.front_skin, "front"),
             })
         to_act = str(self.hand[self.cur].tg_id) if self.status == "betting" and self.deadline else None
+        cfg = self.cfg
         return {
             "status": self.status, "stage": self.stage if self.status == "betting" else "",
-            "running": self.running, "hand_no": self.hand_no, "blinds": [self.cfg["small_blind"], self.cfg["big_blind"]],
+            "running": self.running, "hand_no": self.hand_no, "blinds": [cfg["small_blind"], cfg["big_blind"]],
             "pot": self.pot() if self.status != "waiting" else 0,
             "community": self.board, "current_bet": self.cur_bet, "min_raise_to": self.cur_bet + self.min_raise,
-            "to_act": to_act, "deadline": self.deadline, "turn_time": self.cfg["turn_time"], "server_now": time.time(),
+            "to_act": to_act, "deadline": self.deadline, "turn_time": cfg["turn_time"], "server_now": time.time(),
             "next_hand_at": self.next_hand_at, "winners": self.winners,
-            "players": players, "max_players": self.cfg["max_players"],
+            "players": players, "max_players": cfg["max_players"],
             "table_skin": self.skin_desc(self.table_front, "front"), "is_admin": is_admin(tg_id),
             "me": str(me.tg_id) if me else None,
             "logged_in": tg_id is not None,
             "bank_chips": profile.get("chips"),
-            "bonus_next_at": profile.get("bonus_at", 0), "bonus_amount": self.cfg["bonus_amount"],
+            "bonus_next_at": profile.get("bonus_at", 0), "bonus_amount": cfg["bonus_amount"],
         }
 
     def send_state(self, sid):
