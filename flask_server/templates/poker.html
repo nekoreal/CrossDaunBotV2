@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrossDaun Poker</title>
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+:root{--bg-primary:#0a0c10;--card-bg:rgba(18,22,31,.75);--accent-cyan:#00f2fe;--accent-purple:#9d4edd;--text-main:#f0f4f8;--text-muted:#8a99ad;--border-glow:rgba(0,242,254,.15);--danger:#ff5555;--success:#00e676;--warning:#ffb703;--ease-out:cubic-bezier(.22,1,.36,1);--ease-spring:cubic-bezier(.34,1.56,.64,1)}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,sans-serif}
+body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;display:flex;align-items:center;justify-content:center;overflow-x:hidden;position:relative;padding:20px}
+.hidden{display:none!important}
+.layout{position:relative;z-index:1;width:100%;max-width:680px}
+.glow-sphere-1,.glow-sphere-2{position:absolute;z-index:0;pointer-events:none}
+.glow-sphere-1{width:450px;height:450px;background:radial-gradient(circle,rgba(157,78,221,.25),transparent 70%);top:10%;left:15%;filter:blur(50px);animation:fg1 12s infinite alternate ease-in-out}
+.glow-sphere-2{width:500px;height:500px;background:radial-gradient(circle,rgba(0,242,254,.2),transparent 70%);bottom:10%;right:15%;filter:blur(60px);animation:fg2 14s infinite alternate ease-in-out}
+@keyframes fg1{50%{transform:scale(1.15) translate(30px,-20px)}100%{transform:scale(.9) translate(-20px,30px)}}
+@keyframes fg2{50%{transform:scale(1.2) translate(-40px,15px)}100%{transform:scale(.95) translate(25px,-35px)}}
+@keyframes cardAppear{from{opacity:0;transform:translateY(20px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+@keyframes dealIn{from{opacity:0;transform:translateY(-24px) rotateY(90deg) scale(.8)}to{opacity:1;transform:none}}
+@keyframes pulse{0%{box-shadow:0 0 5px rgba(255,85,85,.2)}100%{box-shadow:0 0 15px rgba(255,85,85,.6)}}
+@keyframes seatGlow{0%{box-shadow:0 0 8px rgba(0,242,254,.25)}100%{box-shadow:0 0 22px rgba(0,242,254,.6)}}
+@keyframes pop{from{transform:scale(0)}to{transform:scale(1)}}
+
+/* --- ИСТОРИЯ --- */
+.glass{background:var(--card-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--border-glow);border-radius:20px;box-shadow:0 20px 50px rgba(0,0,0,.6),0 0 30px rgba(0,242,254,.05);animation:cardAppear .6s var(--ease-out) backwards}
+.history-sidebar{padding:16px;display:flex;flex-direction:column;gap:12px;margin-bottom:16px;z-index:2}
+.history-title{font-size:1.05rem;font-weight:700;color:var(--accent-cyan);border-bottom:1px solid rgba(255,255,255,.1);padding-bottom:10px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.history-sidebar.collapsed .history-title{border-color:transparent;padding-bottom:0}
+.icon-btn{position:relative;display:inline-flex;align-items:center;justify-content:center;width:34px;height:34px;flex-shrink:0;background:rgba(255,255,255,.05);border:1px solid rgba(0,242,254,.25);border-radius:10px;color:var(--accent-cyan);cursor:pointer;transition:all .25s ease}
+.icon-btn:hover{background:rgba(0,242,254,.14);border-color:rgba(0,242,254,.5)}
+.icon-btn:active{transform:scale(.92)}
+.icon-btn svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round;transition:transform .4s var(--ease-out)}
+.history-count{position:absolute;top:-7px;right:-7px;min-width:18px;height:18px;padding:0 5px;border-radius:9px;background:var(--accent-purple);color:#fff;font-size:.7rem;font-weight:700;display:none;align-items:center;justify-content:center}
+.history-sidebar.collapsed .history-count.has-items{display:flex;animation:pop .4s var(--ease-spring)}
+.history-list{display:flex;flex-direction:column;gap:10px;max-height:300px;overflow-y:auto;transition:max-height .4s var(--ease-out),opacity .25s ease;scrollbar-width:thin;scrollbar-color:rgba(0,242,254,.3) transparent}
+.history-sidebar.collapsed .history-list{max-height:0;opacity:0;pointer-events:none}
+.history-sidebar.collapsed .ht-chevron{transform:rotate(-90deg)}
+.history-card{background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:3px;animation:slideIn .35s var(--ease-out) forwards;transition:all .25s ease}
+.history-card:hover{border-color:rgba(0,242,254,.3);background:rgba(0,242,254,.04)}
+.h-round{font-size:.75rem;color:var(--text-muted);font-weight:600}
+.h-win{font-size:.85rem;font-weight:700;color:var(--accent-purple)}
+.h-hand{font-size:.8rem;color:var(--text-muted)}
+@media(min-width:1241px){
+ .history-sidebar{position:absolute;top:0;right:calc(100% + 16px);width:260px;max-height:min(85vh,640px);overflow:hidden;margin:0;transition:width .45s var(--ease-out),padding .45s var(--ease-out),gap .3s ease}
+ .history-list{min-width:226px}
+ .history-sidebar.collapsed{width:58px;padding:10px;gap:0}
+ .history-sidebar.collapsed .history-title{justify-content:center;gap:0}
+ .history-sidebar.collapsed .history-title-text{display:none}
+ .ht-chevron{transform:rotate(90deg)}
+ .history-sidebar.collapsed .ht-chevron{display:none}
+ .history-sidebar.collapsed .ht-icon{display:inline}
+}
+.ht-icon{display:none}
+
+/* --- КАРТОЧКА --- */
+.auth-card{position:relative;z-index:1;width:100%;padding:30px}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:15px;border-bottom:1px solid rgba(255,255,255,.08);gap:10px}
+.top-bar-left{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn-home{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;background:rgba(255,255,255,.05);color:var(--accent-cyan);border:1px solid rgba(0,242,254,.3);border-radius:10px;text-decoration:none;transition:all .25s ease;flex-shrink:0}
+.btn-home:hover{background:rgba(0,242,254,.15);border-color:rgba(0,242,254,.6);box-shadow:0 0 15px rgba(0,242,254,.3);color:#fff}
+.btn-home svg{width:18px;height:18px;fill:currentColor}
+.badge{background:rgba(255,255,255,.05);padding:6px 12px;border-radius:10px;font-size:.85rem;border:1px solid rgba(255,255,255,.1)}
+.badge-cyan{color:var(--accent-cyan);border-color:rgba(0,242,254,.3);font-weight:600}
+.badge-purple{color:var(--accent-purple);border-color:rgba(157,78,221,.4);font-weight:600}
+.badge-warning{color:var(--warning);border-color:rgba(255,183,3,.4);font-weight:600}
+.timer-badge{color:var(--accent-cyan);font-family:monospace;font-size:1.1rem;font-weight:700;white-space:nowrap;transition:all .3s ease}
+.timer-badge.warning-time{color:var(--danger);border-color:rgba(255,85,85,.5);animation:pulse .8s infinite alternate}
+
+/* Кнопки с бликом */
+.btn-def{position:relative;display:inline-block;width:100%;padding:12px 20px;border-radius:12px;background:rgba(255,255,255,.05);color:#00f2fe;border:1px solid rgba(0,242,254,.3);font-size:.95rem;font-weight:600;cursor:pointer;text-align:center;transition:all .25s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.btn-def::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transition:left .5s ease}
+.btn-def:hover:not(:disabled)::before{left:100%}
+.btn-def:hover:not(:disabled){background:rgba(0,242,254,.15);border-color:rgba(0,242,254,.6);box-shadow:0 0 20px rgba(0,242,254,.25)}
+.btn-def:active:not(:disabled){transform:scale(.98)}
+.btn-def:disabled{opacity:.35;cursor:not-allowed}
+.btn-fold{color:var(--danger);border-color:rgba(255,85,85,.35)}
+.btn-fold:hover:not(:disabled){background:rgba(255,85,85,.15)!important;border-color:var(--danger)!important;box-shadow:0 0 20px rgba(255,85,85,.25)!important}
+.btn-raise{color:var(--accent-purple);border-color:rgba(157,78,221,.45)}
+.btn-raise:hover:not(:disabled){background:rgba(157,78,221,.15)!important;border-color:var(--accent-purple)!important;box-shadow:0 0 20px rgba(157,78,221,.3)!important}
+.btn-sm{padding:7px 10px;font-size:.8rem;border-radius:10px;color:var(--text-muted);border-color:rgba(255,255,255,.15)}
+
+/* --- СТОЛ --- */
+.seat.me{border-color:rgba(157,78,221,.4)}
+.seat.active{border-color:var(--accent-cyan);animation:seatGlow .9s infinite alternate}
+.seat.folded{opacity:.4;filter:grayscale(1)}
+.seat.winner{border-color:var(--success);box-shadow:0 0 22px rgba(0,230,118,.4)}
+.av{width:42px;height:42px;border-radius:50%;display:flex;align-items:center;justify-content:center;background:#1b2130;color:var(--text-muted);font-weight:700;border:2px solid rgba(255,255,255,.22);object-fit:cover;overflow:hidden}
+.av img{width:100%;height:100%;object-fit:cover}
+.seat.active .av,.seat.me .av{border-color:var(--accent-cyan);box-shadow:0 0 12px rgba(0,242,254,.35)}
+.s-name{font-size:.85rem;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.s-stack{font-size:.8rem;color:var(--success);font-weight:700;font-family:monospace}
+.s-last{font-size:.7rem;color:var(--text-muted);min-height:1em}
+.dealer{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--warning);color:#1a1200;font-size:.7rem;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid #12161f;animation:pop .4s var(--ease-spring)}
+.mini-cards{display:flex;gap:3px;min-height:36px}
+.table-wrap{position:relative;width:100%;aspect-ratio:16/11;margin:28px 0 34px}
+.table-rail{position:absolute;inset:9% 6%;border-radius:50%;padding:14px;background:linear-gradient(145deg,#1c2333,#0d1017);border:1px solid rgba(157,78,221,.4);box-shadow:0 0 40px rgba(157,78,221,.18),inset 0 0 30px rgba(0,0,0,.6)}
+.felt{width:100%;height:100%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(0,242,254,.13),rgba(157,78,221,.08) 70%),#0f1a22;border:1px solid rgba(0,242,254,.22);box-shadow:inset 0 0 45px rgba(0,0,0,.55);text-align:center}
+.seat{position:absolute;transform:translate(-50%,-50%);width:96px;padding:8px 6px;background:rgba(18,22,31,.92);border:1px solid rgba(255,255,255,.1);border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;transition:border-color .3s ease,box-shadow .3s ease,opacity .3s ease;z-index:2}
+.bet-chip{position:absolute;transform:translate(-50%,-50%);padding:3px 9px;border-radius:999px;background:rgba(255,183,3,.12);border:1px solid rgba(255,183,3,.5);color:var(--warning);font-family:monospace;font-size:.78rem;font-weight:700;z-index:1;animation:pop .35s var(--ease-spring)}
+.board .pc{width:clamp(40px,9.5vw,58px)}
+.board{margin-top:4px}
+
+.pot{font-size:.9rem;color:var(--text-muted);margin-bottom:8px}
+.pot b{color:var(--warning);font-family:monospace;font-size:1.2rem}
+.stage{font-size:.75rem;color:var(--accent-purple);font-weight:700;text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.board{display:flex;justify-content:center;gap:8px;flex-wrap:nowrap}
+
+/* Карты */
+.pc{width:clamp(44px,11vw,58px);aspect-ratio:5/7;position:relative;container-type:inline-size;border-radius:9px;background:var(--pc-bg);border:1px solid var(--pc-border);transition:transform .25s var(--ease-out),box-shadow .25s ease,opacity .25s ease,border-color .25s ease;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:800;line-height:1.05;color:var(--text-main);box-shadow:0 6px 16px rgba(0,0,0,.5);flex-shrink:0}
+.pc.su-s{color:var(--pc-s)}.pc.su-h{color:var(--pc-h)}.pc.su-d{color:var(--pc-d)}.pc.su-c{color:var(--pc-c)}
+.pc.deal{animation:dealIn .5s var(--ease-out) backwards;animation-delay:var(--d,0s)}
+.pc.back{background:var(--pc-back-frame);border-color:var(--pc-border)}
+.pc.empty{background:transparent;border:1px dashed rgba(255,255,255,.12);box-shadow:none}
+.pc.big{width:clamp(56px,16vw,76px)}
+.pc.mini{width:26px;border-radius:5px}
+
+.my-hand{display:flex;align-items:center;justify-content:center;gap:14px;margin:-14px 0 6px;position:relative;z-index:3}
+.my-hand .pc{border-color:rgba(157,78,221,.6)}
+.my-name{text-align:center;color:var(--accent-cyan);font-weight:700;font-size:.9rem;min-height:1.3em;margin-bottom:14px}
+
+/* Действия */
+.actions{display:flex;flex-direction:column;gap:10px}
+.act-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.raise-box{padding:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:14px;display:flex;flex-direction:column;gap:10px}
+.raise-top{display:flex;gap:10px;align-items:center}
+.raise-top input[type=range]{flex:1;accent-color:var(--accent-purple)}
+.raise-top input[type=number]{width:90px;padding:8px;border-radius:10px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.15);color:var(--text-main);font-family:monospace;font-size:.95rem;outline:none}
+.raise-top input[type=number]:focus{border-color:var(--accent-purple)}
+.quick{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.status-line{text-align:center;color:var(--text-muted);font-size:.9rem;margin-bottom:12px;min-height:1.3em}
+.results{margin:6px 0 14px;display:flex;flex-direction:column;gap:8px}
+.result-item{background:rgba(0,230,118,.06);border:1px solid rgba(0,230,118,.3);padding:10px 14px;border-radius:10px;display:flex;justify-content:space-between;gap:10px;animation:slideIn .4s var(--ease-out) backwards}
+.result-item span:last-child{color:var(--success);font-weight:700;font-family:monospace}
+.r-hand{font-size:.78rem;color:var(--text-muted)}
+@media(max-width:600px){.table-wrap{aspect-ratio:1/1.1}.table-rail{inset:8% 3%}.seat{width:80px;padding:6px 4px}.s-name{font-size:.75rem}.av{width:34px;height:34px}.auth-card{padding:22px 16px}.board{gap:5px}.glow-sphere-1,.glow-sphere-2{display:none}}
+
+/* --- СТИЛИ КАРТ (переменные наследуются: работает и в игре, и в превью) --- */
+:root{--pc-bg:linear-gradient(160deg,#1c2333,#12161f);--pc-border:rgba(0,242,254,.3);--pc-s:#f0f4f8;--pc-c:#f0f4f8;--pc-h:#ff5555;--pc-d:#ff5555}
+[data-cards="classic"]{--pc-bg:linear-gradient(160deg,#fff,#e8ebf0);--pc-border:#c9ced8;--pc-s:#12161f;--pc-c:#12161f;--pc-h:#d62828;--pc-d:#d62828}
+[data-cards="four"]{--pc-border:rgba(255,255,255,.25);--pc-s:#f0f4f8;--pc-h:#ff5555;--pc-d:#4da8ff;--pc-c:#00e676}
+[data-cards="gold"]{--pc-bg:linear-gradient(160deg,#2a210d,#14100a);--pc-border:rgba(255,183,3,.55);--pc-s:#ffd166;--pc-c:#ffd166;--pc-h:#ff8a65;--pc-d:#ff8a65}
+
+/* --- ПОДСВЕТКА КОМБИНАЦИЙ --- */
+.pc.hl{border-color:var(--warning);box-shadow:0 0 16px rgba(255,183,3,.75);transform:translateY(-5px)}
+.pc.mini.hl{transform:translateY(-2px);box-shadow:0 0 10px rgba(255,183,3,.75)}
+.pc.dim{opacity:.35}
+
+/* --- ПАНЕЛЬ ИНСТРУМЕНТОВ --- */
+.tools-row{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.btn-def.auto{width:auto;padding:8px 14px}
+.btn-bonus{color:var(--warning);border-color:rgba(255,183,3,.45)}
+.btn-bonus:hover:not(:disabled){background:rgba(255,183,3,.14)!important;border-color:var(--warning)!important;box-shadow:0 0 20px rgba(255,183,3,.25)!important}
+
+/* --- ПРАВАЯ ПАНЕЛЬ: КОМБИНАЦИИ --- */
+.combo-sidebar{margin:16px 0 0}
+.combo-list{max-height:520px}
+.combo-card.current{border-color:var(--warning);background:rgba(255,183,3,.08);box-shadow:0 0 14px rgba(255,183,3,.2)}
+.c-head{display:flex;justify-content:space-between;align-items:center;font-size:.85rem;font-weight:700;color:var(--accent-purple)}
+.c-head span{color:var(--text-muted);font-weight:600;font-size:.72rem}
+.c-cards{display:flex;gap:3px;margin:4px 0 2px}
+@media(min-width:1241px){
+ .combo-sidebar{right:auto;left:calc(100% + 16px);margin:0}
+ .combo-sidebar .ht-chevron{transform:rotate(-90deg)}
+}
+
+/* --- МОДАЛКА НАСТРОЕК --- */
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(5,7,10,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:fadeIn .25s ease}
+.modal-card{position:relative;width:100%;max-width:460px;padding:28px 24px}
+.modal-card h2{font-size:1.25rem;margin-bottom:18px}
+.modal-close{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;cursor:pointer;transition:all .25s var(--ease-out)}
+.modal-close:hover{background:rgba(255,85,85,.8);border-color:var(--danger);transform:rotate(90deg) scale(1.08)}
+.set-title{font-size:.8rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.08em;margin-bottom:10px}
+.style-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.style-opt{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 8px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.12);color:var(--text-main);font-weight:600;font-size:.9rem;cursor:pointer;transition:all .25s ease}
+.style-opt:hover{border-color:rgba(0,242,254,.5);background:rgba(0,242,254,.06)}
+.style-opt.active{border-color:var(--accent-cyan);box-shadow:0 0 18px rgba(0,242,254,.3);background:rgba(0,242,254,.08)}
+.prev-cards{display:flex;gap:4px}
+.pc.prev{width:44px;border-radius:6px}
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:10000;padding:10px 18px;border-radius:12px;background:rgba(18,22,31,.95);border:1px solid rgba(0,242,254,.4);box-shadow:0 8px 30px rgba(0,0,0,.5);animation:fadeIn .3s ease}
+
+/* --- РЕАЛИСТИЧНЫЕ КАРТЫ (размеры шрифтов в cqw = от ширины карты) --- */
+:root{--pc-back-frame:#12161f;--pc-back-a:rgba(157,78,221,.75);--pc-back-b:rgba(0,242,254,.18)}
+[data-cards="classic"]{--pc-back-frame:#fff;--pc-back-a:#c1272d;--pc-back-b:#f6dcdc}
+[data-cards="four"]{--pc-back-frame:#1c2333;--pc-back-a:#4da8ff;--pc-back-b:#12161f}
+[data-cards="gold"]{--pc-back-frame:#14100a;--pc-back-a:#ffb703;--pc-back-b:#2a210d}
+.pc{font-family:Georgia,'Times New Roman',serif;box-shadow:0 1px 2px rgba(0,0,0,.5),0 6px 14px rgba(0,0,0,.4)}
+.pc.sm{width:34px;border-radius:5px}
+.pc .cn{position:absolute;display:flex;flex-direction:column;align-items:center;line-height:1}
+.pc .cn.tl{top:5%;left:6%}
+.pc .cn.br{bottom:5%;right:6%;transform:rotate(180deg)}
+.pc .cn b{font-size:25cqw;font-weight:700;letter-spacing:-.06em}
+.pc .cn i{font-style:normal;font-size:21cqw;margin-top:-1cqw}
+.pc .cn.t10 b{font-size:20cqw;letter-spacing:-.12em}
+.pc .pips{position:absolute;inset:0}
+.pc .pips i{position:absolute;transform:translate(-50%,-50%);font-style:normal;font-size:22cqw;line-height:1}
+.pc .pips i.fl{transform:translate(-50%,-50%) rotate(180deg)}
+.pc .ace{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:64cqw;line-height:1}
+.pc .face{position:absolute;left:22%;right:22%;top:14%;bottom:14%;border:1px solid currentColor;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:52cqw;font-weight:700;background:linear-gradient(135deg,rgba(255,183,3,.2),rgba(157,78,221,.12))}
+.pc .face .fs{position:absolute;font-style:normal;font-size:19cqw;line-height:1}
+.pc .face .fs.t{top:4%;left:10%}.pc .face .fs.b{bottom:4%;right:10%;transform:rotate(180deg)}
+.pc.back::after{content:'';position:absolute;inset:7%;border-radius:3px;background:repeating-linear-gradient(45deg,var(--pc-back-a) 0 3px,transparent 3px 6px),repeating-linear-gradient(-45deg,var(--pc-back-a) 0 3px,var(--pc-back-b) 3px 6px);box-shadow:inset 0 0 0 1px var(--pc-back-a)}
+/* маленькие карты соперников: только индекс по центру */
+.pc.mini .pips,.pc.mini .face,.pc.mini .ace,.pc.mini .cn.br{display:none}
+.pc.mini .cn.tl{position:static}
+.pc.mini .cn b{font-size:46cqw}.pc.mini .cn i{font-size:42cqw}
+.seat-empty{position:absolute;transform:translate(-50%,-50%);width:52px;height:52px;border-radius:50%;background:rgba(18,22,31,.6);border:1px dashed rgba(255,255,255,.18);color:var(--text-muted);font-size:.7rem;font-weight:600;display:flex;align-items:center;justify-content:center;text-align:center;z-index:2;transition:all .25s ease}
+button.seat-empty{cursor:pointer;color:var(--accent-cyan);border-color:rgba(0,242,254,.4)}
+button.seat-empty:hover{background:rgba(0,242,254,.12);border-color:var(--accent-cyan);box-shadow:0 0 14px rgba(0,242,254,.35)}
+.tools-left{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.btn-stand{color:var(--danger);border-color:rgba(255,85,85,.35)}
+.watch-note{text-align:center;color:var(--text-muted);font-size:.9rem;padding:10px 0}
+.watch-note a{color:var(--accent-cyan)}
+@media(max-width:600px){.seat{width:66px}.seat-empty{width:40px;height:40px;font-size:.6rem}.pc.mini{width:20px}}
+</style>
+</head>
+<body>
+<div class="glow-sphere-1"></div><div class="glow-sphere-2"></div>
+
+<div class="layout">
+
+<!-- ИСТОРИЯ РАЗДАЧ -->
+<aside id="historySidebar" class="history-sidebar glass">
+  <div class="history-title">
+    <div class="history-title-text">📜 Последние раздачи</div>
+    <button class="icon-btn" type="button" onclick="toggleHistory()" title="Свернуть/развернуть">
+      <svg class="ht-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      <span class="ht-icon">📜</span><span id="historyCount" class="history-count">0</span>
+    </button>
+  </div>
+  <div id="historyList" class="history-list">
+    <div style="color:var(--text-muted);font-size:.85rem;text-align:center;padding:10px 0">История пока пуста</div>
+  </div>
+</aside>
+
+<div class="auth-card glass">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <a href="/" class="btn-home" title="На главную"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></a>
+      <div class="badge badge-purple">🃏 Раздача: <span id="handNo">0</span></div>
+      <div class="badge badge-warning">🪙 Блайнды: <span id="blinds">—</span></div>
+      <div class="badge badge-cyan">👥 <span id="playersCount">0</span></div>
+    </div>
+    <div class="badge timer-badge" id="timerBadge">⏱ <span id="timer">00:00</span></div>
+  </div>
+
+  
+  <div class="tools-row">
+    <div class="tools-left">
+      <button id="btnBonus" class="btn-def btn-sm btn-bonus auto hidden" onclick="claimBonus()">💰 Взять деньги</button>
+      <button id="btnStand" class="btn-def btn-sm btn-stand auto hidden" onclick="standUp()">🚪 Встать</button>
+      <span id="bankChips" class="badge hidden"></span>
+    </div>
+    <button class="btn-def btn-sm auto" onclick="openSettings()">⚙️ Настройки</button>
+  </div>
+
+  <div class="table-wrap">
+    <div class="table-rail"><div class="felt">
+      <div id="stage" class="stage">Ожидание</div>
+      <div class="pot">Банк: <b id="pot">0</b></div>
+      <div id="board" class="board"></div>
+    </div></div>
+    <div id="seats"></div>
+  </div>
+
+  <div id="myHand" class="my-hand"></div>
+  <div id="myName" class="my-name"></div>
+  <div id="statusLine" class="status-line"></div>
+
+  <!-- Ожидание / начало -->
+  <div id="screenWaiting"><button class="btn-def" onclick="startHand()">Раздать карты</button></div>
+  <div id="watchNote" class="watch-note hidden"></div>
+
+  <!-- Итоги раздачи -->
+  <div id="screenResults" class="hidden">
+    <div id="results" class="results"></div>
+    <button class="btn-def seated-only" onclick="startHand()">Следующая раздача</button>
+  </div>
+
+  <!-- Ставки -->
+  <div id="screenActions" class="actions hidden">
+    <div class="act-row">
+      <button id="btnFold" class="btn-def btn-fold" onclick="sendAction('fold')">Фолд</button>
+      <button id="btnCall" class="btn-def" onclick="sendCallOrCheck()">Чек</button>
+    </div>
+    <div class="raise-box">
+      <div class="raise-top">
+        <input id="raiseRange" type="range" oninput="syncRaise(this.value)">
+        <input id="raiseNum" type="number" onchange="syncRaise(this.value)">
+      </div>
+      <div class="quick">
+        <button class="btn-def btn-sm" onclick="quickRaise(.5)">½ банка</button>
+        <button class="btn-def btn-sm" onclick="quickRaise(.75)">¾ банка</button>
+        <button class="btn-def btn-sm" onclick="quickRaise(1)">Банк</button>
+        <button class="btn-def btn-sm" onclick="quickRaise('all')">Олл-ин</button>
+      </div>
+      <button id="btnRaise" class="btn-def btn-raise" onclick="sendRaise()">Рейз</button>
+    </div>
+  </div>
+</div>
+<!-- ПРАВАЯ ПАНЕЛЬ: КОМБИНАЦИИ -->
+<aside id="comboSidebar" class="history-sidebar combo-sidebar glass collapsed">
+  <div class="history-title">
+    <div class="history-title-text">🏅 Комбинации</div>
+    <button class="icon-btn" type="button" onclick="toggleCombos()" title="Свернуть/развернуть">
+      <svg class="ht-chevron" viewBox="0 0 24 24"><path d="M6 9l6 6 6-6"/></svg>
+      <span class="ht-icon">🏅</span>
+    </button>
+  </div>
+  <div id="comboList" class="history-list combo-list"></div>
+</aside>
+</div>
+<!-- НАСТРОЙКИ -->
+<div id="settingsModal" class="modal hidden" onclick="if(event.target===this)closeSettings()">
+  <div class="modal-card glass">
+    <button class="modal-close" type="button" onclick="closeSettings()">✕</button>
+    <h2>⚙️ Настройки</h2>
+    <div class="set-title">Стиль карт</div>
+    <div id="styleGrid" class="style-grid"></div>
+  </div>
+</div>
+
+<script>
+/* =====================================================================
+   КОНТРАКТ API (то, что потом нужно реализовать на сервере)
+   ---------------------------------------------------------------------
+   Клиент -> сервер (transport.emit):
+     'join_table'                       — подписаться на стол (зритель), в ответ придёт table_state
+     'sit' {seat} / 'stand'             — сесть на место 0..9 / встать (только авторизованные)
+     'start_hand'                       — начать раздачу
+     'player_action' {type, amount}     — type: 'fold' | 'check' | 'call' | 'raise'
+                                          amount — для raise: итоговая ставка игрока («рейз до»)
+   Сервер -> клиент (transport.on):
+     'table_state' {                    — полное состояние стола (персонализированное!)
+         status: 'waiting'|'betting'|'showdown', stage, hand_no, me: id|null (null = зритель), blinds:[sb,bb],
+         logged_in, max_seats, bank_chips (баланс, когда не за столом), card_style,
+         pot, community:['As','Td',..], current_bet, min_raise_to,
+         to_act: id|null, deadline: epoch-секунды|null, winners:[{id,name,amount,hand_name}],
+         players:[{id,seat,name,photo_url,stack,bet,folded,all_in,in_hand,last_action,is_dealer,
+                   cards: ['Ah','Kd'] | null}]   // чужие cards = null, пока не шоудаун
+     }
+     'hand_result' {hand_no, pot, winners:[{id,name,amount,hand_name}]}  — для истории
+     'alert' {message}                  — ошибка/уведомление
+   Дополнительно:
+     клиент -> сервер: 'claim_bonus' (забрать бонус, раз в 12 ч), 'save_settings' {card_style}
+     сервер -> клиент: 'bonus_result' {amount, message}; в table_state: bonus_next_at (epoch-сек), bonus_amount
+   Карты: ранг [2-9TJQKA] + масть [shdc]
+   ===================================================================== */
+
+function createSocketTransport() {
+    const socket = io('/poker');
+    socket.on('connect', () => socket.emit('join_table'));  // и при переподключении
+    return {
+        on: (event, cb) => socket.on(event, cb),
+        emit: (event, data) => socket.emit(event, data)
+    };
+}
+
+/* ---- оценка комбинаций (только для подсветки; итоги считает сервер) ---- */
+const RK = '23456789TJQKA', CATS = ['Старшая карта','Пара','Две пары','Сет','Стрит','Флеш','Фулл-хаус','Каре','Стрит-флеш'];
+const KB = 15 ** 5;
+function score5(c) {
+    const r = c.map(x => RK.indexOf(x[0]) + 2).sort((a, b) => b - a), fl = c.every(x => x[1] === c[0][1]), cnt = {};
+    r.forEach(v => cnt[v] = (cnt[v] || 0) + 1);
+    const g = Object.entries(cnt).map(([v, n]) => [n, +v]).sort((a, b) => b[0] - a[0] || b[1] - a[1]);
+    const st = (r[0] - r[4] === 4 && g.length === 5) ? r[0] : (r.join() === '14,5,4,3,2' ? 5 : 0);
+    const cat = st && fl ? 8 : g[0][0] === 4 ? 7 : g[0][0] === 3 && g[1][0] === 2 ? 6 : fl ? 5 : st ? 4 : g[0][0] === 3 ? 3 : g[0][0] === 2 && g[1][0] === 2 ? 2 : g[0][0] === 2 ? 1 : 0;
+    const k = (cat === 4 || cat === 8) ? [st] : g.map(x => x[1]);
+    return cat * KB + k.reduce((a, v) => a * 15 + v, 0);
+}
+const combos = (a, k) => k ? a.flatMap((x, i) => combos(a.slice(i + 1), k - 1).map(c => [x, ...c])) : [[]];
+function bestHand(c) { let b = { score: -1, cards: [] }; combos(c, 5).forEach(h => { const sc = score5(h); if (sc > b.score) b = { score: sc, cards: h }; }); return b; }
+const bestScore = c => bestHand(c).score;
+const handName = s => { const c = catOf(s); return c === 8 && s % KB === 14 ? 'Роял-флеш' : CATS[c]; };
+const catKey = s => { const c = catOf(s); return c === 8 && s % KB === 14 ? 9 : c; };
+// карты, образующие саму комбинацию (без кикеров)
+function madeCards(b) {
+    const cat = catOf(b.score); if (cat === 0) return new Set();
+    if (cat === 4 || cat === 5 || cat === 6 || cat === 8) return new Set(b.cards);
+    const cnt = {}; b.cards.forEach(c => cnt[c[0]] = (cnt[c[0]] || 0) + 1);
+    return new Set(b.cards.filter(c => cnt[c[0]] >= 2));
+}
+const catOf = s => Math.floor(s / KB);
+
+/* =====================================================================
+   КЛИЕНТ
+   ===================================================================== */
+const transport = createSocketTransport();
+const seenHands = new Set();
+let S = null, timerInterval = null, prevBoardLen = 0, prevHandKey = '', historyCount = 0;
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+
+transport.on('table_state', render);
+transport.on('hand_result', r => { if (!seenHands.has(r.hand_no)) { seenHands.add(r.hand_no); addHistory(r); } });
+transport.on('alert', d => toast(d.message));
+transport.on('bonus_result', d => toast(d.message || ('+' + d.amount)));
+
+/* ---- отправка действий ---- */
+function startHand() { transport.emit('start_hand'); }
+function sitDown(seat) { transport.emit('sit', { seat }); }
+function standUp() { transport.emit('stand'); }
+function sendAction(type, amount) { transport.emit('player_action', { type, amount }); }
+function sendCallOrCheck() { sendAction(toCall() > 0 ? 'call' : 'check'); }
+function sendRaise() { sendAction('raise', +$('raiseNum').value); }
+const me = () => S && S.me ? S.players.find(p => p.id === S.me) : undefined;
+const toCall = () => Math.min(S.current_bet - me().bet, me().stack);
+
+/* ---- рейз ---- */
+function syncRaise(v) {
+    const m = me(), max = m.stack + m.bet; v = Math.max(+v || 0, 0);
+    v = Math.min(v, max); $('raiseRange').value = v; $('raiseNum').value = v;
+    $('btnRaise').innerText = v >= max ? 'Олл-ин ' + v : (S.current_bet ? 'Рейз до ' : 'Ставка ') + v;
+}
+function quickRaise(k) {
+    const m = me(), max = m.stack + m.bet;
+    syncRaise(k === 'all' ? max : Math.max(S.min_raise_to, Math.round(S.current_bet + (S.pot + toCall()) * k)));
+}
+
+/* ---- отрисовка ---- */
+const SUIT = { s: '♠', h: '♥', d: '♦', c: '♣' };
+// расстановка мастей на картах 2–10 (x: 0..1 по ширине, y: 0..1 по высоте)
+const PIPS = {
+    '2': [[.5, 0], [.5, 1]], '3': [[.5, 0], [.5, .5], [.5, 1]], '4': [[0, 0], [1, 0], [0, 1], [1, 1]],
+    '5': [[0, 0], [1, 0], [.5, .5], [0, 1], [1, 1]], '6': [[0, 0], [1, 0], [0, .5], [1, .5], [0, 1], [1, 1]],
+    '7': [[0, 0], [1, 0], [.5, .25], [0, .5], [1, .5], [0, 1], [1, 1]],
+    '8': [[0, 0], [1, 0], [.5, .25], [0, .5], [1, .5], [.5, .75], [0, 1], [1, 1]],
+    '9': [[0, 0], [1, 0], [0, 1 / 3], [1, 1 / 3], [.5, .5], [0, 2 / 3], [1, 2 / 3], [0, 1], [1, 1]],
+    'T': [[0, 0], [1, 0], [.5, 1 / 6], [0, 1 / 3], [1, 1 / 3], [0, 2 / 3], [1, 2 / 3], [.5, 5 / 6], [0, 1], [1, 1]]
+};
+let HL = { set: new Set(), dim: false };
+function cardHTML(c, cls = '', d = 0) {
+    if (!c) return `<div class="pc back ${cls}"></div>`;
+    const r = c[0], su = SUIT[c[1]], rk = r === 'T' ? '10' : r;
+    const corner = pos => `<div class="cn ${pos}${rk === '10' ? ' t10' : ''}"><b>${rk}</b><i>${su}</i></div>`;
+    const center = r === 'A' ? `<div class="ace">${su}</div>`
+        : 'JQK'.includes(r) ? `<div class="face">${r}<i class="fs t">${su}</i><i class="fs b">${su}</i></div>`
+        : `<div class="pips">${PIPS[r].map(([x, y]) => `<i${y > .5 ? ' class="fl"' : ''} style="left:${36 + x * 28}%;top:${17 + y * 66}%">${su}</i>`).join('')}</div>`;
+    return `<div class="pc su-${c[1]} ${cls}" style="--d:${d}s">${corner('tl')}${center}${corner('br')}</div>`;
+}
+// карта в игре: с учётом подсветки комбинации
+const gc = (c, cls = '', d = 0) => cardHTML(c, cls + (HL.set.has(c) ? ' hl' : (HL.dim ? ' dim' : '')), d);
+
+function render(s) {
+    S = s; const seated = !!me(), m = me() || { cards: null, folded: true, stack: 0, bet: 0 }, myTurn = seated && s.status === 'betting' && s.to_act === s.me;
+    if (s.card_style && s.card_style !== cardStyle && STYLES.some(x => x[0] === s.card_style)) applyCardStyle(s.card_style);
+    // подсветка комбинаций: в игре — моя, на шоудауне — у победителей
+    HL = { set: new Set(), dim: false };
+    if (s.status === 'showdown' && s.players.filter(p => p.in_hand && !p.folded).length > 1) {
+        (s.winners || []).map(w => s.players.find(p => p.id === w.id)).filter(p => p && p.cards && p.cards.length && s.community.length >= 3)
+            .forEach(p => madeCards(bestHand([...p.cards, ...s.community])).forEach(c => HL.set.add(c)));
+        HL.dim = HL.set.size > 0;
+    } else if (s.status === 'betting' && m.cards && m.cards.length && !m.folded && s.community.length >= 3) {
+        madeCards(bestHand([...m.cards, ...s.community])).forEach(c => HL.set.add(c));
+    }
+    $('handNo').innerText = s.hand_no; $('blinds').innerText = s.blinds.join('/'); $('playersCount').innerText = s.players.length + '/' + s.max_seats;
+    $('pot').innerText = s.pot;
+    $('stage').innerText = { waiting: 'Ожидание', preflop: 'Префлоп', flop: 'Флоп', turn: 'Тёрн', river: 'Ривер' }[s.stage] || (s.status === 'showdown' ? 'Шоудаун' : 'Ожидание');
+    if (s.status === 'showdown') $('stage').innerText = 'Шоудаун';
+
+    // игроки
+    const wIds = (s.winners || []).map(w => w.id);
+    // 10 мест по кругу; своё место — внизу (зритель видит внизу место 1)
+    const n = s.max_seats, mySeat = seated ? me().seat : 0, bySeat = {};
+    s.players.forEach(p => bySeat[p.seat] = p);
+    $('seats').innerHTML = Array.from({ length: n }, (_, i) => {
+        const ang = (90 + ((i - mySeat + n) % n) * 360 / n) * Math.PI / 180, x = 50 + 44 * Math.cos(ang), y = 50 + 42 * Math.sin(ang);
+        const p = bySeat[i];
+        if (!p) return s.logged_in && !seated
+            ? `<button class="seat-empty" style="left:${x}%;top:${y}%" onclick="sitDown(${i})">Сесть</button>`
+            : `<div class="seat-empty" style="left:${x}%;top:${y}%">${i + 1}</div>`;
+        const cls = ['seat', p.id === s.me && 'me', p.id === s.to_act && 'active', p.folded && 'folded', s.status === 'showdown' && wIds.includes(p.id) && 'winner'].filter(Boolean).join(' ');
+        const minis = p.id === s.me ? '' : (p.cards ? p.cards.map(c => gc(c, 'mini')).join('') : (p.in_hand && !p.folded ? cardHTML(null, 'mini') + cardHTML(null, 'mini') : ''));
+        const chip = p.bet ? `<div class="bet-chip" style="left:${50 + (x - 50) * .47}%;top:${50 + (y - 50) * .47}%">🪙 ${p.bet}</div>` : '';
+        return chip + `<div class="${cls}" style="left:${x}%;top:${y}%">
+            ${p.is_dealer ? '<div class="dealer">D</div>' : ''}
+            <div class="av">${p.photo_url ? `<img src="${esc(p.photo_url)}" alt="">` : esc(p.name[0] || '?')}</div>
+            <div class="s-name">${esc(p.name)}</div>
+            <div class="s-stack">${p.stack}</div>
+            ${minis ? `<div class="mini-cards">${minis}</div>` : ''}
+            <div class="s-last">${esc(p.all_in && !p.folded ? 'Олл-ин' : p.last_action)}</div></div>`;
+    }).join('');
+
+    // борд (анимируем только новые карты)
+    if (s.community.length < prevBoardLen) prevBoardLen = 0;
+    $('board').innerHTML = Array.from({ length: 5 }, (_, i) => s.community[i]
+        ? gc(s.community[i], i >= prevBoardLen ? 'deal' : '', (i - prevBoardLen) * .12) : '<div class="pc empty"></div>').join('');
+    prevBoardLen = s.community.length;
+
+    // моя рука
+    const key = s.hand_no + (m.cards || []).join('');
+    $('myHand').innerHTML = (m.cards || []).map((c, i) => gc(c, 'big ' + (key !== prevHandKey ? 'deal' : ''), i * .15)).join('');
+    prevHandKey = key;
+    let curCat = -1, myScore = null;
+    if (m.cards && m.cards.length && s.community.length >= 3 && s.status !== 'waiting' && !m.folded) { myScore = bestScore([...m.cards, ...s.community]); curCat = catKey(myScore); }
+    $('myName').innerText = myScore === null ? '' : handName(myScore);
+    document.querySelectorAll('.combo-card').forEach(el => el.classList.toggle('current', +el.dataset.cat === curCat));
+
+    // экраны
+    $('screenWaiting').classList.toggle('hidden', s.status !== 'waiting' || !seated);
+    document.querySelectorAll('.seated-only').forEach(el => el.classList.toggle('hidden', !seated));
+    $('btnStand').classList.toggle('hidden', !seated);
+    $('btnBonus').classList.toggle('hidden', !s.logged_in);
+    $('bankChips').classList.toggle('hidden', !s.logged_in || seated || s.bank_chips == null);
+    $('bankChips').innerText = '🪙 Баланс: ' + (s.bank_chips ?? 0);
+    $('watchNote').classList.toggle('hidden', seated);
+    $('watchNote').innerHTML = s.logged_in ? '👀 Вы зритель — выберите свободное место, чтобы сесть за стол'
+        : '👀 Вы зритель. <a href="/home">Войдите через Telegram</a>, чтобы играть';
+    $('screenResults').classList.toggle('hidden', s.status !== 'showdown');
+    $('screenActions').classList.toggle('hidden', s.status !== 'betting' || !seated || !m.cards);
+    $('statusLine').innerText = s.status === 'betting' ? (myTurn ? '🎯 Ваш ход' : 'Ходит: ' + (s.players.find(p => p.id === s.to_act)?.name || '…')) : '';
+
+    if (s.status === 'showdown') {
+        $('results').innerHTML = (s.winners || []).map((w, i) => `<div class="result-item" style="animation-delay:${i * .08}s">
+            <div><div style="font-weight:600">🏆 ${esc(w.name)}</div><div class="r-hand">${esc(w.hand_name)}</div></div><span>+${w.amount}</span></div>`).join('');
+    }
+    if (s.status === 'betting' && seated && m.cards) {
+        const c = toCall(), max = m.stack + m.bet, minTo = Math.min(s.min_raise_to, max);
+        ['btnFold', 'btnCall', 'btnRaise', 'raiseRange', 'raiseNum'].forEach(id => $(id).disabled = !myTurn);
+        $('btnCall').innerText = c > 0 ? (c >= m.stack ? 'Колл олл-ин ' + c : 'Колл ' + c) : 'Чек';
+        $('raiseRange').min = minTo; $('raiseRange').max = max; $('raiseNum').min = minTo; $('raiseNum').max = max;
+        $('raiseRange').step = $('raiseNum').step = 10;
+        if (myTurn) syncRaise(Math.max(+$('raiseNum').value || 0, minTo)); else $('btnRaise').innerText = 'Рейз';
+    }
+    s.deadline && s.status === 'betting' ? startTimer(s.deadline) : stopTimer();
+    updateBonusBtn();
+}
+
+/* ---- таймер хода ---- */
+function startTimer(end) {
+    stopTimer();
+    const tick = () => {
+        const left = Math.max(0, Math.ceil(end - Date.now() / 1000));
+        $('timer').innerText = String(Math.floor(left / 60)).padStart(2, '0') + ':' + String(left % 60).padStart(2, '0');
+        $('timerBadge').classList.toggle('warning-time', left <= 10);
+        if (left <= 0) stopTimer();
+    };
+    tick(); timerInterval = setInterval(tick, 1000);
+}
+function stopTimer() {
+    clearInterval(timerInterval); timerInterval = null;
+    $('timer').innerText = '00:00'; $('timerBadge').classList.remove('warning-time');
+}
+
+/* ---- история ---- */
+function addHistory(r) {
+    const list = $('historyList');
+    if (!historyCount) list.innerHTML = '';
+    historyCount++;
+    const el = document.createElement('div'); el.className = 'history-card';
+    el.innerHTML = `<div class="h-round">Раздача #${r.hand_no} · банк ${r.pot}</div>` +
+        r.winners.map(w => `<div class="h-win">🏆 ${esc(w.name)} +${w.amount}</div><div class="h-hand">${esc(w.hand_name)}</div>`).join('');
+    list.prepend(el);
+    const c = $('historyCount'); c.innerText = historyCount; c.classList.add('has-items');
+}
+function toggleHistory() { $('historySidebar').classList.toggle('collapsed'); }
+function toggleCombos() { $('comboSidebar').classList.toggle('collapsed'); }
+
+/* ---- уведомления ---- */
+function toast(msg) { const t = document.createElement('div'); t.className = 'toast'; t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2600); }
+
+/* ---- бонус раз в 12 часов (время и сумму отдаёт сервер в table_state) ---- */
+function claimBonus() { transport.emit('claim_bonus'); }
+function updateBonusBtn() {
+    const b = $('btnBonus'); if (!S) return;
+    const left = Math.ceil((S.bonus_next_at || 0) - Date.now() / 1000);
+    if (left > 0) {
+        const f = n => String(n).padStart(2, '0');
+        b.disabled = true; b.innerText = `⏳ ${f(Math.floor(left / 3600))}:${f(Math.floor(left % 3600 / 60))}:${f(left % 60)}`;
+    } else { b.disabled = false; b.innerText = '💰 Взять ' + (S.bonus_amount || 'деньги'); }
+}
+setInterval(updateBonusBtn, 1000);
+
+/* ---- справочник комбинаций ---- */
+const COMBOS = [
+    { cat: 9, name: 'Роял-флеш', ex: ['As', 'Ks', 'Qs', 'Js', 'Ts'], d: 'Стрит-флеш от десятки до туза' },
+    { cat: 8, name: 'Стрит-флеш', ex: ['9h', '8h', '7h', '6h', '5h'], d: 'Пять по порядку одной масти' },
+    { cat: 7, name: 'Каре', ex: ['Qs', 'Qh', 'Qd', 'Qc', '4s'], d: 'Четыре карты одного ранга' },
+    { cat: 6, name: 'Фулл-хаус', ex: ['Ks', 'Kh', 'Kd', '7c', '7s'], d: 'Сет и пара' },
+    { cat: 5, name: 'Флеш', ex: ['Ad', 'Jd', '8d', '5d', '2d'], d: 'Пять карт одной масти' },
+    { cat: 4, name: 'Стрит', ex: ['9s', '8h', '7d', '6c', '5s'], d: 'Пять по порядку, масти разные' },
+    { cat: 3, name: 'Сет', ex: ['8s', '8h', '8d', 'Kc', '3s'], d: 'Три карты одного ранга' },
+    { cat: 2, name: 'Две пары', ex: ['Js', 'Jh', '4d', '4c', 'As'], d: 'Две разные пары' },
+    { cat: 1, name: 'Пара', ex: ['As', 'Ah', 'Kd', '8c', '3s'], d: 'Две карты одного ранга' },
+    { cat: 0, name: 'Старшая карта', ex: ['As', 'Jh', '8d', '5c', '2s'], d: 'Комбинации нет — решает старшая карта' }
+];
+$('comboList').innerHTML = COMBOS.map((c, i) => `<div class="history-card combo-card" data-cat="${c.cat}">
+    <div class="c-head">${i + 1}. ${c.name}<span>${i === 0 ? 'сильнейшая' : i === 9 ? 'слабейшая' : ''}</span></div>
+    <div class="c-cards">${c.ex.map(x => cardHTML(x, 'sm')).join('')}</div>
+    <div class="h-hand">${c.d}</div></div>`).join('');
+
+/* ---- настройки: стиль карт ---- */
+const STYLES = [['classic', 'Классика'], ['four', '4 цвета'], ['neon', 'Неон'], ['gold', 'Золото']];
+const SERVER_CARD_STYLE = {{ (card_style or '') | tojson }};  // стиль, сохранённый в БД
+let cardStyle = SERVER_CARD_STYLE || 'classic';
+if (!SERVER_CARD_STYLE) try { cardStyle = localStorage.getItem('pk_cards') || 'classic'; } catch (e) {}
+if (!STYLES.some(x => x[0] === cardStyle)) cardStyle = 'classic';
+document.body.dataset.cards = cardStyle;
+function renderStyleGrid() {
+    $('styleGrid').innerHTML = STYLES.map(([id, name]) => `<button type="button" class="style-opt ${id === cardStyle ? 'active' : ''}" data-cards="${id}" onclick="setCardStyle('${id}')">
+        <div class="prev-cards">${['As', 'Kh', 'Qd', 'Jc'].map(c => cardHTML(c, 'prev')).join('')}</div><span>${name}</span></button>`).join('');
+}
+function applyCardStyle(id) {
+    cardStyle = id; document.body.dataset.cards = id;
+    try { localStorage.setItem('pk_cards', id); } catch (e) {}
+}
+function setCardStyle(id) {
+    applyCardStyle(id);
+    if (S) S.card_style = id;
+    transport.emit('save_settings', { card_style: id });  // в БД; гостю — только localStorage
+    renderStyleGrid();
+}
+function openSettings() { renderStyleGrid(); $('settingsModal').classList.remove('hidden'); }
+function closeSettings() { $('settingsModal').classList.add('hidden'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') closeSettings(); });
+</script>
+</body>
+</html>

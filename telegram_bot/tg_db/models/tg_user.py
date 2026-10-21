@@ -1,5 +1,5 @@
 
-from sqlalchemy import Column, Integer, String, BigInteger, Boolean
+from sqlalchemy import Column, Integer, String, BigInteger, Boolean, Float
 from telegram_bot.tg_db import Base
 from sqlalchemy.orm import relationship
 
@@ -23,6 +23,10 @@ class TelegramUser(Base):
     sticker_count_month = Column(Integer, default=0, nullable=False)
     nya_count_month = Column(Integer, default=0, nullable=False)
 
+    # покер
+    chips = Column(Integer, default=1000, server_default="1000", nullable=False)
+    poker_card_style = Column(String(20), default="classic", server_default="classic", nullable=False)
+    poker_bonus_at = Column(Float, default=0, server_default="0", nullable=False)  # epoch-сек, когда доступен следующий бонус
 
     at_user_tag = relationship("UserTagAssociation", back_populates="user", cascade="all, delete-orphan")
 
@@ -40,6 +44,9 @@ class TelegramUser(Base):
             "video_count_month": self.video_count_month,
             "sticker_count_month": self.sticker_count_month,
             "nya_count_month": self.nya_count_month,
+            "chips": self.chips,
+            "poker_card_style": self.poker_card_style,
+            "poker_bonus_at": self.poker_bonus_at,
         }
 
     def __repr__(self):

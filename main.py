@@ -5,7 +5,7 @@ from telegram_bot import run_telegram_bot
 import threading
 import asyncio
 from utils.logger import logger
-from telegram_bot.tg_db import engine, Base
+from telegram_bot.tg_db import engine, Base, add_missing_columns
 from telegram_bot.tg_db.models.tg_user import TelegramUser
 from telegram_bot.tg_db.models.tg_teg import TelegramTag
 from telegram_bot.tg_db.models.tg_at_user_tag import UserTagAssociation
@@ -38,6 +38,7 @@ import s3
 def main(): 
 
     Base.metadata.create_all(bind=engine)
+    add_missing_columns()
     telegram_thread = threading.Thread(target=run_telegram_bot)
     telegram_thread.start()
 

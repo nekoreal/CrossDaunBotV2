@@ -391,6 +391,7 @@
                 {% endif %}
                 <a href="{{ url_for('stats') }}" class="btn-def">Статистика</a>
                 <a href="{{ url_for('gallery_bp.gallery_page') }}" class="btn-def">Галерея</a>
+                <a href="{{ url_for('poker_bp.poker_page') }}" class="btn-def">🃏 Покер</a>
                 <a href="{{ url_for('entry_telegram_bp.logout') }}" class="btn-logout">Выйти из аккаунта</a>
             </div>
         {% else %}
@@ -415,6 +416,7 @@
                     </script>
                 </div>
             </div>
+            <a href="{{ url_for('poker_bp.poker_page') }}" class="btn-def" style="margin-top:20px">🃏 Смотреть покер</a>
         {% endif %}
     </div>
 
