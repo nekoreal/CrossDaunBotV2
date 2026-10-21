@@ -149,3 +149,9 @@ def save_settings(values: dict[str, int]):
                 row.value = value
             else:
                 session.add(PokerSetting(key=key, value=value))
+
+
+def list_users_chips() -> list[tuple[int, int]]:
+    """Все пользователи и их фишки (для админки)."""
+    with session_scope() as session:
+        return [(u.tg_id, u.chips) for u in session.query(TelegramUser.tg_id, TelegramUser.chips).all()]

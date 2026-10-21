@@ -7,7 +7,7 @@ from threading import RLock
 from flask import Blueprint, request, session, render_template
 from flask_socketio import emit
 
-from config import ADMIN_ID, MODER_ID
+from config import ADMIN_ID, POKER_MODER_ID
 from telegram_bot.tg_db.db_controllers.poker_controller import (
     get_poker_profile,
     set_chips_many,
@@ -28,7 +28,7 @@ RUNOUT_DELAY = 1.3      # пауза между улицами, когда вс�
 DISCONNECT_GRACE = 25   # сек на переподключение, потом игрока убирают из-за стола
 MAX_TIMEOUTS = 2        # столько автоходов подряд — и игрок убирается из-за стола
 STD_SKINS = {"classic": "Классика", "four": "4 цвета", "neon": "Неон", "gold": "Золото"}
-ADMIN_IDS = {ADMIN_ID, MODER_ID}
+ADMIN_IDS = {ADMIN_ID, POKER_MODER_ID}  # модер голосования к покеру доступа не имеет
 
 # настройки из админ-панели: ключ -> (по умолчанию, мин, макс, подпись)
 SETTINGS_SPEC = {

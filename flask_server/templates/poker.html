@@ -93,13 +93,16 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .s-stack{font-size:.8rem;color:var(--success);font-weight:700;font-family:monospace}
 .s-last{font-size:.7rem;color:var(--text-muted);min-height:1em}
 .dealer{position:absolute;top:-6px;right:-6px;width:20px;height:20px;border-radius:50%;background:var(--warning);color:#1a1200;font-size:.7rem;font-weight:900;display:flex;align-items:center;justify-content:center;border:2px solid #12161f;animation:pop .4s var(--ease-spring)}
-.mini-cards{display:flex;gap:3px;min-height:36px}
+.mini-cards{display:flex;gap:3px;min-height:36px;align-items:center}
+/* карты никогда не растягиваются flex-контейнером — иначе ломается пропорция 5:7 (на мобилках «сплющивались») */
+.pc{flex:none;align-self:center}
 .table-wrap{position:relative;width:100%;aspect-ratio:16/11;margin:28px 0 34px}
 .table-rail{position:absolute;inset:9% 6%;border-radius:50%;padding:14px;background:linear-gradient(145deg,#1c2333,#0d1017);border:1px solid rgba(157,78,221,.4);box-shadow:0 0 40px rgba(157,78,221,.18),inset 0 0 30px rgba(0,0,0,.6)}
 .felt{width:100%;height:100%;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(0,242,254,.13),rgba(157,78,221,.08) 70%),#0f1a22;border:1px solid rgba(0,242,254,.22);box-shadow:inset 0 0 45px rgba(0,0,0,.55);text-align:center}
 .seat{position:absolute;transform:translate(-50%,-50%);width:96px;padding:8px 6px;background:rgba(18,22,31,.92);border:1px solid rgba(255,255,255,.1);border-radius:14px;display:flex;flex-direction:column;align-items:center;gap:3px;text-align:center;transition:border-color .3s ease,box-shadow .3s ease,opacity .3s ease;z-index:2}
 .bet-chip{position:absolute;transform:translate(-50%,-50%);padding:3px 9px;border-radius:999px;background:rgba(255,183,3,.12);border:1px solid rgba(255,183,3,.5);color:var(--warning);font-family:monospace;font-size:.78rem;font-weight:700;z-index:1;animation:pop .35s var(--ease-spring)}
-.board .pc{width:clamp(40px,9.5vw,58px)}
+.board{--bw:clamp(40px,9.5vw,58px)}
+.board .pc,.board .flip-card{width:var(--bw)}
 .board{margin-top:4px}
 
 .pot{font-size:.9rem;color:var(--text-muted);margin-bottom:8px}
@@ -230,7 +233,37 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .adm-row label{font-size:.78rem;color:var(--text-muted);display:flex;align-items:center;gap:4px}
 .adm-note{font-size:.8rem;color:var(--warning);margin-bottom:10px;min-height:1em}
 .btn-admin{color:var(--warning);border-color:rgba(255,183,3,.4)}
-.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:10000;padding:10px 18px;border-radius:12px;background:rgba(18,22,31,.95);border:1px solid rgba(0,242,254,.4);box-shadow:0 8px 30px rgba(0,0,0,.5);animation:fadeIn .3s ease}
+/* карты борда: закрытые с начала раздачи, открываются переворотом */
+@keyframes flipOpen{0%{transform:rotateY(0)}45%{transform:translateY(-16px) rotateY(100deg) scale(1.16)}75%{transform:translateY(-4px) rotateY(196deg) scale(1.04)}100%{transform:rotateY(180deg)}}
+@keyframes dealFly{from{opacity:0;transform:translate(0,-70px) rotate(-28deg) scale(.55)}to{opacity:1;transform:none}}
+@keyframes revealFlash{0%{opacity:0;transform:scale(.9)}35%{opacity:1;transform:scale(1.06)}100%{opacity:0;transform:scale(1.15)}}
+.flip-card{position:relative;flex:none;aspect-ratio:5/7;perspective:700px}
+.flip-inner{position:absolute;inset:0;transform-style:preserve-3d}
+.flip-face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden}
+.board .flip-face .pc{width:100%}
+.flip-front{transform:rotateY(180deg)}
+.flip-card.open .flip-inner{transform:rotateY(180deg)}
+.flip-card.reveal .flip-inner{animation:flipOpen .8s var(--ease-out) var(--fd) backwards}
+.flip-card.reveal::after{content:'';position:absolute;inset:-5px;border-radius:12px;pointer-events:none;opacity:0;box-shadow:0 0 28px rgba(0,242,254,.75),inset 0 0 14px rgba(157,78,221,.5);animation:revealFlash .9s ease calc(var(--fd) + .25s)}
+.flip-card.dealt{animation:dealFly .55s var(--ease-spring) var(--dd) backwards}
+/* админка: список пользователей */
+.adm-search{width:100%;margin-bottom:8px}
+.user-list{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow-y:auto;margin-bottom:12px;scrollbar-width:thin;scrollbar-color:rgba(0,242,254,.3) transparent}
+.user-row{display:flex;align-items:center;gap:10px;width:100%;padding:8px 10px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);color:var(--text-main);text-align:left;cursor:pointer;transition:all .2s ease;animation:slideIn .3s var(--ease-out) backwards}
+.user-row:hover{border-color:rgba(0,242,254,.4);background:rgba(0,242,254,.05)}
+.user-row.sel{border-color:var(--accent-cyan);background:rgba(0,242,254,.1);box-shadow:0 0 14px rgba(0,242,254,.25)}
+.u-av{position:relative;flex:none;width:38px;height:38px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-purple));display:flex;align-items:center;justify-content:center;font-weight:800;color:#0a0c10}
+.u-av::before{content:attr(data-l)}
+.u-av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.u-info{flex:1;min-width:0;display:flex;flex-direction:column}
+.u-info b,.u-info small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.u-info small{color:var(--text-muted);font-size:.74rem}
+.u-chips{font-family:monospace;font-weight:700;color:var(--success);white-space:nowrap}
+.picked{display:flex;align-items:center;gap:10px;padding:10px;border-radius:12px;margin-bottom:10px;background:linear-gradient(135deg,rgba(0,242,254,.08),rgba(157,78,221,.12));border:1px solid rgba(0,242,254,.35);animation:tagPop .3s var(--ease-spring)}
+.quick-amt{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 12px}
+.quick-amt .btn-def{width:auto;padding:6px 10px}
+#editorModal{z-index:10001}  /* редактор открывается поверх настроек и админки */
+.toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%);z-index:10002;padding:10px 18px;border-radius:12px;background:rgba(18,22,31,.95);border:1px solid rgba(0,242,254,.4);box-shadow:0 8px 30px rgba(0,0,0,.5);animation:fadeIn .3s ease}
 
 /* --- РЕАЛИСТИЧНЫЕ КАРТЫ (размеры шрифтов в cqw = от ширины карты) --- */
 :root{--pc-back-frame:#12161f;--pc-back-a:rgba(157,78,221,.75);--pc-back-b:rgba(0,242,254,.18)}
@@ -262,7 +295,8 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .btn-stand{color:var(--danger);border-color:rgba(255,85,85,.35)}
 .watch-note{text-align:center;color:var(--text-muted);font-size:.9rem;padding:10px 0}
 .watch-note a{color:var(--accent-cyan)}
-@media(max-width:600px){.seat{width:66px}.pc.mini{width:20px}.tag{font-size:.6rem}}
+@media(max-width:600px){.seat{width:66px;gap:2px}.pc.mini{width:21px}.mini-cards{min-height:30px}.tag{font-size:.6rem}.s-stack{font-size:.72rem}.s-last{font-size:.62rem}}
+@media(max-width:420px){.auth-card{padding:18px 12px}.seat{width:58px;padding:5px 3px;border-radius:11px}.av{width:26px;height:26px;font-size:.75rem}.s-name{font-size:.66rem}.board{gap:4px;--bw:clamp(28px,8.4vw,40px)}.pc.big{width:clamp(56px,17vw,70px)}.bet-chip{font-size:.66rem;padding:2px 6px}.table-wrap{aspect-ratio:1/1.55;margin:44px 0 36px;--rx:41;--ry:44}.felt{justify-content:flex-start;padding-top:24%}.table-rail{inset:13% 9%}.mini-cards{min-height:23px}.pc.mini{width:16px;border-radius:3px}.seat{width:54px;gap:1px}.s-stack{font-size:.66rem}.dealer{width:17px;height:17px;font-size:.6rem}.my-hand{margin-top:-4px}.top-bar{flex-wrap:wrap}.badge{font-size:.75rem;padding:5px 9px}}
 
 /* --- СЛОТЫ ИГРОКОВ: плавная пересадка, появление и уход --- */
 @keyframes seatIn{from{opacity:0;scale:.3;filter:blur(6px)}to{opacity:1;scale:1;filter:none}}
@@ -477,11 +511,18 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
       <div id="admSkinList"></div>
     </div>
     <div id="admChips" class="hidden">
-      <div class="adm-form">
-        <label class="fld"><span>Telegram ID</span><input id="admChipsId" type="number"></label>
-        <label class="fld"><span>Сумма (минус — списать)</span><input id="admChipsAmount" type="number" value="1000"></label>
+      <input id="admUserQ" class="adm-input adm-search" placeholder="🔎 Поиск по username, имени или ID" oninput="admSearchUsers()">
+      <div id="admUserNote" class="skin-hint"></div>
+      <div id="admUserList" class="user-list"></div>
+      <div id="admPicked" class="picked hidden"></div>
+      <label class="fld" style="margin-bottom:10px"><span>Сумма (минус — списать)</span><input id="admChipsAmount" type="number" value="1000"></label>
+      <div class="quick-amt">
+        <button class="btn-def btn-sm" onclick="$('admChipsAmount').value=500">+500</button>
+        <button class="btn-def btn-sm" onclick="$('admChipsAmount').value=1000">+1000</button>
+        <button class="btn-def btn-sm" onclick="$('admChipsAmount').value=5000">+5000</button>
+        <button class="btn-def btn-sm btn-fold" onclick="$('admChipsAmount').value=-1000">−1000</button>
       </div>
-      <button class="btn-def" onclick="admGiveChips()">Начислить</button>
+      <button id="admGiveBtn" class="btn-def" onclick="admGiveChips()" disabled>Выберите пользователя</button>
     </div>
   </div>
 </div>
@@ -557,7 +598,7 @@ const catOf = s => Math.floor(s / KB);
    ===================================================================== */
 const transport = createSocketTransport();
 const seenHands = new Set();
-let S = null, timerInterval = null, prevBoardLen = 0, prevHandKey = '', historyCount = 0;
+let S = null, timerInterval = null, prevBoardLen = 0, prevBoardHand = null, prevHandKey = '', historyCount = 0;
 const $ = id => document.getElementById(id);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
 
@@ -648,11 +689,19 @@ function render(s) {
 
     renderSeats(s, prev);
 
-    // борд (анимируем только новые карты)
-    if (s.community.length < prevBoardLen) prevBoardLen = 0;
-    $('board').innerHTML = Array.from({ length: 5 }, (_, i) => s.community[i]
-        ? gc(s.community[i], i >= prevBoardLen ? 'deal' : '', (i - prevBoardLen) * .12) : '<div class="pc empty"></div>').join('');
-    prevBoardLen = s.community.length;
+    // борд: с начала раздачи 5 карт лежат рубашкой вверх (рубашка дилера) и переворачиваются по мере открытия
+    const handOn = s.status !== 'waiting' && s.players.some(p => p.in_hand);
+    const newHand = s.hand_no !== prevBoardHand, firstRender = prevBoardHand === null;
+    if (newHand) prevBoardLen = 0;
+    const deckBack = (s.players.find(p => p.is_dealer) || {}).back_skin;
+    $('board').innerHTML = !handOn ? '<div class="pc empty"></div>'.repeat(5) : Array.from({ length: 5 }, (_, i) => {
+        const c = s.community[i], reveal = c && i >= prevBoardLen && !firstRender;
+        const cls = ['flip-card', c && 'open', reveal && 'reveal', newHand && !firstRender && 'dealt'].filter(Boolean).join(' ');
+        return `<div class="${cls}" style="--fd:${reveal ? (i - prevBoardLen) * .18 : 0}s;--dd:${i * .08}s"><div class="flip-inner">
+            <div class="flip-face flip-back">${cardHTML(null, '', 0, deckBack)}</div>
+            <div class="flip-face flip-front">${c ? gc(c) : ''}</div></div></div>`;
+    }).join('');
+    prevBoardLen = s.community.length; prevBoardHand = s.hand_no;
 
     // моя рука
     const key = s.hand_no + (m.cards || []).join('');
@@ -714,9 +763,11 @@ function render(s) {
 /* ---- игроки за столом: позиции считаются от количества игроков ---- */
 const slotEls = new Map(), chipEls = new Map();
 const tableEl = () => $('seats');
+// радиусы эллипса мест в % — из CSS (--rx/--ry), на телефоне стол выше и места дальше от борда
 function seatPos(i, n) {
+    const cs = getComputedStyle(tableEl().parentElement), rx = parseFloat(cs.getPropertyValue('--rx')) || 44, ry = parseFloat(cs.getPropertyValue('--ry')) || 41;
     const ang = (90 + i * 360 / n) * Math.PI / 180;
-    return { x: 50 + 44 * Math.cos(ang), y: 50 + 41 * Math.sin(ang) };
+    return { x: 50 + rx * Math.cos(ang), y: 50 + ry * Math.sin(ang) };
 }
 function seatInner(s, p) {
     const wIds = (s.winners || []).map(w => w.id);
@@ -756,7 +807,7 @@ function renderSeats(s, prev) {
         let chip = chipEls.get(p.id);
         if (p.bet) {
             if (!chip) { chip = document.createElement('div'); chip.className = 'bet-chip'; tableEl().appendChild(chip); chipEls.set(p.id, chip); }
-            chip.style.left = 50 + (x - 50) * .5 + '%'; chip.style.top = 50 + (y - 50) * .5 + '%';
+            const c = chipPos(x, y, el.firstElementChild); chip.style.left = c.x + '%'; chip.style.top = c.y + '%';
             chip.innerText = '🪙 ' + p.bet;
         } else if (chip) collectChip(p.id);
     });
@@ -777,6 +828,15 @@ function renderSeats(s, prev) {
             }, wi * 250 + 500);
         });
     }
+}
+// фишка ставки — сразу за краем места в сторону центра (по реальному размеру места), чтобы не ложиться на борд
+function chipPos(x, y, seat) {
+    const wrap = tableEl().parentElement, W = wrap.clientWidth, H = wrap.clientHeight;
+    let dx = (50 - x) * W / 100, dy = (50 - y) * H / 100;
+    const dist = Math.hypot(dx, dy) || 1; dx /= dist; dy /= dist;
+    const a = (seat ? seat.offsetWidth : 90) / 2 + 24, b = (seat ? seat.offsetHeight : 110) / 2 + 13;
+    const L = Math.min(1 / Math.hypot(dx / a, dy / b), dist * .6);   // радиус «эллипса места» по направлению
+    return { x: x + dx * L * 100 / W, y: y + dy * L * 100 / H };
 }
 // ставки уезжают в банк
 function collectChip(id) {
@@ -1031,6 +1091,7 @@ function setAdminTab(t) {
     ['settings', 'skins', 'chips'].forEach(x => $('adm' + x[0].toUpperCase() + x.slice(1)).classList.toggle('hidden', x !== t));
     if (t === 'settings') admLoadSettings();
     if (t === 'skins') admLoadSkins();
+    if (t === 'chips') admLoadUsers();
 }
 async function admLoadSettings() {
     try {
@@ -1068,10 +1129,45 @@ async function admDeleteSkin(id, name) {
     try { await api('/poker/admin/skins/' + id, { method: 'DELETE' }); toast('🗑 Удалён'); admLoadSkins(); }
     catch (e) { toast(e.message); }
 }
-async function admGiveChips() {
+let admUsers = {}, admPick = null, admSearchT = null, admPollT = null;
+const userLabel = u => u.first_name || (u.username ? '@' + u.username : 'id ' + u.tg_id);
+const userAv = u => `<div class="u-av" data-l="${esc((userLabel(u).replace(/^@/, '')[0] || '?').toUpperCase())}"><img src="${u.avatar}" alt="" loading="lazy" onerror="this.remove()"></div>`;
+function admSearchUsers() { clearTimeout(admSearchT); admSearchT = setTimeout(admLoadUsers, 250); }
+async function admLoadUsers() {
+    clearTimeout(admPollT);
     try {
-        const d = await api('/poker/admin/chips', { json: { tg_id: $('admChipsId').value, amount: $('admChipsAmount').value } });
-        toast('✅ Баланс: ' + d.chips);
+        const d = await api('/poker/admin/users?q=' + encodeURIComponent($('admUserQ').value.trim()));
+        d.users.forEach(u => admUsers[u.tg_id] = u);
+        $('admUserNote').innerText = (d.loading ? '⏳ Подтягиваем имена из Telegram… ' : '') + `Найдено: ${d.total}` + (d.total > d.users.length ? `, показаны первые ${d.users.length}` : '');
+        $('admUserList').innerHTML = d.users.map((u, i) => `<button type="button" class="user-row ${u.tg_id === admPick ? 'sel' : ''}" style="animation-delay:${Math.min(i, 12) * .02}s" onclick="admPickUser('${u.tg_id}')">
+            ${userAv(u)}<div class="u-info"><b>${esc(userLabel(u))}</b><small>${u.username ? '@' + esc(u.username) + ' · ' : ''}id ${u.tg_id}</small></div>
+            ${u.seated ? '<span class="tag ok">за столом</span>' : ''}<span class="u-chips">🪙 ${u.chips}</span></button>`).join('')
+            || '<div class="skin-hint">Никого не нашлось</div>';
+        admRenderPick();
+        // пока имена грузятся — обновляем список, если вкладка открыта
+        if (d.loading && !$('adminModal').classList.contains('hidden') && !$('admChips').classList.contains('hidden')) admPollT = setTimeout(admLoadUsers, 2500);
+    } catch (e) { toast(e.message); }
+}
+function admPickUser(id) {
+    admPick = id;
+    document.querySelectorAll('.user-row').forEach(el => el.classList.toggle('sel', el.getAttribute('onclick').includes(`'${id}'`)));
+    admRenderPick();
+}
+function admRenderPick() {
+    const u = admPick && admUsers[admPick];
+    $('admPicked').classList.toggle('hidden', !u);
+    $('admGiveBtn').disabled = !u;
+    $('admGiveBtn').innerText = u ? '🪙 Начислить — ' + userLabel(u) : 'Выберите пользователя';
+    if (u) $('admPicked').innerHTML = `${userAv(u)}<div class="u-info"><b>${esc(userLabel(u))}</b><small>${u.username ? '@' + esc(u.username) + ' · ' : ''}id ${u.tg_id}${u.seated ? ' · за столом' : ''}</small></div><span class="u-chips">🪙 ${u.chips}</span>`;
+}
+async function admGiveChips() {
+    const u = admUsers[admPick]; if (!u) return;
+    const amount = +$('admChipsAmount').value;
+    if (!amount) return toast('Укажите сумму');
+    try {
+        const d = await api('/poker/admin/chips', { json: { tg_id: u.tg_id, amount } });
+        toast(`✅ ${userLabel(u)}: ${amount > 0 ? '+' : ''}${amount} → ${d.chips}`);
+        u.chips = d.chips; admLoadUsers();
     } catch (e) { toast(e.message); }
 }
 

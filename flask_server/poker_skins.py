@@ -1,14 +1,20 @@
 """HTTP API скинов карт и админ-панели покера. Картинки скинов лежат в отдельном S3-бакете."""
 import io
 import re
+import time
 import uuid
 from collections import OrderedDict
 from threading import Lock
 from flask import request, session, jsonify, Response, abort
 from PIL import Image, ImageOps
 
+from config import TELEGRAM_CHAT_ID
 from s3 import skins_s3_client
-from telegram_bot.tg_db.db_controllers.poker_controller import create_skin, update_skin, delete_skin, get_owned_skin_ids
+from telegram_bot.bot import bot
+from telegram_bot.tg_db.db_controllers.poker_controller import (
+    create_skin, update_skin, delete_skin, get_owned_skin_ids, list_users_chips,
+)
+from flask_server.dashboard import socketio
 from flask_server.poker import poker_bp, table, is_admin, STD_SKINS, SETTINGS_SPEC
 
 RANKS = "AKQJT98765432"
@@ -321,6 +327,90 @@ def admin_settings():
             "spec": [{"key": k, "default": v[0], "min": v[1], "max": v[2], "label": v[3]} for k, v in SETTINGS_SPEC.items()],
             "active": table.cfg, "pending": table.pending_cfg,
         })
+
+
+# ---------- админка: список пользователей (имя и аватар — из Telegram, с кэшем) ----------
+USER_INFO_TTL = 3600
+_user_info: dict[int, dict] = {}       # tg_id -> {username, first_name, at}
+_avatars: dict[int, tuple] = {}        # tg_id -> (bytes | None, at)
+_info_lock = Lock()
+_warming = False
+
+
+def _fetch_user_info(tg_id: int) -> dict:
+    try:
+        u = bot.get_chat_member(TELEGRAM_CHAT_ID, tg_id).user
+        info = {"username": u.username or "", "first_name": " ".join(filter(None, [u.first_name, u.last_name]))}
+    except Exception:
+        info = {"username": "", "first_name": ""}
+    info["at"] = time.time()
+    return info
+
+
+def _warm_user_info(ids):
+    """Фоново подтягивает имена всех пользователей (запросов к Telegram много — не держим запрос админа)."""
+    global _warming
+    try:
+        for tg_id in ids:
+            with _info_lock:
+                fresh = tg_id in _user_info and time.time() - _user_info[tg_id]["at"] < USER_INFO_TTL
+            if not fresh:
+                info = _fetch_user_info(tg_id)
+                with _info_lock:
+                    _user_info[tg_id] = info
+    finally:
+        _warming = False
+
+
+@poker_bp.route("/poker/admin/users")
+def admin_users():
+    """Пользователи с фишками; q — поиск по id, username или имени."""
+    global _warming
+    _require_admin()
+    q = (request.args.get("q") or "").strip().lower().lstrip("@")
+    rows = list_users_chips()
+    with _info_lock:
+        stale = [t for t, _ in rows if t not in _user_info or time.time() - _user_info[t]["at"] >= USER_INFO_TTL]
+        info = dict(_user_info)
+    if stale and not _warming:
+        _warming = True
+        socketio.start_background_task(_warm_user_info, stale)
+    with table.lock:
+        seated = {p.tg_id: p.stack for p in table.players}
+    users = []
+    for tg_id, chips in rows:
+        i = info.get(tg_id, {})
+        hay = f"{tg_id} {i.get('username', '')} {i.get('first_name', '')}".lower()
+        if q and q not in hay:
+            continue
+        users.append({
+            "tg_id": str(tg_id), "username": i.get("username", ""), "first_name": i.get("first_name", ""),
+            "chips": seated.get(tg_id, chips), "seated": tg_id in seated,
+            "avatar": f"/poker/admin/avatar/{tg_id}",
+        })
+    users.sort(key=lambda u: -u["chips"])
+    return jsonify({"users": users[:60], "total": len(users), "loading": bool(stale)})
+
+
+@poker_bp.route("/poker/admin/avatar/<int:tg_id>")
+def admin_avatar(tg_id: int):
+    _require_admin()
+    with _info_lock:
+        cached = _avatars.get(tg_id)
+    if cached is None or time.time() - cached[1] >= USER_INFO_TTL:
+        data = None
+        try:
+            photos = bot.get_user_profile_photos(tg_id, limit=1).photos
+            if photos:
+                data = bot.download_file(bot.get_file(photos[0][0].file_id).file_path)  # самый маленький размер
+        except Exception:
+            data = None
+        cached = (data, time.time())
+        with _info_lock:
+            _avatars[tg_id] = cached
+    if not cached[0]:
+        abort(404)
+    return Response(cached[0], mimetype="image/jpeg", headers={"Cache-Control": "private, max-age=3600"})
 
 
 @poker_bp.route("/poker/admin/chips", methods=["POST"])
