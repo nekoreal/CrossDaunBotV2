@@ -142,6 +142,22 @@ def _daily_state(tg_id) -> dict:
     return state
 
 
+def games_summary(tg_id) -> dict:
+    """Живые статусы для панели игр на главной."""
+    with table.lock:
+        summary = {"at_table": len(table.players), "chips": None, "wordle": None}
+    if tg_id is None:
+        return summary
+    game = get_game(tg_id, today())
+    summary["chips"] = _chips(tg_id)
+    summary["wordle"] = {
+        "finished": bool(game and game["finished"]), "solved": bool(game and game["solved"]),
+        "tries": len(game["guesses"]) if game else 0, "max_tries": MAX_TRIES,
+        "streak": _stats().get(tg_id, {}).get("streak", 0),
+    }
+    return summary
+
+
 # ---------- тренировка ----------
 def _practice_key() -> str:
     key = session.get("wordle_key")

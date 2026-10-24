@@ -40,8 +40,11 @@ def auth_telegram():
 
 @entry_telegram_bp.route("/home")
 def home():
+    from flask_server.wordle import games_summary, REWARD  # wordle импортирует покер, а тот — dashboard: импорт здесь, без цикла
     user = session.get("user")
-    return render_template("home.html", user=user, bot_username=TELEGRAM_BOT_USERNAME, is_started=is_started_poll())
+    games = games_summary(int(user["id"]) if user else None)
+    return render_template("home.html", user=user, bot_username=TELEGRAM_BOT_USERNAME, is_started=is_started_poll(),
+                           games=games, wordle_reward=REWARD)
 
 @entry_telegram_bp.route("/logout")
 def logout():

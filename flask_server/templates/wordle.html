@@ -137,13 +137,35 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .toast.gold{border-color:rgba(255,183,3,.6);color:var(--warning);box-shadow:0 0 30px rgba(255,183,3,.3)}
 
 @media(max-width:600px){
-  body{padding:10px;align-items:flex-start}
-  .auth-card{padding:18px 12px}
+  body{padding:8px;align-items:flex-start}
+  .auth-card{padding:12px 10px 14px;border-radius:18px}
   .glow-sphere-1,.glow-sphere-2{display:none}
-  .badge{padding:5px 9px;font-size:.8rem}
-  .key{height:50px;font-size:.85rem}
+  /* шапка в одну строку */
+  .top-bar{flex-wrap:nowrap;margin-bottom:10px;padding-bottom:10px;gap:6px}
+  .top-bar-left{flex-wrap:nowrap;min-width:0;gap:5px}
+  .tools{flex-wrap:nowrap;gap:5px;flex:none}
+  .btn-home,.tool-ico{width:32px;height:32px;border-radius:9px}
+  .badge{padding:4px 8px;font-size:.78rem;border-radius:9px}
+  .tabs{margin-bottom:8px;padding:3px}
+  .tab{padding:7px 6px;font-size:.84rem}
+  .status-line{font-size:.8rem;margin-bottom:8px;min-height:1.2em}
+  /* доска и клавиатура подстраиваются под высоту экрана, чтобы всё влезало без прокрутки */
+  .board{--ts:clamp(36px,min(13.5vw,6.3vh),58px);--ts:clamp(36px,min(13.5vw,6.3dvh),58px);gap:5px;margin-bottom:10px}
+  .row{gap:5px}
+  .tile{border-radius:8px}
+  .kb{gap:6px}
   .kb-row{gap:4px}
+  .key{max-width:none;height:clamp(42px,6.2vh,54px);height:clamp(42px,6.2dvh,54px);font-size:.85rem;border-radius:7px}
+  .key.wide{max-width:none;font-size:.68rem}
+  .result{padding:12px;gap:8px;margin-bottom:10px}
+  .r-word{font-size:1.35rem}
+  .r-actions .btn-def{padding:10px 8px;font-size:.85rem}
+  .modal{padding:10px;align-items:flex-end}
+  .modal-card{padding:22px 14px 18px;max-height:88vh;max-height:88dvh;border-radius:20px}
   .mini{padding-left:0}
+}
+@media(max-width:380px){
+  #numBadge{display:none}
 }
 </style>
 </head>
