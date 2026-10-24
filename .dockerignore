@@ -1,6 +1,7 @@
 *.txt
 !req.txt
 !README.md
+!flask_server/wordle_words/*.txt
 __pycache__
 .idea
 test.py

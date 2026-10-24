@@ -1,4 +1,5 @@
 *.txt 
+!flask_server/wordle_words/*.txt
 __pycache__
 !req.txt
 !README.md

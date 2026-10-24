@@ -33,7 +33,6 @@
             justify-content: center;
             overflow: hidden;
             position: relative;
-            perspective: 1000px;
         }
 
         /* Анимированные фоновые неоновые сферы */
@@ -351,6 +350,157 @@
             from { opacity: 0; transform: translateY(15px); }
             to { opacity: 1; transform: translateY(0); }
         }
+
+        /* Кнопка Zavod Game */
+        .btn-game {
+            width: 100%;
+            cursor: pointer;
+            font-weight: 700;
+            letter-spacing: 1px;
+            color: #fff;
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.18), rgba(157, 78, 221, 0.28));
+            border: 1px solid rgba(157, 78, 221, 0.55);
+            box-shadow: 0 0 16px rgba(157, 78, 221, 0.25);
+        }
+
+        .btn-game:hover {
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.3), rgba(157, 78, 221, 0.45));
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 26px rgba(157, 78, 221, 0.45), 0 0 12px rgba(0, 242, 254, 0.25);
+        }
+
+        /* Боковая панель игр */
+        .drawer-backdrop {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: rgba(5, 7, 10, 0.6);
+            backdrop-filter: blur(6px);
+            -webkit-backdrop-filter: blur(6px);
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.35s ease;
+        }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 51;
+            width: min(360px, 88vw);
+            padding: 28px 22px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            background: rgba(14, 17, 24, 0.92);
+            backdrop-filter: blur(18px);
+            -webkit-backdrop-filter: blur(18px);
+            border-left: 1px solid rgba(157, 78, 221, 0.35);
+            box-shadow: -20px 0 50px rgba(0, 0, 0, 0.6), -4px 0 30px rgba(157, 78, 221, 0.15);
+            transform: translateX(105%);
+            transition: transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+            overflow-y: auto;
+        }
+
+        body.drawer-open .drawer-backdrop { opacity: 1; pointer-events: auto; }
+        body.drawer-open .drawer { transform: translateX(0); }
+
+        .drawer-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding-bottom: 14px;
+            margin-bottom: 4px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .drawer-title {
+            font-size: 1.35rem;
+            font-weight: 800;
+            letter-spacing: 1px;
+            background: linear-gradient(90deg, var(--accent-cyan), var(--accent-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .drawer-close {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #fff;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+
+        .drawer-close:hover {
+            background: rgba(255, 85, 85, 0.8);
+            border-color: var(--accent-danger);
+            transform: rotate(90deg) scale(1.08);
+        }
+
+        .game-tile {
+            position: relative;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            padding: 16px;
+            border-radius: 16px;
+            text-decoration: none;
+            color: var(--text-main);
+            background: rgba(255, 255, 255, 0.03);
+            border: 1px solid rgba(0, 242, 254, 0.2);
+            overflow: hidden;
+            opacity: 0;
+            transform: translateX(24px);
+            transition: border-color 0.3s ease, box-shadow 0.3s ease, background 0.3s ease;
+        }
+
+        body.drawer-open .game-tile { animation: tileIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) 0.1s forwards; }
+        body.drawer-open .game-tile.wordle { animation-delay: 0.18s; }
+
+        @keyframes tileIn {
+            to { opacity: 1; transform: translateX(0); }
+        }
+
+        .game-tile:hover {
+            background: rgba(0, 242, 254, 0.07);
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 22px rgba(0, 242, 254, 0.22);
+        }
+
+        .game-tile.wordle { border-color: rgba(0, 230, 118, 0.3); }
+
+        .game-tile.wordle:hover {
+            background: rgba(0, 230, 118, 0.07);
+            border-color: #00e676;
+            box-shadow: 0 0 22px rgba(0, 230, 118, 0.22);
+        }
+
+        .game-icon {
+            flex: none;
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.6rem;
+            background: linear-gradient(135deg, rgba(0, 242, 254, 0.2), rgba(157, 78, 221, 0.3));
+            box-shadow: 0 0 14px rgba(0, 242, 254, 0.2);
+        }
+
+        .game-tile.wordle .game-icon {
+            background: linear-gradient(135deg, rgba(0, 230, 118, 0.25), rgba(255, 183, 3, 0.25));
+            box-shadow: 0 0 14px rgba(0, 230, 118, 0.2);
+        }
+
+        .game-text { display: flex; flex-direction: column; gap: 3px; text-align: left; }
+        .game-name { font-size: 1.05rem; font-weight: 700; }
+        .game-desc { font-size: 0.8rem; color: var(--text-muted); line-height: 1.35; }
+        .drawer-note { margin-top: auto; font-size: 0.78rem; color: var(--text-muted); text-align: center; }
     </style>
 </head>
 <body>
@@ -391,7 +541,7 @@
                 {% endif %}
                 <a href="{{ url_for('stats') }}" class="btn-def">Статистика</a>
                 <a href="{{ url_for('gallery_bp.gallery_page') }}" class="btn-def">Галерея</a>
-                <a href="{{ url_for('poker_bp.poker_page') }}" class="btn-def">Покер</a>
+                <button type="button" class="btn-def btn-game" onclick="toggleDrawer(true)">🎮 Zavod Game</button>
                 <a href="{{ url_for('entry_telegram_bp.logout') }}" class="btn-logout">Выйти из аккаунта</a>
             </div>
         {% else %}
@@ -416,18 +566,49 @@
                     </script>
                 </div>
             </div>
-            <a href="{{ url_for('poker_bp.poker_page') }}" class="btn-def" style="margin-top:20px">🃏 Смотреть покер</a>
+            <button type="button" class="btn-def btn-game" style="margin-top:20px" onclick="toggleDrawer(true)">🎮 Zavod Game</button>
         {% endif %}
     </div>
 
+    <div class="drawer-backdrop" onclick="toggleDrawer(false)"></div>
+    <aside class="drawer" aria-label="Zavod Game">
+        <div class="drawer-head">
+            <span class="drawer-title">🎮 Zavod Game</span>
+            <button type="button" class="drawer-close" onclick="toggleDrawer(false)">✕</button>
+        </div>
+        <a href="{{ url_for('poker_bp.poker_page') }}" class="game-tile">
+            <div class="game-icon">🃏</div>
+            <div class="game-text">
+                <span class="game-name">Покер</span>
+                <span class="game-desc">Техасский холдем за общим столом</span>
+            </div>
+        </a>
+        <a href="{{ url_for('wordle_bp.wordle_page') }}" class="game-tile wordle">
+            <div class="game-icon">🟩</div>
+            <div class="game-text">
+                <span class="game-name">Wordle</span>
+                <span class="game-desc">Слово дня · +500 🪙 и стрик<br>Тренировка со случайными словами</span>
+            </div>
+        </a>
+        <div class="drawer-note">Фишки общие для всех игр 🪙</div>
+    </aside>
+
     <script>
+        function toggleDrawer(open) {
+            document.body.classList.toggle('drawer-open', open);
+        }
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') toggleDrawer(false);
+        });
+
         // Легкий 3D-Tilt эффект для карточки при движении мыши
         const card = id = document.getElementById('authCard');
         
         document.addEventListener('mousemove', (e) => {
             const xAxis = (window.innerWidth / 2 - e.pageX) / 45;
             const yAxis = (window.innerHeight / 2 - e.pageY) / 45;
-            card.style.transform = `rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
+            card.style.transform = `perspective(1000px) rotateY(${xAxis}deg) rotateX(${yAxis}deg)`;
         });
 
         // Сброс положения карточки при уходе курсора

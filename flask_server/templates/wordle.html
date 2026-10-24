@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CrossDaun Wordle</title>
+<link rel="shortcut icon" href="/static/favicon.ico" />
+<style>
+:root{--bg-primary:#0a0c10;--card-bg:rgba(18,22,31,.75);--accent-cyan:#00f2fe;--accent-purple:#9d4edd;--text-main:#f0f4f8;--text-muted:#8a99ad;--border-glow:rgba(0,242,254,.15);--danger:#ff5555;--success:#00e676;--warning:#ffb703;--ease-out:cubic-bezier(.22,1,.36,1);--ease-spring:cubic-bezier(.34,1.56,.64,1);
+      --g-bg:linear-gradient(160deg,#00c968,#00995a);--g-bd:#00e676;--y-bg:linear-gradient(160deg,#e9a400,#b97f00);--y-bd:#ffb703;--b-bg:#232a38;--b-bd:#2f3849}
+*{margin:0;padding:0;box-sizing:border-box;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,sans-serif}
+body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;display:flex;align-items:center;justify-content:center;overflow-x:hidden;position:relative;padding:20px}
+.hidden{display:none!important}
+.layout{position:relative;z-index:1;width:100%;max-width:520px}
+.glow-sphere-1,.glow-sphere-2{position:absolute;z-index:0;pointer-events:none}
+.glow-sphere-1{width:450px;height:450px;background:radial-gradient(circle,rgba(157,78,221,.25),transparent 70%);top:10%;left:15%;filter:blur(50px);animation:fg1 12s infinite alternate ease-in-out}
+.glow-sphere-2{width:500px;height:500px;background:radial-gradient(circle,rgba(0,242,254,.2),transparent 70%);bottom:10%;right:15%;filter:blur(60px);animation:fg2 14s infinite alternate ease-in-out}
+@keyframes fg1{50%{transform:scale(1.15) translate(30px,-20px)}100%{transform:scale(.9) translate(-20px,30px)}}
+@keyframes fg2{50%{transform:scale(1.2) translate(-40px,15px)}100%{transform:scale(.95) translate(25px,-35px)}}
+@keyframes cardAppear{from{opacity:0;transform:translateY(20px) scale(.98)}to{opacity:1;transform:none}}
+@keyframes slideIn{from{opacity:0;transform:translateX(-12px)}to{opacity:1;transform:none}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes pop{0%{transform:scale(1)}40%{transform:scale(1.12)}100%{transform:scale(1)}}
+@keyframes tagPop{from{opacity:0;transform:scale(.6)}to{opacity:1;transform:scale(1)}}
+@keyframes shake{10%,90%{transform:translateX(-2px)}20%,80%{transform:translateX(4px)}30%,50%,70%{transform:translateX(-7px)}40%,60%{transform:translateX(7px)}}
+@keyframes bounce{0%,20%{transform:translateY(0)}40%{transform:translateY(-22px)}50%{transform:translateY(4px)}60%{transform:translateY(-8px)}80%,100%{transform:translateY(0)}}
+@keyframes flip{0%{transform:rotateX(0)}50%{transform:rotateX(90deg)}50.01%{background:var(--mk-bg);border-color:var(--mk-bd);color:#fff}100%{transform:rotateX(0);background:var(--mk-bg);border-color:var(--mk-bd);color:#fff}}
+
+.glass{background:var(--card-bg);backdrop-filter:blur(16px);-webkit-backdrop-filter:blur(16px);border:1px solid var(--border-glow);border-radius:20px;box-shadow:0 20px 50px rgba(0,0,0,.6),0 0 30px rgba(0,242,254,.05);animation:cardAppear .6s var(--ease-out) backwards}
+.auth-card{position:relative;z-index:1;width:100%;padding:26px}
+.top-bar{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;padding-bottom:14px;border-bottom:1px solid rgba(255,255,255,.08);gap:10px}
+.top-bar-left,.tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn-home{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;background:rgba(255,255,255,.05);color:var(--accent-cyan);border:1px solid rgba(0,242,254,.3);border-radius:10px;text-decoration:none;transition:all .25s ease;flex-shrink:0}
+.btn-home:hover{background:rgba(0,242,254,.15);border-color:rgba(0,242,254,.6);box-shadow:0 0 15px rgba(0,242,254,.3);color:#fff}
+.btn-home svg{width:18px;height:18px;fill:currentColor}
+.badge{background:rgba(255,255,255,.05);padding:6px 12px;border-radius:10px;font-size:.85rem;border:1px solid rgba(255,255,255,.1);white-space:nowrap}
+.badge-cyan{color:var(--accent-cyan);border-color:rgba(0,242,254,.3);font-weight:600}
+.badge-purple{color:var(--accent-purple);border-color:rgba(157,78,221,.4);font-weight:600}
+.badge-warning{color:var(--warning);border-color:rgba(255,183,3,.4);font-weight:600}
+.badge.bump{animation:pop .5s var(--ease-spring)}
+
+.btn-def{position:relative;display:inline-block;width:100%;padding:12px 20px;border-radius:12px;background:rgba(255,255,255,.05);color:#00f2fe;border:1px solid rgba(0,242,254,.3);font-size:.95rem;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;transition:all .25s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.btn-def::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transition:left .5s ease}
+.btn-def:hover:not(:disabled)::before{left:100%}
+.btn-def:hover:not(:disabled){background:rgba(0,242,254,.15);border-color:rgba(0,242,254,.6);box-shadow:0 0 20px rgba(0,242,254,.25)}
+.btn-def:active:not(:disabled){transform:scale(.98)}
+.btn-def:disabled{opacity:.35;cursor:not-allowed}
+.tool-ico{width:36px;height:36px;padding:0;font-size:1rem;display:inline-flex;align-items:center;justify-content:center}
+.btn-purple{color:var(--accent-purple);border-color:rgba(157,78,221,.45)}
+.btn-purple:hover:not(:disabled){background:rgba(157,78,221,.15)!important;border-color:var(--accent-purple)!important;box-shadow:0 0 20px rgba(157,78,221,.3)!important}
+
+.tabs{display:flex;gap:6px;margin-bottom:14px;padding:4px;border-radius:12px;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08)}
+.tab{flex:1;padding:9px 10px;border-radius:9px;border:0;background:transparent;color:var(--text-muted);font-weight:700;font-size:.9rem;cursor:pointer;transition:all .25s ease}
+.tab:hover{color:var(--text-main)}
+.tab.active{background:linear-gradient(135deg,rgba(0,242,254,.18),rgba(157,78,221,.22));color:#fff;box-shadow:0 0 14px rgba(0,242,254,.2)}
+.tab small{font-weight:600;opacity:.75}
+.status-line{text-align:center;color:var(--text-muted);font-size:.88rem;margin-bottom:12px;min-height:1.3em;line-height:1.35}
+.status-line a{color:var(--accent-cyan)}
+
+/* --- ДОСКА --- */
+.board{--ts:clamp(46px,14vw,60px);display:grid;grid-template-rows:repeat(6,var(--ts));gap:7px;justify-content:center;margin:0 auto 16px;perspective:600px}
+.row{display:grid;grid-template-columns:repeat(5,var(--ts));gap:7px}
+.row.shake{animation:shake .5s ease}
+.tile{display:flex;align-items:center;justify-content:center;border-radius:10px;border:2px solid rgba(255,255,255,.1);background:rgba(255,255,255,.03);font-size:calc(var(--ts) * .5);font-weight:800;text-transform:uppercase;color:var(--text-main);user-select:none;transition:border-color .15s ease,box-shadow .15s ease}
+.tile.filled{border-color:rgba(0,242,254,.55);box-shadow:0 0 12px rgba(0,242,254,.2);animation:pop .15s ease}
+.tile.mk-g{--mk-bg:var(--g-bg);--mk-bd:var(--g-bd)}
+.tile.mk-y{--mk-bg:var(--y-bg);--mk-bd:var(--y-bd)}
+.tile.mk-b{--mk-bg:var(--b-bg);--mk-bd:var(--b-bd)}
+.tile.done{background:var(--mk-bg);border-color:var(--mk-bd);color:#fff}
+.tile.done.mk-g{box-shadow:0 0 14px rgba(0,230,118,.3)}
+.tile.done.mk-y{box-shadow:0 0 14px rgba(255,183,3,.25)}
+.tile.rev{animation:flip .6s ease both;animation-delay:var(--d,0s)}
+.tile.win{animation:bounce .9s ease both;animation-delay:var(--d,0s)}
+
+/* --- ИТОГ --- */
+.result{margin:0 0 16px;padding:16px;border-radius:14px;text-align:center;display:flex;flex-direction:column;gap:10px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.1);animation:cardAppear .5s var(--ease-out) backwards}
+.result.won{border-color:rgba(0,230,118,.45);background:rgba(0,230,118,.06);box-shadow:0 0 22px rgba(0,230,118,.15)}
+.result.lost{border-color:rgba(255,85,85,.4);background:rgba(255,85,85,.05)}
+.r-title{font-size:1.1rem;font-weight:800}
+.r-word{font-size:1.6rem;font-weight:900;letter-spacing:.3em;color:var(--accent-cyan);text-transform:uppercase;text-shadow:0 0 18px rgba(0,242,254,.45)}
+.r-sub{font-size:.85rem;color:var(--text-muted)}
+.r-sub b{color:var(--warning);font-family:monospace;font-size:1rem}
+.r-timer{font-family:monospace;font-size:1.05rem;color:var(--accent-cyan);font-weight:700}
+.r-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.r-actions.one{grid-template-columns:1fr}
+
+/* --- КЛАВИАТУРА --- */
+.kb{display:flex;flex-direction:column;gap:7px;user-select:none}
+.kb-row{display:flex;gap:5px;justify-content:center}
+.key{flex:1;max-width:44px;height:52px;border-radius:9px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.07);color:var(--text-main);font-weight:700;font-size:.95rem;text-transform:uppercase;cursor:pointer;transition:background .25s ease,border-color .25s ease,transform .08s ease,box-shadow .25s ease;touch-action:manipulation}
+.key:hover{border-color:rgba(0,242,254,.5);box-shadow:0 0 10px rgba(0,242,254,.2)}
+.key:active{transform:scale(.92)}
+.key.wide{max-width:68px;flex:1.5;font-size:.75rem}
+.key.mk-g{background:var(--g-bg);border-color:var(--g-bd);color:#fff}
+.key.mk-y{background:var(--y-bg);border-color:var(--y-bd);color:#fff}
+.key.mk-b{background:var(--b-bg);border-color:var(--b-bd);color:#5d6a80}
+.kb.off{opacity:.4;pointer-events:none}
+
+/* --- МОДАЛКИ --- */
+.modal{position:fixed;inset:0;z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(5,7,10,.72);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);animation:fadeIn .25s ease}
+.modal-card{position:relative;width:100%;max-width:480px;max-height:92vh;overflow-y:auto;padding:28px 24px;scrollbar-width:thin}
+.modal-card h2{font-size:1.25rem;margin-bottom:6px;padding-right:40px}
+.modal-close{position:absolute;top:14px;right:14px;width:36px;height:36px;border-radius:50%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.2);color:#fff;cursor:pointer;transition:all .25s var(--ease-out)}
+.modal-close:hover{background:rgba(255,85,85,.8);border-color:var(--danger);transform:rotate(90deg) scale(1.08)}
+.hint{font-size:.8rem;color:var(--text-muted);margin:0 0 14px;line-height:1.45}
+.lb-list{display:flex;flex-direction:column;gap:6px}
+.lb-row{display:flex;align-items:center;gap:10px;padding:8px 12px;border-radius:12px;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);animation:slideIn .35s var(--ease-out) backwards}
+.lb-row.top1{border-color:rgba(255,183,3,.6);background:rgba(255,183,3,.08);box-shadow:0 0 18px rgba(255,183,3,.2)}
+.lb-row.top2{border-color:rgba(200,210,230,.5)}
+.lb-row.top3{border-color:rgba(205,127,50,.55)}
+.lb-row.me{border-color:var(--accent-cyan);box-shadow:0 0 14px rgba(0,242,254,.25)}
+.lb-place{width:28px;text-align:center;font-weight:800;color:var(--text-muted);font-family:monospace;flex:none}
+.lb-row.top1 .lb-place,.lb-row.top2 .lb-place,.lb-row.top3 .lb-place{font-size:1.25rem}
+.u-av{position:relative;flex:none;width:38px;height:38px;border-radius:50%;overflow:hidden;background:linear-gradient(135deg,var(--accent-cyan),var(--accent-purple));display:flex;align-items:center;justify-content:center;font-weight:800;color:#0a0c10}
+.u-av::before{content:attr(data-l)}
+.u-av img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.u-info{flex:1;min-width:0;display:flex;flex-direction:column}
+.u-info b,.u-info small{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.u-info small{color:var(--text-muted);font-size:.74rem}
+.u-streak{font-family:monospace;font-weight:800;color:var(--warning);white-space:nowrap;font-size:1rem}
+.u-streak.zero{color:var(--text-muted);opacity:.6}
+.tag{font-size:.7rem;font-weight:700;padding:2px 8px;border-radius:999px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.14);color:var(--text-muted);white-space:nowrap;animation:tagPop .35s var(--ease-spring)}
+.tag.ok{color:var(--success);border-color:rgba(0,230,118,.45);background:rgba(0,230,118,.08)}
+.tag.off{color:var(--danger);border-color:rgba(255,85,85,.45);background:rgba(255,85,85,.08)}
+.td-row{flex-wrap:wrap}
+.mini{display:flex;flex-direction:column;gap:3px;width:100%;padding-left:48px}
+.mini-row{display:flex;gap:3px}
+.mini-t{width:22px;height:22px;border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:.7rem;font-weight:800;text-transform:uppercase;color:#fff;border:1px solid transparent}
+.mini-t.mk-g{background:var(--g-bg);border-color:var(--g-bd)}
+.mini-t.mk-y{background:var(--y-bg);border-color:var(--y-bd)}
+.mini-t.mk-b{background:var(--b-bg);border-color:var(--b-bd);color:#7d8aa0}
+.rules p{font-size:.9rem;line-height:1.5;color:var(--text-main);margin-bottom:10px}
+.rules p small{color:var(--text-muted)}
+.ex{display:flex;gap:5px;margin:4px 0 4px}
+.ex .tile{--ts:38px;width:38px;height:38px;font-size:1.05rem;border-radius:8px}
+.toast{position:fixed;left:50%;top:22px;transform:translateX(-50%);z-index:10004;padding:10px 18px;border-radius:12px;background:rgba(18,22,31,.95);border:1px solid rgba(0,242,254,.4);box-shadow:0 8px 30px rgba(0,0,0,.5);animation:fadeIn .3s ease;font-weight:600;white-space:nowrap}
+.toast.gold{border-color:rgba(255,183,3,.6);color:var(--warning);box-shadow:0 0 30px rgba(255,183,3,.3)}
+
+@media(max-width:600px){
+  body{padding:10px;align-items:flex-start}
+  .auth-card{padding:18px 12px}
+  .glow-sphere-1,.glow-sphere-2{display:none}
+  .badge{padding:5px 9px;font-size:.8rem}
+  .key{height:50px;font-size:.85rem}
+  .kb-row{gap:4px}
+  .mini{padding-left:0}
+}
+</style>
+</head>
+<body>
+<div class="glow-sphere-1"></div><div class="glow-sphere-2"></div>
+
+<div class="layout">
+<div class="auth-card glass">
+  <div class="top-bar">
+    <div class="top-bar-left">
+      <a href="/" class="btn-home" title="На главную"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></a>
+      <div class="badge badge-purple" id="numBadge" title="Номер слова">🟩 #—</div>
+      <div class="badge badge-warning hidden" id="streakBadge" title="Стрик — дней подряд с угаданным словом">🔥 <span id="streak">0</span></div>
+      <div class="badge badge-cyan hidden" id="chipsBadge" title="Фишки (общие с покером)">🪙 <span id="chips">0</span></div>
+    </div>
+    <div class="tools">
+      <button class="btn-def tool-ico" onclick="openToday()" title="Как сыграли сегодня">👥</button>
+      <button class="btn-def tool-ico" onclick="openLeaders()" title="Лидеры по стрику">🏆</button>
+      <button class="btn-def tool-ico" onclick="openModal('rulesModal')" title="Правила">❔</button>
+    </div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab" data-mode="daily" onclick="setMode('daily')">Слово дня <small>· +{{ reward }} 🪙</small></button>
+    <button class="tab" data-mode="practice" onclick="setMode('practice')">Тренировка</button>
+  </div>
+
+  <div class="status-line" id="status"></div>
+  <div class="board" id="board"></div>
+  <div id="result"></div>
+  <div class="kb" id="kb"></div>
+</div>
+</div>
+
+<!-- сегодня -->
+<div id="todayModal" class="modal hidden" onclick="if(event.target===this)closeModal('todayModal')">
+  <div class="modal-card glass">
+    <button class="modal-close" type="button" onclick="closeModal('todayModal')">✕</button>
+    <h2>👥 Слово дня #<span id="tdNum">—</span></h2>
+    <p class="hint" id="tdNote"></p>
+    <div class="lb-list" id="tdList"></div>
+  </div>
+</div>
+
+<!-- лидеры -->
+<div id="leaderModal" class="modal hidden" onclick="if(event.target===this)closeModal('leaderModal')">
+  <div class="modal-card glass">
+    <button class="modal-close" type="button" onclick="closeModal('leaderModal')">✕</button>
+    <h2>🏆 Лидеры по стрику</h2>
+    <p class="hint" id="lbNote"></p>
+    <div class="lb-list" id="lbList"></div>
+  </div>
+</div>
+
+<!-- правила -->
+<div id="rulesModal" class="modal hidden" onclick="if(event.target===this)closeModal('rulesModal')">
+  <div class="modal-card glass rules">
+    <button class="modal-close" type="button" onclick="closeModal('rulesModal')">✕</button>
+    <h2>❔ Как играть</h2>
+    <p class="hint">Угадайте английское слово из 5 букв за 6 попыток. Каждая попытка — настоящее слово.</p>
+    <div class="ex"><div class="tile done mk-g">c</div><div class="tile">r</div><div class="tile">a</div><div class="tile">n</div><div class="tile">e</div></div>
+    <p><small><b>C</b> есть в слове и стоит на своём месте.</small></p>
+    <div class="ex"><div class="tile">p</div><div class="tile done mk-y">i</div><div class="tile">l</div><div class="tile">o</div><div class="tile">t</div></div>
+    <p><small><b>I</b> есть в слове, но в другом месте.</small></p>
+    <div class="ex"><div class="tile">v</div><div class="tile">a</div><div class="tile">g</div><div class="tile done mk-b">u</div><div class="tile">e</div></div>
+    <p><small><b>U</b> в слове нет.</small></p>
+    <p>🟩 <b>Слово дня</b> — одно на всех, меняется в полночь по Москве. Попытка одна: после неё слово открывается. Угадали — <b>+{{ reward }} 🪙</b> (те же фишки, что в покере) и +1 к стрику. Пропустили день или не угадали — стрик сгорает.</p>
+    <p>🎲 <b>Тренировка</b> — случайные слова сколько угодно, без фишек и стрика.</p>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, m => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m]));
+const store = { get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} } };
+const KEYS = ['qwertyuiop', 'asdfghjkl', '+zxcvbnm-'];
+const FLIP = 0.3;  // задержка между плитками при открытии, сек
+
+let mode = store.get('wordle_mode') === 'practice' ? 'practice' : 'daily';
+let S = null;          // состояние текущего режима с сервера
+let cur = '';          // набираемое слово
+let busy = false;
+let animRow = -1;      // строка, которую нужно «перевернуть» после ответа сервера
+let keyMarks = {};
+let clockOffset = 0, timerT = null;
+
+async function api(url, json) {
+    const r = await fetch(url, json ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(json) } : {});
+    const d = await r.json().catch(() => ({}));
+    if (!r.ok) { const e = new Error(d.error || 'Ошибка ' + r.status); e.status = r.status; throw e; }
+    return d;
+}
+function toast(msg, cls) { const t = document.createElement('div'); t.className = 'toast ' + (cls || ''); t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2400); }
+
+/* ---- режимы ---- */
+async function setMode(m) {
+    mode = m; store.set('wordle_mode', m);
+    document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
+    cur = ''; S = null; animRow = -1; render();
+    try { apply(await api(m === 'daily' ? '/wordle/daily' : '/wordle/practice')); }
+    catch (e) { toast(e.message); }
+}
+function apply(s) {
+    S = s;
+    if (s.server_now) clockOffset = s.server_now - Date.now() / 1000;
+    render();
+}
+
+/* ---- отрисовка ---- */
+function render() {
+    const rows = S ? S.rows : [], max = S ? S.max_tries : 6;
+    const revealMs = animRow >= 0 ? (FLIP * 4 + 0.6) * 1000 : 0;
+    let html = '';
+    for (let r = 0; r < max; r++) {
+        html += `<div class="row" id="row${r}">`;
+        for (let c = 0; c < 5; c++) {
+            if (r < rows.length) {
+                const anim = r === animRow;
+                const won = anim && rows[r].marks === 'ggggg';
+                html += `<div class="tile mk-${rows[r].marks[c]} ${anim ? 'rev' : 'done'}" style="--d:${anim ? c * FLIP : 0}s" ${won ? `data-win="${c}"` : ''}>${rows[r].word[c]}</div>`;
+            } else if (r === rows.length && S && !S.finished) {
+                html += `<div class="tile ${cur[c] ? 'filled' : ''}">${cur[c] || ''}</div>`;
+            } else html += '<div class="tile"></div>';
+        }
+        html += '</div>';
+    }
+    $('board').innerHTML = html;
+
+    // клавиатуру и итог показываем, когда плитки перевернутся
+    const later = () => { paintKeys(); renderResult(); };
+    if (revealMs) {
+        $('result').innerHTML = '';
+        setTimeout(() => {
+            document.querySelectorAll('[data-win]').forEach(t => { t.classList.remove('rev'); t.classList.add('done', 'win'); t.style.setProperty('--d', t.dataset.win * 0.1 + 's'); });
+            later();
+        }, revealMs);
+        animRow = -1;
+    } else later();
+    renderTop();
+}
+
+function renderTop() {
+    $('numBadge').innerHTML = mode === 'daily' ? `🟩 #${S?.number ?? '—'}` : '🎲 Тренировка';
+    $('streakBadge').classList.toggle('hidden', !S || S.streak == null);
+    if (S && S.streak != null) $('streak').innerText = S.streak;
+    $('chipsBadge').classList.toggle('hidden', !S || S.chips == null);
+    if (S && S.chips != null) $('chips').innerText = S.chips;
+    let st = '';
+    if (!S) st = 'Загрузка…';
+    else if (mode === 'daily' && !S.logged_in) st = 'Слово дня — только для заводчан: <a href="/">войдите через Telegram</a>. А тренировка доступна всем.';
+    else if (!S.finished) st = mode === 'daily'
+        ? `Попытка ${S.rows.length + 1} из ${S.max_tries} · угадаете — <b style="color:var(--warning)">+${S.reward} 🪙</b>`
+        : `Попытка ${S.rows.length + 1} из ${S.max_tries} · без фишек и стрика`;
+    $('status').innerHTML = st;
+    $('kb').classList.toggle('off', !S || S.finished || (mode === 'daily' && !S.logged_in));
+}
+
+function renderResult() {
+    clearInterval(timerT);
+    if (!S || !S.finished) { $('result').innerHTML = ''; return; }
+    const n = S.rows.length;
+    let h = `<div class="result ${S.solved ? 'won' : 'lost'}">`;
+    h += `<div class="r-title">${S.solved ? ['🤯 С первой попытки!', '🔥 Великолепно!', '✨ Отлично!', '👍 Хорошо!', '😅 Неплохо!', '😮‍💨 На грани!'][n - 1] : '💀 Не угадано'}</div>`;
+    h += `<div class="r-word">${esc(S.answer)}</div>`;
+    if (mode === 'daily') {
+        h += `<div class="r-sub">${S.solved ? `Угадано за ${n}/${S.max_tries} · награда <b>+${S.reward} 🪙</b> · стрик 🔥 ${S.streak}` : 'Стрик сгорел. Завтра — новое слово.'}</div>`;
+        h += `<div class="r-sub">Новое слово через <span class="r-timer" id="nextTimer">--:--:--</span></div>`;
+        h += `<div class="r-actions"><button class="btn-def" onclick="openToday()">👥 Как сыграли все</button><button class="btn-def btn-purple" onclick="setMode('practice')">🎲 Тренировка</button></div>`;
+    } else {
+        h += `<div class="r-sub">${S.solved ? `Угадано за ${n}/${S.max_tries}` : 'Попытки закончились'}</div>`;
+        h += `<div class="r-actions one"><button class="btn-def btn-purple" onclick="newPractice()">🎲 Новое слово</button></div>`;
+    }
+    $('result').innerHTML = h + '</div>';
+    if (mode === 'daily') { tickTimer(); timerT = setInterval(tickTimer, 1000); }
+}
+function tickTimer() {
+    const el = $('nextTimer'); if (!el || !S) return;
+    const left = Math.max(0, Math.floor(S.next_at - (Date.now() / 1000 + clockOffset)));
+    if (left === 0) { clearInterval(timerT); setTimeout(() => setMode('daily'), 1500); return; }
+    el.innerText = [left / 3600, left % 3600 / 60, left % 60].map(v => String(Math.floor(v)).padStart(2, '0')).join(':');
+}
+
+function paintKeys() {
+    keyMarks = {};
+    const rank = { b: 1, y: 2, g: 3 };
+    (S ? S.rows : []).forEach(r => [...r.word].forEach((ch, i) => {
+        const m = r.marks[i];
+        if (!keyMarks[ch] || rank[m] > rank[keyMarks[ch]]) keyMarks[ch] = m;
+    }));
+    $('kb').innerHTML = KEYS.map(row => `<div class="kb-row">${[...row].map(k =>
+        k === '+' ? `<button class="key wide" onclick="press('Enter')">Enter</button>`
+        : k === '-' ? `<button class="key wide" onclick="press('Backspace')" title="Стереть">⌫</button>`
+        : `<button class="key ${keyMarks[k] ? 'mk-' + keyMarks[k] : ''}" onclick="press('${k}')">${k}</button>`).join('')}</div>`).join('');
+}
+
+/* ---- ввод ---- */
+function canType() { return S && !S.finished && !busy && !(mode === 'daily' && !S.logged_in); }
+function press(k) {
+    if (!canType()) return;
+    if (k === 'Enter') return submit();
+    if (k === 'Backspace') cur = cur.slice(0, -1);
+    else if (/^[a-z]$/.test(k) && cur.length < 5) cur += k;
+    else return;
+    redrawCurrent();
+}
+function redrawCurrent() {
+    const row = $('row' + S.rows.length); if (!row) return;
+    [...row.children].forEach((t, i) => { t.textContent = cur[i] || ''; t.classList.toggle('filled', !!cur[i]); });
+}
+function shake(msg) {
+    toast(msg);
+    const row = S && $('row' + S.rows.length);
+    if (row) { row.classList.remove('shake'); void row.offsetWidth; row.classList.add('shake'); }
+}
+async function submit() {
+    if (cur.length < 5) return shake('Нужно 5 букв');
+    busy = true;
+    try {
+        const s = mode === 'daily'
+            ? await api('/wordle/daily/guess', { word: cur, day: S.day })
+            : await api('/wordle/practice/guess', { word: cur });
+        cur = ''; animRow = s.rows.length - 1;
+        apply(s);
+        if (s.won_chips) setTimeout(() => { toast(`+${s.won_chips} 🪙 за слово дня!`, 'gold'); $('chipsBadge').classList.add('bump'); }, (FLIP * 4 + 0.9) * 1000);
+    } catch (e) {
+        if (e.status === 409) { toast(e.message); setMode(mode); }
+        else shake(e.message);
+    } finally { busy = false; }
+}
+async function newPractice() {
+    try { cur = ''; apply(await api('/wordle/practice/new', {})); } catch (e) { toast(e.message); }
+}
+document.addEventListener('keydown', e => {
+    if (e.ctrlKey || e.metaKey || e.altKey || document.querySelector('.modal:not(.hidden)')) return;
+    const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;
+    if (k === 'Enter' || k === 'Backspace' || /^[a-z]$/.test(k)) { e.preventDefault(); press(k); }
+});
+
+/* ---- модалки ---- */
+function openModal(id) { $(id).classList.remove('hidden'); }
+function closeModal(id) { $(id).classList.add('hidden'); }
+document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden')); });
+const userLabel = u => u.first_name || (u.username ? '@' + u.username : 'id ' + u.tg_id);
+const userAv = u => `<div class="u-av" data-l="${esc((userLabel(u).replace(/^@/, '')[0] || '?').toUpperCase())}"><img src="${u.avatar}" alt="" loading="lazy" onerror="this.remove()"></div>`;
+let pollT = null;
+
+async function openToday() { openModal('todayModal'); loadToday(); }
+async function loadToday() {
+    clearTimeout(pollT);
+    try {
+        const d = await api('/wordle/today');
+        $('tdNum').innerText = d.number;
+        $('tdNote').innerText = (d.loading ? '⏳ ' : '') + (d.players.length ? `Сыграли: ${d.players.filter(p => p.finished).length} · угадали: ${d.players.filter(p => p.solved).length}` : '')
+            + (d.reveal ? '' : (d.players.length ? ' · ' : '') + 'Буквы откроются, когда вы сами сыграете слово дня.');
+        $('tdList').innerHTML = d.players.map((p, i) => `<div class="lb-row td-row ${p.tg_id === d.me ? 'me' : ''}" style="animation-delay:${Math.min(i, 15) * .03}s">
+            ${userAv(p)}<div class="u-info"><b>${esc(userLabel(p))}${p.tg_id === d.me ? ' · вы' : ''}</b><small>${p.username ? '@' + esc(p.username) : ''}</small></div>
+            ${!p.finished ? '<span class="tag">играет…</span>' : p.solved ? `<span class="tag ok">${p.rows.length}/${d.max_tries}</span>` : `<span class="tag off">✗/${d.max_tries}</span>`}
+            <div class="mini">${p.rows.map(r => `<div class="mini-row">${[...r.marks].map((m, c) => `<div class="mini-t mk-${m}">${r.word ? esc(r.word[c]) : ''}</div>`).join('')}</div>`).join('')}</div>
+        </div>`).join('') || '<div class="hint">Сегодня ещё никто не играл — будьте первым!</div>';
+        if (d.loading && !$('todayModal').classList.contains('hidden')) pollT = setTimeout(loadToday, 2500);
+    } catch (e) { toast(e.message); }
+}
+
+async function openLeaders() { openModal('leaderModal'); loadLeaders(); }
+async function loadLeaders() {
+    clearTimeout(pollT);
+    try {
+        const d = await api('/wordle/leaderboard'), medal = ['🥇', '🥈', '🥉'];
+        $('lbList').innerHTML = d.users.map((u, i) => `<div class="lb-row ${i < 3 && u.streak ? 'top' + (i + 1) : ''} ${u.tg_id === d.me ? 'me' : ''}" style="animation-delay:${Math.min(i, 15) * .03}s">
+            <span class="lb-place">${u.streak ? medal[i] || i + 1 : i + 1}</span>${userAv(u)}
+            <div class="u-info"><b>${esc(userLabel(u))}${u.tg_id === d.me ? ' · вы' : ''}</b><small>лучший 🔥${u.max_streak} · угадано ${u.wins}/${u.played}</small></div>
+            <span class="u-streak ${u.streak ? '' : 'zero'}">🔥 ${u.streak}</span></div>`).join('')
+            || '<div class="hint">Пока пусто — сыграйте слово дня первым!</div>';
+        $('lbNote').innerText = (d.loading ? '⏳ ' : '') + `Стрик — дней подряд с угаданным словом дня. Пропуск или промах обнуляют его. Игроков: ${d.total}` + (d.my_place ? ` · вы на ${d.my_place} месте` : '');
+        if (d.loading && !$('leaderModal').classList.contains('hidden')) pollT = setTimeout(loadLeaders, 2500);
+    } catch (e) { toast(e.message); }
+}
+
+setMode(mode);
+</script>
+</body>
+</html>

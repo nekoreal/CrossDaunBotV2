@@ -498,15 +498,21 @@ def _warm_user_info(ids):
         _warming = False
 
 
-def _users_with_names(rows):
-    """Добавляет к (tg_id, фишки) имена из кэша; устаревшие подтягиваются в фоне."""
+def user_infos(ids) -> tuple[dict[int, dict], bool]:
+    """Имена из кэша по tg_id; устаревшие подтягиваются в фоне. Второе значение — идёт ли подгрузка."""
     global _warming
     with _info_lock:
-        stale = [t for t, _ in rows if t not in _user_info or time.time() - _user_info[t]["at"] >= USER_INFO_TTL]
+        stale = [t for t in ids if t not in _user_info or time.time() - _user_info[t]["at"] >= USER_INFO_TTL]
         info = dict(_user_info)
     if stale and not _warming:
         _warming = True
         socketio.start_background_task(_warm_user_info, stale)
+    return info, bool(stale)
+
+
+def _users_with_names(rows):
+    """Добавляет к (tg_id, фишки) имена из кэша; устаревшие подтягиваются в фоне."""
+    info, loading = user_infos([t for t, _ in rows])
     with table.lock:
         seated = {p.tg_id: p.stack for p in table.players}  # у сидящих за столом — актуальный стек
     users = []
@@ -517,7 +523,7 @@ def _users_with_names(rows):
             "chips": seated.get(tg_id, chips), "seated": tg_id in seated, "avatar": f"/poker/avatar/{tg_id}",
         })
     users.sort(key=lambda u: -u["chips"])
-    return users, bool(stale)
+    return users, loading
 
 
 @poker_bp.route("/poker/admin/users")

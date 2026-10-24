@@ -10,6 +10,7 @@ from telegram_bot.tg_db.models.tg_user import TelegramUser
 from telegram_bot.tg_db.models.tg_teg import TelegramTag
 from telegram_bot.tg_db.models.tg_at_user_tag import UserTagAssociation
 from telegram_bot.tg_db.models.poker import PokerSkin, PokerSkinOwner, PokerSetting
+from telegram_bot.tg_db.models.wordle import WordleGame
 import logging
 
 
