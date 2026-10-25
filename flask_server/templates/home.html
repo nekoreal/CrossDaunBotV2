@@ -740,13 +740,13 @@
                         <img src="{{ user.photo_url }}" alt="Avatar" class="avatar">
                     {% else %}
                         <div class="avatar-placeholder">
-                            {{ user.first_name[0] | upper }}
+                            {{ (user.first_name or user.username or '?')[0] | upper }}
                         </div>
                     {% endif %}
                 </div>
 
                 <div class="user-info">
-                    <div class="user-name">{{ user.first_name }} {{ user.last_name }}</div>
+                    <div class="user-name">{{ user.first_name or user.username or ('ID ' ~ user.id) }} {{ user.last_name or '' }}</div>
                     {% if user.username %}
                         <div class="user-username">@{{ user.username }}</div>
                     {% endif %}

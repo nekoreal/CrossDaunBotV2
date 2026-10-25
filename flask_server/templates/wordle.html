@@ -70,6 +70,8 @@ body{background:var(--bg-primary);color:var(--text-main);min-height:100vh;displa
 .tile.done.mk-g{box-shadow:0 0 14px rgba(0,230,118,.3)}
 .tile.done.mk-y{box-shadow:0 0 14px rgba(255,183,3,.25)}
 .tile.rev{animation:flip .6s ease both;animation-delay:var(--d,0s)}
+.row.pending .tile{animation:pending .7s ease-in-out infinite alternate;animation-delay:calc(var(--i) * .08s)}
+@keyframes pending{to{border-color:var(--accent-purple);box-shadow:0 0 16px rgba(157,78,221,.45);transform:translateY(-3px)}}
 .tile.win{animation:bounce .9s ease both;animation-delay:var(--d,0s)}
 
 /* --- ИТОГ --- */
@@ -250,7 +252,8 @@ let cur = '';          // набираемое слово
 let busy = false;
 let animRow = -1;      // строка, которую нужно «перевернуть» после ответа сервера
 let keyMarks = {};
-let clockOffset = 0, timerT = null;
+let clockOffset = 0, timerT = null, revealT = null;
+let reqNo = 0;         // номер последнего запроса состояния: ответы на устаревшие (сменили режим) игнорируются
 
 async function api(url, json) {
     const r = await fetch(url, json ? { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(json) } : {});
@@ -258,17 +261,20 @@ async function api(url, json) {
     if (!r.ok) { const e = new Error(d.error || 'Ошибка ' + r.status); e.status = r.status; throw e; }
     return d;
 }
-function toast(msg, cls) { const t = document.createElement('div'); t.className = 'toast ' + (cls || ''); t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2400); }
+function toast(msg, cls) { document.querySelectorAll('.toast').forEach(t => t.remove()); const t = document.createElement('div'); t.className = 'toast ' + (cls || ''); t.textContent = msg; document.body.appendChild(t); setTimeout(() => t.remove(), 2400); }
 
 /* ---- режимы ---- */
 async function setMode(m) {
     mode = m; store.set('wordle_mode', m);
     document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.mode === m));
-    cur = ''; S = null; animRow = -1; render();
-    try { apply(await api(m === 'daily' ? '/wordle/daily' : '/wordle/practice')); }
-    catch (e) { toast(e.message); }
+    cur = ''; S = null; animRow = -1; busy = false; render();
+    const no = ++reqNo;
+    try { const s = await api(m === 'daily' ? '/wordle/daily' : '/wordle/practice'); if (no === reqNo) apply(s); }
+    catch (e) { if (no === reqNo) toast(e.message); }
 }
 function apply(s) {
+    // ответ на попытку не несёт стрик и баланс, пока партия не закончилась — берём прежние
+    if (S && S.mode === s.mode) for (const k of ['streak', 'chips']) if (s[k] == null && S[k] != null) s[k] = S[k];
     S = s;
     if (s.server_now) clockOffset = s.server_now - Date.now() / 1000;
     render();
@@ -287,7 +293,7 @@ function render() {
                 const won = anim && rows[r].marks === 'ggggg';
                 html += `<div class="tile mk-${rows[r].marks[c]} ${anim ? 'rev' : 'done'}" style="--d:${anim ? c * FLIP : 0}s" ${won ? `data-win="${c}"` : ''}>${rows[r].word[c]}</div>`;
             } else if (r === rows.length && S && !S.finished) {
-                html += `<div class="tile ${cur[c] ? 'filled' : ''}">${cur[c] || ''}</div>`;
+                html += `<div class="tile ${cur[c] ? 'filled' : ''}" style="--i:${c}">${esc(cur[c] || '')}</div>`;
             } else html += '<div class="tile"></div>';
         }
         html += '</div>';
@@ -296,9 +302,10 @@ function render() {
 
     // клавиатуру и итог показываем, когда плитки перевернутся
     const later = () => { paintKeys(); renderResult(); };
+    clearTimeout(revealT);
     if (revealMs) {
         $('result').innerHTML = '';
-        setTimeout(() => {
+        revealT = setTimeout(() => {
             document.querySelectorAll('[data-win]').forEach(t => { t.classList.remove('rev'); t.classList.add('done', 'win'); t.style.setProperty('--d', t.dataset.win * 0.1 + 's'); });
             later();
         }, revealMs);
@@ -383,21 +390,33 @@ function shake(msg) {
 async function submit() {
     if (cur.length < 5) return shake('Нужно 5 букв');
     busy = true;
+    const no = reqNo, row = $('row' + S.rows.length);
+    row?.classList.add('pending');  // сразу видно, что Enter сработал
     try {
         const s = mode === 'daily'
             ? await api('/wordle/daily/guess', { word: cur, day: S.day })
             : await api('/wordle/practice/guess', { word: cur });
+        if (no !== reqNo) return;  // пока ждали — переключили режим
         cur = ''; animRow = s.rows.length - 1;
         apply(s);
-        if (s.won_chips) setTimeout(() => { toast(`+${s.won_chips} 🪙 за слово дня!`, 'gold'); $('chipsBadge').classList.add('bump'); }, (FLIP * 4 + 0.9) * 1000);
+        if (s.won_chips) setTimeout(() => { toast(`+${s.won_chips} 🪙 за слово дня!`, 'gold'); const b = $('chipsBadge'); b.classList.remove('bump'); void b.offsetWidth; b.classList.add('bump'); }, (FLIP * 4 + 0.9) * 1000);
     } catch (e) {
+        if (no !== reqNo) return;
+        row?.classList.remove('pending');
         if (e.status === 409) { toast(e.message); setMode(mode); }
         else shake(e.message);
-    } finally { busy = false; }
+    } finally { if (no === reqNo) busy = false; }
 }
 async function newPractice() {
-    try { cur = ''; apply(await api('/wordle/practice/new', {})); } catch (e) { toast(e.message); }
+    if (busy) return;
+    busy = true;
+    const no = ++reqNo;
+    try { const s = await api('/wordle/practice/new', {}); if (no === reqNo) { cur = ''; apply(s); } }
+    catch (e) { toast(e.message); }
+    finally { if (no === reqNo) busy = false; }
 }
+// экранные клавиши не забирают фокус: иначе пробел/Enter с физической клавиатуры «нажимали» бы последнюю из них
+$('kb').addEventListener('mousedown', e => e.preventDefault());
 document.addEventListener('keydown', e => {
     if (e.ctrlKey || e.metaKey || e.altKey || document.querySelector('.modal:not(.hidden)')) return;
     const k = e.key.length === 1 ? e.key.toLowerCase() : e.key;

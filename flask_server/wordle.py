@@ -8,7 +8,7 @@ from flask import Blueprint, request, session, render_template, jsonify
 from pytz import timezone
 
 from telegram_bot.tg_db.db_controllers.poker_controller import get_poker_profile
-from telegram_bot.tg_db.db_controllers.wordle_controller import get_game, add_guess, games_of_day, all_results
+from telegram_bot.tg_db.db_controllers.wordle_controller import get_game, add_guess, games_of_day, all_results, user_results
 from flask_server.poker import table
 from flask_server.poker_skins import user_infos
 
@@ -100,10 +100,11 @@ def streaks(days: set[date], day: date, failed_today: bool = False) -> tuple[int
     return cur, best
 
 
-def _stats() -> dict[int, dict]:
+def _stats(rows) -> dict[int, dict]:
+    """Сыграно, угадано и стрики по строкам (tg_id, день, угадал)."""
     day = today()
     by_user: dict[int, dict] = {}
-    for tg_id, d, solved in all_results():
+    for tg_id, d, solved in rows:
         s = by_user.setdefault(tg_id, {"played": 0, "wins": 0, "days": set(), "failed_today": False})
         s["played"] += 1
         if solved:
@@ -116,15 +117,18 @@ def _stats() -> dict[int, dict]:
     return by_user
 
 
+def _streak(tg_id) -> int:
+    return _stats(user_results(tg_id)).get(tg_id, {}).get("streak", 0)
+
+
 def _next_day_at() -> float:
     tomorrow = today() + timedelta(days=1)
     return TZ.localize(datetime(tomorrow.year, tomorrow.month, tomorrow.day)).timestamp()
 
 
-def _daily_state(tg_id) -> dict:
-    day = today()
+def _daily_state(tg_id, game: dict | None, day: date) -> dict:
+    """Состояние слова дня из уже прочитанной партии (без лишних запросов). Стрик и фишки добавляет вызывающий."""
     answer = daily_word(day)
-    game = get_game(tg_id, day) if tg_id else None
     guesses = game["guesses"] if game else []
     finished = bool(game and game["finished"])
     state = {
@@ -135,10 +139,6 @@ def _daily_state(tg_id) -> dict:
         "answer": answer if finished else None,  # слово уходит клиенту только после конца партии
         "next_at": _next_day_at(), "server_now": time.time(),
     }
-    if tg_id:
-        stats = _stats().get(tg_id, {})
-        state["streak"] = stats.get("streak", 0)
-        state["chips"] = _chips(tg_id)
     return state
 
 
@@ -153,7 +153,7 @@ def games_summary(tg_id) -> dict:
     summary["wordle"] = {
         "finished": bool(game and game["finished"]), "solved": bool(game and game["solved"]),
         "tries": len(game["guesses"]) if game else 0, "max_tries": MAX_TRIES,
-        "streak": _stats().get(tg_id, {}).get("streak", 0),
+        "streak": _streak(tg_id),
     }
     return summary
 
@@ -195,7 +195,13 @@ def wordle_page():
 
 @wordle_bp.route("/wordle/daily")
 def daily():
-    return jsonify(_daily_state(_tg_id()))
+    tg_id = _tg_id()
+    day = today()
+    state = _daily_state(tg_id, get_game(tg_id, day) if tg_id else None, day)
+    if tg_id:
+        state["streak"] = _streak(tg_id)
+        state["chips"] = _chips(tg_id)
+    return jsonify(state)
 
 
 @wordle_bp.route("/wordle/daily/guess", methods=["POST"])
@@ -209,15 +215,25 @@ def daily_guess():
     word, error = _read_guess()
     if error:
         return _err(error)
-    game, error = add_guess(tg_id, day, word, daily_word(day), MAX_TRIES)
+    answer = daily_word(day)
+    if word == answer:
+        # угадывающая попытка: держим стол, чтобы игрок не сел за него между записью партии и начислением
+        with table.lock:
+            game, error = add_guess(tg_id, day, word, answer, MAX_TRIES)
+            if game and game["just_solved"]:
+                chips = table.give_chips(tg_id, REWARD)  # сидящему за столом — прямо в стек
+                if table.player_of(tg_id):
+                    table.broadcast()
+    else:
+        game, error = add_guess(tg_id, day, word, answer, MAX_TRIES)
     if error:
         return _err(error, 409)
-    state = _daily_state(tg_id)
+    # обычная попытка — один запрос к БД; стрик и баланс клиент держит с загрузки и меняются они только в конце партии
+    state = _daily_state(tg_id, game, day)
+    if game["finished"]:
+        state["streak"] = _streak(tg_id)
     if game["just_solved"]:
-        with table.lock:
-            state["chips"] = table.give_chips(tg_id, REWARD)  # сидящему за столом — прямо в стек
-            if table.player_of(tg_id):
-                table.broadcast()
+        state["chips"] = chips
         state["won_chips"] = REWARD
     return jsonify(state)
 
@@ -278,7 +294,7 @@ def today_results():
 @wordle_bp.route("/wordle/leaderboard")
 def leaderboard():
     me = _tg_id()
-    stats = _stats()
+    stats = _stats(all_results())
     info, loading = user_infos(list(stats))
     users = []
     for tg_id, s in stats.items():

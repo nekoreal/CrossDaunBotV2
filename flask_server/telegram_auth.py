@@ -31,6 +31,8 @@ def auth_telegram():
         session["user"] = {
             "id": data.get("id"),
             "username": data.get("username", ""),
+            "first_name": data.get("first_name", ""),
+            "last_name": data.get("last_name", ""),
             "photo_url": data.get("photo_url", ""),
             "is_moder": int(data.get("id")) in [MODER_ID, ADMIN_ID] 
         } 
