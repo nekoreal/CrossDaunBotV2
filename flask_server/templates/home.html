@@ -513,6 +513,7 @@
         }
 
         .game.wordle { --c: 0, 230, 118; }
+        .game.quoridor { --c: 255, 183, 3; }
 
         body.hub-open .game { animation: gameIn 0.55s cubic-bezier(0.16, 1, 0.3, 1) forwards; animation-delay: var(--d, 0.1s); }
 
@@ -584,6 +585,35 @@
             background: radial-gradient(ellipse at 50% 120%, rgba(0, 230, 118, 0.22), transparent 65%),
                         radial-gradient(ellipse at center, rgba(255, 183, 3, 0.12), transparent 70%), #10151d;
         }
+
+        .quoridor .game-art {
+            background: radial-gradient(ellipse at center, rgba(255, 183, 3, 0.16), transparent 70%), #10151d;
+        }
+
+        .q-mini-board {
+            display: grid;
+            grid-template-columns: repeat(5, 17px);
+            grid-template-rows: repeat(5, 17px);
+            gap: 3px;
+            transform: rotate(-8deg);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .q-mini-board span {
+            border: 1px solid rgba(255, 255, 255, 0.16);
+            border-radius: 4px;
+            background: rgba(255, 255, 255, 0.04);
+        }
+
+        .q-mini-board span:nth-child(13) {
+            background: #ffb703;
+            border-color: #ffdb70;
+            box-shadow: 0 0 12px rgba(255, 183, 3, 0.75);
+            animation: q-center 1.5s ease-in-out infinite alternate;
+        }
+
+        .game:hover .q-mini-board { transform: rotate(0) scale(1.08); }
+        @keyframes q-center { to { box-shadow: 0 0 20px rgba(255, 183, 3, 0.95); } }
 
         .wtile {
             width: 38px;
@@ -829,7 +859,21 @@
             </a>
 
             {% set w = games.wordle %}
-            <a href="{{ url_for('wordle_bp.wordle_page') }}" class="game wordle" style="--d:.18s">
+            <a href="{{ url_for('quoridor_bp.quoridor_page') }}" class="game quoridor" style="--d:.18s">
+                <div class="game-art">
+                    <div class="q-mini-board" aria-hidden="true">{% for _ in range(25) %}<span></span>{% endfor %}</div>
+                </div>
+                <div class="game-body">
+                    <div class="game-text">
+                        <span class="game-name">Царь горы</span>
+                        <span class="game-desc">Коридор на четверых: доберись до центра</span>
+                        <div class="game-tags"><span class="gtag">4 игрока</span><span class="gtag gold">⏱ 20 сек</span></div>
+                    </div>
+                    <span class="game-go"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>
+                </div>
+            </a>
+
+            <a href="{{ url_for('wordle_bp.wordle_page') }}" class="game wordle" style="--d:.26s">
                 <div class="game-art">
                     {% for ch, m in [('Z','g'),('A','y'),('V','b'),('O','g'),('D','g')] %}
                         <div class="wtile {{ m }}" style="--i:{{ loop.index0 }}">{{ ch }}</div>

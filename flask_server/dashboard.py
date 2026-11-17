@@ -32,12 +32,14 @@ from flask_server.voting import voting_bp
 from flask_server.gallery import gallery_bp
 from flask_server.poker import poker_bp
 from flask_server.wordle import wordle_bp
+from flask_server.quoridor import quoridor_bp
 
 app.register_blueprint(gallery_bp)  
 app.register_blueprint(entry_telegram_bp)  
 app.register_blueprint(voting_bp)
 app.register_blueprint(poker_bp)
 app.register_blueprint(wordle_bp)
+app.register_blueprint(quoridor_bp)
 
 
 from collections import defaultdict

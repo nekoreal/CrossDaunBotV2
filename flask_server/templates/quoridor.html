@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Царь горы · Коридор</title>
+<link rel="shortcut icon" href="/static/favicon.ico">
+<script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+<style>
+:root{--bg-primary:#0a0c10;--card-bg:rgba(18,22,31,.78);--accent-cyan:#00f2fe;--accent-purple:#9d4edd;--text-main:#f0f4f8;--text-muted:#8a99ad;--border-glow:rgba(0,242,254,.15);--warning:#ffb703;--success:#00e676;--danger:#ff5555;--ease-out:cubic-bezier(.22,1,.36,1)}
+*{box-sizing:border-box;font-family:'Segoe UI',-apple-system,BlinkMacSystemFont,Roboto,sans-serif}
+body{margin:0;min-height:100vh;padding:24px 12px;color:var(--text-main);background:var(--bg-primary);display:flex;justify-content:center;overflow-x:hidden}
+button{font:inherit}
+.glow{position:fixed;z-index:-1;pointer-events:none;width:420px;height:420px;filter:blur(70px);border-radius:50%;opacity:.18}
+.glow.a{top:-120px;left:8%;background:var(--accent-purple)}.glow.b{right:4%;bottom:-160px;background:var(--accent-cyan)}
+.layout{width:min(100%,760px);position:relative}
+.card{background:var(--card-bg);backdrop-filter:blur(16px);border:1px solid var(--border-glow);border-radius:20px;box-shadow:0 20px 50px #0009,0 0 30px #00f2fe0d;animation:appear .5s var(--ease-out) both}
+@keyframes appear{from{opacity:0;transform:translateY(16px) scale(.99)}to{opacity:1;transform:none}}
+.head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid #ffffff12}
+.head h1{font-size:1.25rem;margin:0}.head p{font-size:.8rem;color:var(--text-muted);margin:4px 0 0}
+.back{width:38px;height:38px;display:grid;place-items:center;flex:none;border:1px solid #00f2fe55;border-radius:11px;background:#ffffff08;color:var(--accent-cyan);text-decoration:none;font-size:1.2rem}
+.content{padding:18px}
+.status{text-align:center;min-height:26px;margin:0 0 14px;color:var(--accent-cyan);font-weight:700}
+.queue{max-width:520px;margin:28px auto;text-align:center;padding:24px 20px}
+.queue h2{margin:0 0 8px;font-size:1.3rem}.queue p{margin:0;color:var(--text-muted);line-height:1.5}
+.queue-list{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:22px 0}
+.queue-slot{min-width:0;padding:12px 5px;border:1px solid #ffffff14;background:#ffffff05;border-radius:14px;color:var(--text-muted);font-size:.75rem}
+.queue-slot .avatar-ring{margin:0 auto 7px}
+.queue-slot.filled{border-color:#00f2fe44;color:var(--text-main)}
+.player-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:0 0 16px}
+.player{min-width:0;display:flex;align-items:center;gap:8px;padding:9px 8px;border:1px solid #ffffff12;border-radius:14px;background:#ffffff04;transition:border-color .2s,box-shadow .2s,background .2s}
+.player.active{border-color:var(--player-color);background:color-mix(in srgb,var(--player-color) 9%,transparent);box-shadow:0 0 18px color-mix(in srgb,var(--player-color) 28%,transparent)}
+.player.mine:not(.active){border-color:#9d4edd55}
+.player.eliminated{opacity:.62}
+.place-badge{flex:none;padding:2px 6px;border:1px solid #ffb70366;border-radius:999px;color:var(--warning);font-weight:800;font-size:.68rem}
+.avatar-ring{width:44px;height:44px;aspect-ratio:1;flex:0 0 44px;border-radius:50%;padding:3px;display:grid;place-items:center;background:conic-gradient(var(--ring-color,#00f2fe) var(--remaining,0%),#ffffff20 0);transition:background .1s linear}
+.avatar{width:100%;height:100%;border-radius:50%;display:grid;place-items:center;background:#1a2130;overflow:hidden;font-weight:800;font-size:.85rem;color:white}
+.avatar img{width:100%;height:100%;object-fit:cover}
+.player-info{min-width:0;flex:1}
+.player-name{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:.78rem;font-weight:700}
+.player-meta{display:flex;justify-content:space-between;gap:3px;color:var(--text-muted);font-size:.68rem;margin-top:3px}
+.player-time{font-family:monospace;font-size:.75rem;color:var(--text-main);white-space:nowrap}
+.board-wrap{width:min(100%,560px);margin:0 auto}
+.board{position:relative;display:grid;width:100%;height:auto;grid-template-columns:repeat(11,minmax(0,1fr));grid-template-rows:repeat(11,minmax(0,1fr));aspect-ratio:1;border:1px solid #00f2fe44;border-radius:14px;padding:5px;background:radial-gradient(ellipse at center,#18212c,#10151d 74%);box-shadow:0 0 32px #00f2fe12,inset 0 0 25px #0008;touch-action:none;user-select:none}
+.cell{min-width:0;min-height:0;width:100%;height:100%;aspect-ratio:1;position:relative;display:grid;place-items:center;border:1px solid #ffffff0e;background:#ffffff03;border-radius:5px;padding:0;cursor:default}
+.cell.goal:after{content:'✦';position:absolute;color:#ffb703a0;font-size:clamp(10px,2.4vw,16px);text-shadow:0 0 9px #ffb70377}
+.cell.goal{background:#ffb7030b}
+.cell.available{cursor:pointer;background:#00f2fe12;border-color:#00f2fe66;box-shadow:inset 0 0 12px #00f2fe12}
+.cell.available:after{content:'';position:absolute;width:20%;height:20%;border-radius:50%;background:#00f2fe99;box-shadow:0 0 10px #00f2fe99;animation:hintPulse 1s ease-in-out infinite alternate}
+@keyframes hintPulse{to{transform:scale(1.45);opacity:.55}}
+.pawn{position:relative;z-index:2;display:grid;place-items:center;width:78%;height:auto;aspect-ratio:1;flex:none;border:2px solid var(--pawn-color);border-radius:50%;padding:2px;background:#10151d;box-shadow:0 0 14px color-mix(in srgb,var(--pawn-color) 65%,transparent);animation:pop .28s var(--ease-out) both}
+.pawn img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.pawn.initial{display:grid;place-items:center;color:#fff;font-size:clamp(8px,2.3vw,16px);font-weight:900}
+.pawn.hop{animation:hop .55s cubic-bezier(.2,.8,.2,1) both}
+@keyframes pop{from{transform:scale(.3);opacity:.4}to{transform:scale(1);opacity:1}}
+@keyframes hop{0%{transform:scale(.72) translateY(3px)}45%{transform:scale(1.28) translateY(-5px)}100%{transform:scale(1)}}
+.wall{position:absolute;z-index:4;border-radius:6px;background:linear-gradient(135deg,#d9e1eb,#7b8998 55%,#c2ccd8);box-shadow:0 0 12px #00f2fe66,0 2px 6px #000a;pointer-events:none;animation:wallDrop .3s var(--ease-out) both}
+.wall.horizontal{height:clamp(5px,1.5vw,8px);transform:translateY(-50%)}
+.wall.vertical{width:clamp(5px,1.5vw,8px);transform:translateX(-50%)}
+@keyframes wallDrop{from{opacity:0;filter:brightness(2);scale:.72}to{opacity:1;filter:none;scale:1}}
+.wall-preview{opacity:.55;background:#00f2fe}
+.toolbar{display:flex;justify-content:center;align-items:center;gap:9px;flex-wrap:wrap;margin:15px 0 0}
+.tool{display:flex;align-items:center;gap:8px;padding:10px 13px;border:1px solid #00f2fe55;border-radius:12px;background:#ffffff08;color:var(--text-main);font-weight:700;cursor:grab;touch-action:none;transition:.2s}
+.tool:hover,.tool.selected{border-color:var(--accent-cyan);background:#00f2fe17;box-shadow:0 0 15px #00f2fe20}
+.tool:disabled{opacity:.35;cursor:not-allowed}
+.tool.surrender{color:var(--danger);border-color:#ff555555}
+.wall-icon{width:23px;height:8px;border-radius:3px;background:linear-gradient(135deg,#d9e1eb,#7b8998)}
+.wall-icon.vertical{width:8px;height:23px}
+.walls-left{font-family:monospace;color:var(--accent-cyan);font-size:.78rem}
+.hint{text-align:center;color:var(--text-muted);font-size:.78rem;line-height:1.5;margin:12px 0 0}
+.result{display:none;margin:15px auto 0;padding:15px;text-align:center;border-radius:14px;border:1px solid #ffb70366;background:#ffb7030e;font-weight:800;color:var(--warning);animation:appear .4s ease both}
+.result.show{display:block}
+.notice{position:fixed;left:50%;top:16px;z-index:10;transform:translateX(-50%);max-width:calc(100vw - 24px);padding:11px 16px;border:1px solid #ff555577;border-radius:12px;background:#12161ff2;color:#fff;box-shadow:0 8px 28px #0008;animation:appear .2s ease both}
+.hidden{display:none!important}
+@media(max-width:650px){body{padding:8px 6px;align-items:flex-start}.head{padding:14px}.content{padding:12px 8px}.player-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}.player{padding:7px 6px}.avatar-ring{width:36px;height:auto;flex-basis:36px}.board{gap:0;padding:3px;border-radius:10px}.cell{border-radius:3px}.wall{border-radius:4px}.tool{padding:9px 10px;font-size:.82rem}}
+@media(prefers-reduced-motion:reduce){*,*:before,*:after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<div class="glow a"></div><div class="glow b"></div>
+<main class="layout card">
+  <header class="head">
+    <div><h1>👑 Царь горы</h1><p>Коридор на четверых · первым доберись до центра</p></div>
+    <a class="back" href="/" aria-label="На главную" title="На главную">⌂</a>
+  </header>
+  <section class="content">
+    <div class="status" id="status">Подключаемся к столу…</div>
+    <section class="queue" id="queue">
+      <h2>Ищем соперников</h2>
+      <p>Партия начинается, когда соберутся четыре игрока. После старта у каждого будет 20 секунд на ход.</p>
+      <div class="queue-list" id="queueList"></div>
+      <p id="queueCount">В очереди: 0 из 4</p>
+      <button class="tool" id="leaveQueue" type="button" style="margin:16px auto 0">Покинуть очередь</button>
+    </section>
+    <section id="game" class="hidden">
+      <div class="player-grid" id="players"></div>
+      <div class="board-wrap">
+        <div class="board" id="board" aria-label="Игровая доска 11 на 11"></div>
+        <div class="toolbar" id="toolbar">
+          <button class="tool" type="button" data-orientation="horizontal" aria-label="Перетащить горизонтальную стену">
+            <span class="wall-icon"></span><span>Горизонтальная</span><span class="walls-left" id="horizontalCount"></span>
+          </button>
+          <button class="tool" type="button" data-orientation="vertical" aria-label="Перетащить вертикальную стену">
+            <span class="wall-icon vertical"></span><span>Вертикальная</span><span class="walls-left" id="verticalCount"></span>
+          </button>
+          <button class="tool surrender" id="surrender" type="button">Сдаться</button>
+        </div>
+        <p class="hint" id="hint">Перетащите стену на доску или выберите клетку для хода. Стена не должна перекрывать путь к центру.</p>
+        <div class="result" id="result"></div>
+      </div>
+    </section>
+  </section>
+</main>
+<script>
+const socket = io('/quoridor');
+const $ = id => document.getElementById(id);
+let state = null, lobby = {waiting: []}, selectedOrientation = null, dragOrientation = null, clock = null, queueActive = true;
+let previousPositions = null, previousWalls = new Set();
+const escInitial = name => Array.from(name || '?')[0].toUpperCase();
+const formatTime = seconds => `00:${String(seconds).padStart(2, '0')}`;
+
+socket.on('connect', () => {
+  queueActive = true;
+  $('leaveQueue').textContent = 'Покинуть очередь';
+  socket.emit('queue_join');
+});
+socket.on('connect_error', () => { $('status').textContent = 'Не удалось подключиться. Обновите страницу.'; });
+socket.on('lobby_state', value => { lobby = value; renderLobby(); });
+socket.on('game_state', value => { state = value; renderGame(); });
+socket.on('alert', value => showNotice(value.message || 'Не удалось выполнить действие'));
+
+function showNotice(message) {
+  const notice = document.createElement('div');
+  notice.className = 'notice';
+  notice.textContent = message;
+  document.body.appendChild(notice);
+  setTimeout(() => notice.remove(), 2800);
+}
+
+function avatarRing(player, progress = 0, color = '#00f2fe', size = '') {
+  const ring = document.createElement('div');
+  ring.className = `avatar-ring ${size}`;
+  ring.style.setProperty('--ring-color', color);
+  ring.style.setProperty('--remaining', `${progress}%`);
+  const avatar = document.createElement('div');
+  avatar.className = 'avatar';
+  const url = player && player.photo_url;
+  if (url) {
+    const image = document.createElement('img');
+    image.src = url;
+    image.alt = '';
+    image.referrerPolicy = 'no-referrer';
+    image.onerror = () => { image.remove(); avatar.textContent = escInitial(player.username); };
+    avatar.appendChild(image);
+  } else {
+    avatar.textContent = escInitial(player && player.username);
+  }
+  ring.appendChild(avatar);
+  return ring;
+}
+
+function renderLobby() {
+  if (state) return;
+  $('queue').classList.remove('hidden');
+  $('game').classList.add('hidden');
+  $('status').textContent = queueActive ? 'Ожидание игроков' : 'Вы вышли из очереди';
+  const list = $('queueList');
+  list.replaceChildren();
+  for (let index = 0; index < 4; index++) {
+    const player = lobby.waiting[index];
+    const slot = document.createElement('div');
+    slot.className = `queue-slot ${player ? 'filled' : ''}`;
+    slot.appendChild(avatarRing(player, 0, '#00f2fe'));
+    const label = document.createElement('span');
+    label.textContent = player ? player.username : 'Ожидание…';
+    slot.appendChild(label);
+    list.appendChild(slot);
+  }
+  $('queueCount').textContent = `В очереди: ${lobby.waiting.length} из 4 · осталось ${lobby.needed ?? 4 - lobby.waiting.length}`;
+}
+
+function renderPlayers() {
+  const container = $('players');
+  container.replaceChildren();
+  state.players.forEach((player, index) => {
+    const isActive = state.current_turn === index && state.winner === null && player.active;
+    const isMine = state.my_index === index;
+    const card = document.createElement('div');
+    card.className = `player${isActive ? ' active' : ''}${isMine ? ' mine' : ''}${player.active ? '' : ' eliminated'}`;
+    card.style.setProperty('--player-color', player.color);
+    card.dataset.seat = index;
+    card.appendChild(avatarRing(player, 0, player.color));
+    const info = document.createElement('div');
+    info.className = 'player-info';
+    const name = document.createElement('span');
+    name.className = 'player-name';
+    name.textContent = player.username + (isMine ? ' · вы' : '');
+    if (player.place !== null) {
+      const place = document.createElement('span');
+      place.className = 'place-badge';
+      place.textContent = `${player.place} место`;
+      name.appendChild(document.createTextNode(' '));
+      name.appendChild(place);
+    }
+    const meta = document.createElement('div');
+    meta.className = 'player-meta';
+    const walls = document.createElement('span');
+    walls.textContent = !player.active && player.surrendered
+      ? 'Сдался'
+      : player.active && player.auto_turns > 0
+        ? `Автоходы: ${player.auto_turns}/4`
+        : `Стены: ${player.walls}`;
+    const timer = document.createElement('span');
+    timer.className = 'player-time';
+    timer.dataset.timer = index;
+    timer.textContent = isActive ? formatTime(20) : player.place !== null ? `${player.place} место` : '—';
+    meta.append(walls, timer);
+    info.append(name, meta);
+    card.append(info);
+    container.appendChild(card);
+  });
+}
+
+function renderBoard() {
+  const board = $('board');
+  board.replaceChildren();
+  const legal = new Set(state.legal_moves.map(cell => `${cell[0]}-${cell[1]}`));
+  for (let row = 0; row < 11; row++) {
+    for (let col = 0; col < 11; col++) {
+      const cell = document.createElement('button');
+      cell.type = 'button';
+      cell.className = 'cell';
+      cell.dataset.row = row;
+      cell.dataset.col = col;
+      if (row === 5 && col === 5) cell.classList.add('goal');
+      if (legal.has(`${row}-${col}`) && state.winner === null) cell.classList.add('available');
+      const pawnIndex = state.players.findIndex(player =>
+        player.active && player.row === row && player.col === col);
+      if (pawnIndex !== -1) {
+        const player = state.players[pawnIndex];
+        const pawn = document.createElement('span');
+        pawn.className = 'pawn';
+        pawn.style.setProperty('--pawn-color', player.color);
+        const previous = previousPositions && previousPositions[pawnIndex];
+        if (!previous || previous[0] !== row || previous[1] !== col) pawn.classList.add('hop');
+        if (player.photo_url) {
+          const image = document.createElement('img');
+          image.src = player.photo_url;
+          image.alt = player.username;
+          image.referrerPolicy = 'no-referrer';
+          image.onerror = () => { image.remove(); pawn.classList.add('initial'); pawn.textContent = escInitial(player.username); };
+          pawn.appendChild(image);
+        } else {
+          pawn.classList.add('initial');
+          pawn.textContent = escInitial(player.username);
+        }
+        cell.appendChild(pawn);
+      }
+      board.appendChild(cell);
+    }
+  }
+  const newWalls = new Set();
+  state.walls.forEach(wall => {
+    const key = `${wall.row}-${wall.col}-${wall.orientation}`;
+    newWalls.add(key);
+    const element = document.createElement('div');
+    element.className = `wall ${wall.orientation}`;
+    if (previousWalls.has(key)) element.style.animation = 'none';
+    positionWall(element, wall.row, wall.col, wall.orientation);
+    board.appendChild(element);
+  });
+  previousWalls = newWalls;
+  previousPositions = state.players.map(player => [player.row, player.col]);
+}
+
+function renderGame() {
+  $('queue').classList.add('hidden');
+  $('game').classList.remove('hidden');
+  renderPlayers();
+  renderBoard();
+  const myTurn = state.current_turn === state.my_index && state.winner === null;
+  $('status').textContent = state.finished
+    ? (state.players[state.winner].reached_center
+      ? state.winner === state.my_index ? 'Вы стали царём горы!' : `${state.players[state.winner].username} добрался до центра`
+      : state.winner === state.my_index ? 'Вы победили — остальные игроки выбыли!' : `${state.players[state.winner].username} победил — остальные игроки выбыли`)
+    : myTurn ? 'Ваш ход — успейте за 20 секунд!' : `Ход игрока ${state.players[state.current_turn].username}`;
+  $('result').classList.toggle('show', state.finished);
+  $('result').replaceChildren();
+  if (state.finished) {
+    const winner = document.createElement('div');
+    winner.textContent = state.winner === state.my_index
+      ? '👑 Победа! Вы — царь горы 👑'
+      : `🏆 Победитель: ${state.players[state.winner].username}`;
+    $('result').appendChild(winner);
+    state.players
+      .map((player, index) => ({...player, index}))
+      .sort((a, b) => a.place - b.place)
+      .forEach(player => {
+        const row = document.createElement('div');
+        row.textContent = `${player.place} место · ${player.username}${player.surrendered ? ' · сдался' : ''}`;
+        $('result').appendChild(row);
+      });
+  }
+  $('hint').textContent = myTurn
+    ? 'Перетащите стену на доску или выберите подсвеченную клетку. Стена должна оставлять путь к центру каждому игроку.'
+    : state.finished ? 'Партия завершена. Чтобы сыграть ещё раз, нажмите «Сыграть снова».'
+      : 'Смотрите за ходом соперника. Четыре автохода подряд приводят к сдаче.';
+  $('horizontalCount').textContent = `×${state.players[state.my_index].walls}`;
+  $('verticalCount').textContent = `×${state.players[state.my_index].walls}`;
+  document.querySelectorAll('.tool[data-orientation]').forEach(button => {
+    const disabled = !myTurn || state.players[state.my_index].walls === 0;
+    button.disabled = disabled;
+    button.classList.toggle('selected', selectedOrientation === button.dataset.orientation);
+  });
+  $('surrender').disabled = state.finished || !state.players[state.my_index].active;
+  if (state.finished) {
+    const again = document.createElement('button');
+    again.type = 'button';
+    again.className = 'tool';
+    again.textContent = 'Сыграть снова';
+    again.addEventListener('click', () => {
+      state = null;
+      queueActive = true;
+      $('leaveQueue').textContent = 'Покинуть очередь';
+      previousPositions = null;
+      previousWalls = new Set();
+      socket.emit('queue_join');
+      renderLobby();
+    });
+    $('result').appendChild(again);
+  }
+  startClock();
+}
+
+function startClock() {
+  if (clock) clearInterval(clock);
+  const update = () => {
+    if (!state || state.finished) return;
+    const secondsLeft = Math.max(0, state.deadline - Date.now() / 1000);
+    const remaining = Math.ceil(secondsLeft);
+    const timer = document.querySelector(`[data-timer="${state.current_turn}"]`);
+    if (timer) timer.textContent = formatTime(remaining);
+    const active = document.querySelector(`.player[data-seat="${state.current_turn}"] .avatar-ring`);
+    if (active) active.style.setProperty('--remaining', `${Math.max(0, secondsLeft / state.turn_seconds * 100)}%`);
+  };
+  update();
+  clock = setInterval(update, 100);
+}
+
+function cellAt(x, y) {
+  const cell = document.elementFromPoint(x, y)?.closest('.cell');
+  if (!cell || !$('board').contains(cell)) return null;
+  return {
+    row: Math.min(9, Number(cell.dataset.row)),
+    col: Math.min(9, Number(cell.dataset.col)),
+  };
+}
+
+function placeDraggedWall(x, y) {
+  if (!dragOrientation || !state || state.current_turn !== state.my_index || state.winner !== null) return false;
+  const cell = cellAt(x, y);
+  if (!cell) return false;
+  socket.emit('place_wall', {...cell, orientation: dragOrientation});
+  selectedOrientation = null;
+  document.querySelectorAll('.tool[data-orientation]').forEach(button => button.classList.remove('selected'));
+  return true;
+}
+
+document.querySelectorAll('.tool[data-orientation]').forEach(button => {
+  button.addEventListener('pointerdown', event => {
+    if (button.disabled) return;
+    dragOrientation = button.dataset.orientation;
+    selectedOrientation = dragOrientation;
+    event.preventDefault();
+    updatePreview(event.clientX, event.clientY);
+  });
+  button.addEventListener('click', () => {
+    selectedOrientation = button.dataset.orientation;
+    document.querySelectorAll('.tool[data-orientation]').forEach(item =>
+      item.classList.toggle('selected', item === button));
+  });
+});
+
+function updatePreview(x, y) {
+  const cell = cellAt(x, y);
+  const board = $('board');
+  board.querySelector('.wall-preview')?.remove();
+  if (!cell || !dragOrientation) return;
+  const wall = document.createElement('div');
+  wall.className = `wall wall-preview ${dragOrientation}`;
+  positionWall(wall, cell.row, cell.col, dragOrientation);
+  board.appendChild(wall);
+}
+
+function positionWall(element, row, col, orientation) {
+  const boardRect = $('board').getBoundingClientRect();
+  const firstCell = $('board').querySelector(`.cell[data-row="${row}"][data-col="${col}"]`);
+  const cellRect = firstCell.getBoundingClientRect();
+  if (orientation === 'horizontal') {
+    element.style.left = `${cellRect.left - boardRect.left}px`;
+    element.style.top = `${cellRect.bottom - boardRect.top}px`;
+    element.style.width = `${cellRect.width * 2}px`;
+  } else {
+    element.style.left = `${cellRect.right - boardRect.left}px`;
+    element.style.top = `${cellRect.top - boardRect.top}px`;
+    element.style.height = `${cellRect.height * 2}px`;
+  }
+}
+
+document.addEventListener('pointermove', event => {
+  if (dragOrientation) updatePreview(event.clientX, event.clientY);
+});
+document.addEventListener('pointerup', event => {
+  if (!dragOrientation) return;
+  const placed = placeDraggedWall(event.clientX, event.clientY);
+  if (placed) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+  $('board').querySelector('.wall-preview')?.remove();
+  dragOrientation = null;
+});
+
+$('board').addEventListener('click', event => {
+  const cell = event.target.closest('.cell');
+  if (!cell || !state || state.current_turn !== state.my_index || state.winner !== null) return;
+  const row = Number(cell.dataset.row), col = Number(cell.dataset.col);
+  if (selectedOrientation) {
+    if (row < 10 && col < 10) socket.emit('place_wall', {row, col, orientation: selectedOrientation});
+    selectedOrientation = null;
+    document.querySelectorAll('.tool[data-orientation]').forEach(button => button.classList.remove('selected'));
+    return;
+  }
+  if (cell.classList.contains('available')) socket.emit('move', {row, col});
+});
+
+$('surrender').addEventListener('click', () => {
+  if (!state || !state.players[state.my_index].active || state.finished) return;
+  if (window.confirm('Сдаться? Ваша фишка исчезнет, но стены останутся на доске.')) {
+    socket.emit('surrender');
+  }
+});
+
+$('leaveQueue').addEventListener('click', () => {
+  queueActive = !queueActive;
+  socket.emit(queueActive ? 'queue_join' : 'queue_leave');
+  $('leaveQueue').textContent = queueActive ? 'Покинуть очередь' : 'Войти в очередь';
+  $('status').textContent = queueActive ? 'Ожидание игроков' : 'Вы вышли из очереди';
+});
+</script>
+</body>
+</html>
