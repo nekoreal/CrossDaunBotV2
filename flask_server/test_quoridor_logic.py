@@ -50,9 +50,24 @@ class QuoridorGameTests(unittest.TestCase):
         ]
         self.assertTrue(all(game._has_path_to_center(index) for index in range(4)))
         before = len(game.walls)
+        self.assertFalse(game.can_place_wall(0, 4, 4, "vertical"))
         self.assertFalse(game.place_wall(0, 4, 4, "vertical"))
         self.assertEqual(len(game.walls), before)
         self.assertEqual(game.players[0].walls, 5)
+
+    def test_wall_preview_checks_legality_without_changing_game(self):
+        game = make_game()
+        walls_before = list(game.walls)
+        player_walls_before = game.players[0].walls
+        deadline_before = game.turn_deadline
+
+        self.assertTrue(game.can_place_wall(0, 0, 4, "horizontal"))
+        self.assertEqual(game.walls, walls_before)
+        self.assertEqual(game.players[0].walls, player_walls_before)
+        self.assertEqual(game.turn_deadline, deadline_before)
+
+        self.assertFalse(game.can_place_wall(0, 10, 4, "horizontal"))
+        self.assertEqual(game.walls, walls_before)
 
     def test_legal_wall_uses_one_turn_and_blocks_both_edges(self):
         game = make_game()

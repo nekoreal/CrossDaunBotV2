@@ -18,7 +18,15 @@ button{font:inherit}
 @keyframes appear{from{opacity:0;transform:translateY(16px) scale(.99)}to{opacity:1;transform:none}}
 .head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:18px 20px;border-bottom:1px solid #ffffff12}
 .head h1{font-size:1.25rem;margin:0}.head p{font-size:.8rem;color:var(--text-muted);margin:4px 0 0}
-.back{width:38px;height:38px;display:grid;place-items:center;flex:none;border:1px solid #00f2fe55;border-radius:11px;background:#ffffff08;color:var(--accent-cyan);text-decoration:none;font-size:1.2rem}
+.btn-home{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;background:rgba(255,255,255,.05);color:var(--accent-cyan);border:1px solid rgba(0,242,254,.3);border-radius:10px;text-decoration:none;transition:all .25s ease;flex-shrink:0}
+.btn-home:hover{background:rgba(0,242,254,.15);border-color:rgba(0,242,254,.6);box-shadow:0 0 15px rgba(0,242,254,.3);color:#fff}
+.btn-home svg{width:18px;height:18px;fill:currentColor}
+.btn-def{position:relative;display:inline-block;width:100%;padding:12px 20px;border-radius:12px;background:rgba(255,255,255,.05);color:#00f2fe;border:1px solid rgba(0,242,254,.3);font-size:.95rem;font-weight:600;cursor:pointer;text-align:center;text-decoration:none;transition:all .25s cubic-bezier(.4,0,.2,1);overflow:hidden}
+.btn-def::before{content:'';position:absolute;top:0;left:-100%;width:100%;height:100%;background:linear-gradient(90deg,transparent,rgba(255,255,255,.15),transparent);transition:left .5s ease}
+.btn-def:hover:not(:disabled)::before{left:100%}
+.btn-def:hover:not(:disabled){background:rgba(0,242,254,.15);border-color:rgba(0,242,254,.6);box-shadow:0 0 20px rgba(0,242,254,.25)}
+.btn-def:active:not(:disabled){transform:scale(.98)}
+.btn-def:disabled{opacity:.35;cursor:not-allowed}
 .content{padding:18px}
 .status{text-align:center;min-height:26px;margin:0 0 14px;color:var(--accent-cyan);font-weight:700}
 .queue{max-width:520px;margin:28px auto;text-align:center;padding:24px 20px}
@@ -48,9 +56,10 @@ button{font:inherit}
 .cell.available{cursor:pointer;background:#00f2fe12;border-color:#00f2fe66;box-shadow:inset 0 0 12px #00f2fe12}
 .cell.available:after{content:'';position:absolute;width:20%;height:20%;border-radius:50%;background:#00f2fe99;box-shadow:0 0 10px #00f2fe99;animation:hintPulse 1s ease-in-out infinite alternate}
 @keyframes hintPulse{to{transform:scale(1.45);opacity:.55}}
-.pawn{position:relative;z-index:2;display:grid;place-items:center;width:78%;height:auto;aspect-ratio:1;flex:none;border:2px solid var(--pawn-color);border-radius:50%;padding:2px;background:#10151d;box-shadow:0 0 14px color-mix(in srgb,var(--pawn-color) 65%,transparent);animation:pop .28s var(--ease-out) both}
-.pawn img{width:100%;height:100%;border-radius:50%;object-fit:cover}
-.pawn.initial{display:grid;place-items:center;color:#fff;font-size:clamp(8px,2.3vw,16px);font-weight:900}
+.pawn{position:relative;z-index:2;display:grid;place-items:center;width:82%;height:auto;aspect-ratio:1;flex:none;border-radius:50%;padding:2px;background:conic-gradient(var(--pawn-color) var(--pawn-progress,0%),#ffffff30 0);box-shadow:0 0 14px color-mix(in srgb,var(--pawn-color) 45%,transparent);animation:pop .28s var(--ease-out) both}
+.pawn-face{position:absolute;inset:3px;display:grid;place-items:center;border:1px solid var(--pawn-color);border-radius:50%;overflow:hidden;background:#10151d;color:#fff;font-size:clamp(8px,2.3vw,16px);font-weight:900}
+.pawn-face img{width:100%;height:100%;border-radius:50%;object-fit:cover}
+.pawn.disconnected .pawn-face{filter:grayscale(.45)}
 .pawn.hop{animation:hop .55s cubic-bezier(.2,.8,.2,1) both}
 @keyframes pop{from{transform:scale(.3);opacity:.4}to{transform:scale(1);opacity:1}}
 @keyframes hop{0%{transform:scale(.72) translateY(3px)}45%{transform:scale(1.28) translateY(-5px)}100%{transform:scale(1)}}
@@ -58,12 +67,17 @@ button{font:inherit}
 .wall.horizontal{height:clamp(5px,1.5vw,8px);transform:translateY(-50%)}
 .wall.vertical{width:clamp(5px,1.5vw,8px);transform:translateX(-50%)}
 @keyframes wallDrop{from{opacity:0;filter:brightness(2);scale:.72}to{opacity:1;filter:none;scale:1}}
-.wall-preview{opacity:.55;background:#00f2fe}
+.wall-preview{opacity:.82;background:linear-gradient(135deg,#00f2fe,#8affff);box-shadow:0 0 16px #00f2fe99;animation:none}
+.wall-preview.invalid{opacity:.9;background:linear-gradient(135deg,#ff5555,#ff9b9b);box-shadow:0 0 16px #ff5555bb}
 .toolbar{display:flex;justify-content:center;align-items:center;gap:9px;flex-wrap:wrap;margin:15px 0 0}
-.tool{display:flex;align-items:center;gap:8px;padding:10px 13px;border:1px solid #00f2fe55;border-radius:12px;background:#ffffff08;color:var(--text-main);font-weight:700;cursor:grab;touch-action:none;transition:.2s}
-.tool:hover,.tool.selected{border-color:var(--accent-cyan);background:#00f2fe17;box-shadow:0 0 15px #00f2fe20}
+.tool{width:auto;display:inline-flex;align-items:center;justify-content:center;gap:8px;padding:10px 13px;touch-action:none;cursor:grab}
+.tool.selected{border-color:var(--accent-cyan);background:rgba(0,242,254,.15);box-shadow:0 0 15px rgba(0,242,254,.25)}
+.tool.surrender{color:var(--danger);border-color:rgba(255,85,85,.35)}
+.tool.surrender:hover:not(:disabled){background:rgba(255,85,85,.15);border-color:var(--danger);box-shadow:0 0 20px rgba(255,85,85,.25)}
+.tool.surrender::before{display:none}
+.tool.surrender:disabled{opacity:.35;cursor:not-allowed}
 .tool:disabled{opacity:.35;cursor:not-allowed}
-.tool.surrender{color:var(--danger);border-color:#ff555555}
+.queue-action{margin:16px auto 0}
 .wall-icon{width:23px;height:8px;border-radius:3px;background:linear-gradient(135deg,#d9e1eb,#7b8998)}
 .wall-icon.vertical{width:8px;height:23px}
 .walls-left{font-family:monospace;color:var(--accent-cyan);font-size:.78rem}
@@ -81,7 +95,7 @@ button{font:inherit}
 <main class="layout card">
   <header class="head">
     <div><h1>👑 Царь горы</h1><p>Коридор на четверых · первым доберись до центра</p></div>
-    <a class="back" href="/" aria-label="На главную" title="На главную">⌂</a>
+    <a href="/" class="btn-home" title="На главную"><svg viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg></a>
   </header>
   <section class="content">
     <div class="status" id="status">Подключаемся к столу…</div>
@@ -90,20 +104,20 @@ button{font:inherit}
       <p>Партия начинается, когда соберутся четыре игрока. После старта у каждого будет 20 секунд на ход.</p>
       <div class="queue-list" id="queueList"></div>
       <p id="queueCount">В очереди: 0 из 4</p>
-      <button class="tool" id="leaveQueue" type="button" style="margin:16px auto 0">Покинуть очередь</button>
+      <button class="btn-def tool queue-action" id="leaveQueue" type="button">Покинуть очередь</button>
     </section>
     <section id="game" class="hidden">
       <div class="player-grid" id="players"></div>
       <div class="board-wrap">
         <div class="board" id="board" aria-label="Игровая доска 11 на 11"></div>
         <div class="toolbar" id="toolbar">
-          <button class="tool" type="button" data-orientation="horizontal" aria-label="Перетащить горизонтальную стену">
+          <button class="btn-def tool" type="button" data-orientation="horizontal" aria-label="Перетащить горизонтальную стену">
             <span class="wall-icon"></span><span>Горизонтальная</span><span class="walls-left" id="horizontalCount"></span>
           </button>
-          <button class="tool" type="button" data-orientation="vertical" aria-label="Перетащить вертикальную стену">
+          <button class="btn-def tool" type="button" data-orientation="vertical" aria-label="Перетащить вертикальную стену">
             <span class="wall-icon vertical"></span><span>Вертикальная</span><span class="walls-left" id="verticalCount"></span>
           </button>
-          <button class="tool surrender" id="surrender" type="button">Сдаться</button>
+          <button class="btn-def tool surrender" id="surrender" type="button">Сдаться</button>
         </div>
         <p class="hint" id="hint">Перетащите стену на доску или выберите клетку для хода. Стена не должна перекрывать путь к центру.</p>
         <div class="result" id="result"></div>
@@ -115,7 +129,8 @@ button{font:inherit}
 const socket = io('/quoridor');
 const $ = id => document.getElementById(id);
 let state = null, lobby = {waiting: []}, selectedOrientation = null, dragOrientation = null, clock = null, queueActive = true;
-let previousPositions = null, previousWalls = new Set();
+let previousPositions = null, previousWalls = new Set(), previewWall = null, previewCellKey = null;
+let previewSequence = 0, previewValid = null, lastPointer = null;
 const escInitial = name => Array.from(name || '?')[0].toUpperCase();
 const formatTime = seconds => `00:${String(seconds).padStart(2, '0')}`;
 
@@ -127,6 +142,11 @@ socket.on('connect', () => {
 socket.on('connect_error', () => { $('status').textContent = 'Не удалось подключиться. Обновите страницу.'; });
 socket.on('lobby_state', value => { lobby = value; renderLobby(); });
 socket.on('game_state', value => { state = value; renderGame(); });
+socket.on('wall_preview_result', value => {
+  if (!previewWall || value.seq !== previewSequence) return;
+  previewValid = value.valid;
+  previewWall.classList.toggle('invalid', !value.valid);
+});
 socket.on('alert', value => showNotice(value.message || 'Не удалось выполнить действие'));
 
 function showNotice(message) {
@@ -187,6 +207,7 @@ function renderPlayers() {
     const isMine = state.my_index === index;
     const card = document.createElement('div');
     card.className = `player${isActive ? ' active' : ''}${isMine ? ' mine' : ''}${player.active ? '' : ' eliminated'}`;
+    if (player.reconnect_deadline !== null) card.classList.add('disconnected');
     card.style.setProperty('--player-color', player.color);
     card.dataset.seat = index;
     card.appendChild(avatarRing(player, 0, player.color));
@@ -205,7 +226,9 @@ function renderPlayers() {
     const meta = document.createElement('div');
     meta.className = 'player-meta';
     const walls = document.createElement('span');
-    walls.textContent = !player.active && player.surrendered
+    walls.textContent = player.reconnect_deadline !== null
+      ? 'Нет связи · ждём'
+      : !player.active && player.surrendered
       ? 'Сдался'
       : player.active && player.auto_turns > 0
         ? `Автоходы: ${player.auto_turns}/4`
@@ -213,7 +236,9 @@ function renderPlayers() {
     const timer = document.createElement('span');
     timer.className = 'player-time';
     timer.dataset.timer = index;
-    timer.textContent = isActive ? formatTime(20) : player.place !== null ? `${player.place} место` : '—';
+    timer.textContent = player.reconnect_deadline !== null
+      ? formatTime(Math.max(0, Math.ceil(player.reconnect_deadline - Date.now() / 1000)))
+      : isActive ? formatTime(20) : player.place !== null ? `${player.place} место` : '—';
     meta.append(walls, timer);
     info.append(name, meta);
     card.append(info);
@@ -239,21 +264,24 @@ function renderBoard() {
       if (pawnIndex !== -1) {
         const player = state.players[pawnIndex];
         const pawn = document.createElement('span');
-        pawn.className = 'pawn';
+        pawn.className = `pawn${player.reconnect_deadline !== null ? ' disconnected' : ''}`;
         pawn.style.setProperty('--pawn-color', player.color);
+        pawn.dataset.pawn = pawnIndex;
         const previous = previousPositions && previousPositions[pawnIndex];
         if (!previous || previous[0] !== row || previous[1] !== col) pawn.classList.add('hop');
+        const face = document.createElement('span');
+        face.className = 'pawn-face';
         if (player.photo_url) {
           const image = document.createElement('img');
           image.src = player.photo_url;
           image.alt = player.username;
           image.referrerPolicy = 'no-referrer';
-          image.onerror = () => { image.remove(); pawn.classList.add('initial'); pawn.textContent = escInitial(player.username); };
-          pawn.appendChild(image);
+          image.onerror = () => { image.remove(); face.textContent = escInitial(player.username); };
+          face.appendChild(image);
         } else {
-          pawn.classList.add('initial');
-          pawn.textContent = escInitial(player.username);
+          face.textContent = escInitial(player.username);
         }
+        pawn.appendChild(face);
         cell.appendChild(pawn);
       }
       board.appendChild(cell);
@@ -271,6 +299,7 @@ function renderBoard() {
   });
   previousWalls = newWalls;
   previousPositions = state.players.map(player => [player.row, player.col]);
+  if (dragOrientation && lastPointer) updatePreview(lastPointer.x, lastPointer.y);
 }
 
 function renderGame() {
@@ -279,11 +308,14 @@ function renderGame() {
   renderPlayers();
   renderBoard();
   const myTurn = state.current_turn === state.my_index && state.winner === null;
+  const disconnectedPlayer = state.players.find(player => player.reconnect_deadline !== null);
   $('status').textContent = state.finished
     ? (state.players[state.winner].reached_center
       ? state.winner === state.my_index ? 'Вы стали царём горы!' : `${state.players[state.winner].username} добрался до центра`
       : state.winner === state.my_index ? 'Вы победили — остальные игроки выбыли!' : `${state.players[state.winner].username} победил — остальные игроки выбыли`)
-    : myTurn ? 'Ваш ход — успейте за 20 секунд!' : `Ход игрока ${state.players[state.current_turn].username}`;
+    : disconnectedPlayer
+      ? `Игрок ${disconnectedPlayer.username} переподключается · ${Math.max(0, Math.ceil(disconnectedPlayer.reconnect_deadline - Date.now() / 1000))} сек`
+      : myTurn ? 'Ваш ход — успейте за 20 секунд!' : `Ход игрока ${state.players[state.current_turn].username}`;
   $('result').classList.toggle('show', state.finished);
   $('result').replaceChildren();
   if (state.finished) {
@@ -304,7 +336,7 @@ function renderGame() {
   $('hint').textContent = myTurn
     ? 'Перетащите стену на доску или выберите подсвеченную клетку. Стена должна оставлять путь к центру каждому игроку.'
     : state.finished ? 'Партия завершена. Чтобы сыграть ещё раз, нажмите «Сыграть снова».'
-      : 'Смотрите за ходом соперника. Четыре автохода подряд приводят к сдаче.';
+      : 'Смотрите за ходом соперника. Четыре автохода подряд приводят к сдаче; на переподключение даётся 30 секунд.';
   $('horizontalCount').textContent = `×${state.players[state.my_index].walls}`;
   $('verticalCount').textContent = `×${state.players[state.my_index].walls}`;
   document.querySelectorAll('.tool[data-orientation]').forEach(button => {
@@ -316,7 +348,7 @@ function renderGame() {
   if (state.finished) {
     const again = document.createElement('button');
     again.type = 'button';
-    again.className = 'tool';
+    again.className = 'btn-def tool';
     again.textContent = 'Сыграть снова';
     again.addEventListener('click', () => {
       state = null;
@@ -336,12 +368,27 @@ function startClock() {
   if (clock) clearInterval(clock);
   const update = () => {
     if (!state || state.finished) return;
-    const secondsLeft = Math.max(0, state.deadline - Date.now() / 1000);
-    const remaining = Math.ceil(secondsLeft);
-    const timer = document.querySelector(`[data-timer="${state.current_turn}"]`);
-    if (timer) timer.textContent = formatTime(remaining);
-    const active = document.querySelector(`.player[data-seat="${state.current_turn}"] .avatar-ring`);
-    if (active) active.style.setProperty('--remaining', `${Math.max(0, secondsLeft / state.turn_seconds * 100)}%`);
+    const now = Date.now() / 1000;
+    state.players.forEach((player, index) => {
+      const reconnecting = player.reconnect_deadline !== null;
+      const deadline = reconnecting ? player.reconnect_deadline : state.deadline;
+      const secondsLeft = Math.max(0, deadline - now);
+      const totalSeconds = reconnecting ? 30 : state.turn_seconds;
+      const progress = `${Math.max(0, secondsLeft / totalSeconds * 100)}%`;
+      if (reconnecting && index === state.current_turn) {
+        $('status').textContent = `Игрок ${player.username} переподключается · ${Math.ceil(secondsLeft)} сек`;
+      }
+      const timer = document.querySelector(`[data-timer="${index}"]`);
+      if (timer && (reconnecting || index === state.current_turn)) {
+        timer.textContent = formatTime(Math.ceil(secondsLeft));
+      }
+      if (reconnecting || index === state.current_turn) {
+        const ring = document.querySelector(`.player[data-seat="${index}"] .avatar-ring`);
+        if (ring) ring.style.setProperty('--remaining', progress);
+        const pawn = document.querySelector(`.pawn[data-pawn="${index}"]`);
+        if (pawn) pawn.style.setProperty('--pawn-progress', progress);
+      }
+    });
   };
   update();
   clock = setInterval(update, 100);
@@ -360,6 +407,10 @@ function placeDraggedWall(x, y) {
   if (!dragOrientation || !state || state.current_turn !== state.my_index || state.winner !== null) return false;
   const cell = cellAt(x, y);
   if (!cell) return false;
+  if (previewValid === false) {
+    showNotice('Эту стену здесь поставить нельзя');
+    return false;
+  }
   socket.emit('place_wall', {...cell, orientation: dragOrientation});
   selectedOrientation = null;
   document.querySelectorAll('.tool[data-orientation]').forEach(button => button.classList.remove('selected'));
@@ -382,14 +433,47 @@ document.querySelectorAll('.tool[data-orientation]').forEach(button => {
 });
 
 function updatePreview(x, y) {
+  lastPointer = {x, y};
   const cell = cellAt(x, y);
   const board = $('board');
-  board.querySelector('.wall-preview')?.remove();
-  if (!cell || !dragOrientation) return;
-  const wall = document.createElement('div');
-  wall.className = `wall wall-preview ${dragOrientation}`;
-  positionWall(wall, cell.row, cell.col, dragOrientation);
-  board.appendChild(wall);
+  if (!cell || !dragOrientation) {
+    if (previewWall) previewWall.remove();
+    previewCellKey = null;
+    previewValid = null;
+    return;
+  }
+
+  const key = `${dragOrientation}-${cell.row}-${cell.col}`;
+  if (!previewWall || previewWall.dataset.orientation !== dragOrientation) {
+    clearWallPreview();
+    previewWall = document.createElement('div');
+    previewWall.className = `wall wall-preview ${dragOrientation}`;
+    previewWall.dataset.orientation = dragOrientation;
+  }
+  if (!previewWall.isConnected) board.appendChild(previewWall);
+  if (key === previewCellKey) {
+    positionWall(previewWall, cell.row, cell.col, dragOrientation);
+    return;
+  }
+
+  previewCellKey = key;
+  previewValid = null;
+  previewWall.classList.remove('invalid');
+  positionWall(previewWall, cell.row, cell.col, dragOrientation);
+  previewSequence += 1;
+  socket.emit('preview_wall', {
+    row: cell.row,
+    col: cell.col,
+    orientation: dragOrientation,
+    seq: previewSequence,
+  });
+}
+
+function clearWallPreview() {
+  previewWall?.remove();
+  previewWall = null;
+  previewCellKey = null;
+  previewValid = null;
 }
 
 function positionWall(element, row, col, orientation) {
@@ -417,8 +501,9 @@ document.addEventListener('pointerup', event => {
     event.preventDefault();
     event.stopPropagation();
   }
-  $('board').querySelector('.wall-preview')?.remove();
+  clearWallPreview();
   dragOrientation = null;
+  lastPointer = null;
 });
 
 $('board').addEventListener('click', event => {

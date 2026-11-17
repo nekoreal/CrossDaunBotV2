@@ -150,7 +150,19 @@ class QuoridorGame:
         return True
 
     def place_wall(self, player_index: int, row: int, col: int, orientation: str) -> bool:
+        if not self.can_place_wall(player_index, row, col, orientation):
+            return False
+
+        self.walls.append(Wall(row, col, orientation))
+        self.players[player_index].walls -= 1
+        self.players[player_index].auto_turns = 0
+        self.advance_turn()
+        return True
+
+    def can_place_wall(self, player_index: int, row: int, col: int, orientation: str) -> bool:
         if self.finished or player_index != self.current_turn:
+            return False
+        if not 0 <= player_index < len(self.players) or not self.players[player_index].active:
             return False
         if orientation not in ("horizontal", "vertical"):
             return False
@@ -171,18 +183,14 @@ class QuoridorGame:
                 return False
 
         self.walls.append(wall)
-        if not all(
-            self._has_path_to_center(index)
-            for index, player in enumerate(self.players)
-            if player.active
-        ):
+        try:
+            return all(
+                self._has_path_to_center(index)
+                for index, player in enumerate(self.players)
+                if player.active
+            )
+        finally:
             self.walls.pop()
-            return False
-
-        self.players[player_index].walls -= 1
-        self.players[player_index].auto_turns = 0
-        self.advance_turn()
-        return True
 
     def surrender(self, player_index: int) -> bool:
         if self.finished or not 0 <= player_index < len(self.players):
